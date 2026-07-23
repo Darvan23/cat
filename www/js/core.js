@@ -146,7 +146,7 @@ const state = {
 // frame rate feels far better in the paw than extra resolution ever looks.
 const IS_MOBILE = (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
 const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance' });   // MSAA is pricey on phone GPUs
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = IS_MOBILE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
@@ -278,6 +278,13 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 60));
+
+// ── No page zoom, ever. iOS Safari IGNORES user-scalable=no, so block it at the
+//    event level: Safari's pinch gestures, two-finger touch zoom, and double-tap. ──
+['gesturestart', 'gesturechange', 'gestureend'].forEach(ev =>
+  document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
 
 // ─── Lighting ─────────────────────────────────────────────────────────────────
 const sun = new THREE.DirectionalLight(0xfff4e0, 2.6);

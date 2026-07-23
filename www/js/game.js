@@ -2245,9 +2245,15 @@ function drawMinimap() {
 }
 
 // ─── Game Loop ────────────────────────────────────────────────────────────────
-let t = 0;
-function animate() {
+let t = 0, _lastFrame = 0;
+function animate(now) {
   requestAnimationFrame(animate);
+  // The sim is tuned for 60Hz fixed steps — 120Hz ProMotion phones fire RAF twice as
+  // often, which ran the WHOLE GAME at double speed. Skip frames closer than ~12ms.
+  if (now != null) {
+    if (now - _lastFrame < 12) return;
+    _lastFrame = now;
+  }
   if (!state.gameStarted) return;
   if (mg.active) return;   // overworld pauses while the mouse-catching minigame is open
   t += 0.016;
