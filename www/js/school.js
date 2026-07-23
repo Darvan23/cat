@@ -12,7 +12,7 @@ const SCHOOL_COURSES = [
   { id: 'humanity', icon: '❤️', name: 'Humanity & Kindness', cost: 200,
     blurb: 'Kindness, taught by doing. Perk: good deeds count DOUBLE toward your reputation.',
     lessons: [
-      { teach: 'Kindness starts small. The Millers took you in — give a little back.', task: 'Give the Millers 5 🪙 (💝 Give Coins at home)', ev: 'give', goal: 5 },
+      { teach: 'Kindness starts small. The shelter keeps a 💝 donation box by the desk — or give straight to the Millers at home.', task: 'Give 5 🪙 (the shelter\'s 💝 donation box, or 💝 Give Coins at home)', ev: 'give', goal: 5 },
       { teach: 'Every cat in the shelter is waiting for a life. You can buy one its freedom.', task: 'Free a cat from the 🐾 shelter', ev: 'freeCat', goal: 1 },
       { teach: 'Better still: imagine a cat that never existed, and give it a life.', task: 'Create a cat of your own design, name it, and free it', ev: 'createCat', goal: 1 },
       { teach: 'The family always needs something — an errand run, a kid walked to the park.', task: 'Do 1 good deed (Elena\'s errand or walk a kid to the park)', ev: 'goodDeed', goal: 1 },
@@ -362,6 +362,7 @@ function graduateCourse(c, score) {
   if (typeof sfx === 'function') sfx('upgrade');
   showNotif('🎓 DEGREE EARNED: ' + c.name + '!  (' + score + '/' + c.exam.length + ' on the exam)');
   if (typeof spawnHeart === 'function') { spawnHeart(); setTimeout(spawnHeart, 250); setTimeout(spawnHeart, 500); }
+  if (typeof refreshDiplomaWall === 'function') refreshDiplomaWall();   // hang it in the Millers' living room
   if (c.id === 'logistics' && state.job) {   // your diploma raises your current wage right away
     state.job.wage = Math.round(state.job.wage * 1.25);
     showNotif('💼 Your Logistics Diploma earned you a pay bump — now ' + state.job.wage + ' 🪙/day!');

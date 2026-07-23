@@ -862,6 +862,7 @@ function updateContextButton() {
   } else if (state.inShelter) {
     const giver = state.shelterGiver;
     if (giver && giver.hasJob && Math.hypot(cp.x - giver.x, cp.z - giver.z) < 2.0) { action = 'playgame'; label = (JOBS[giver.job] && JOBS[giver.job].playLabel) || '🎮 Play'; state.giverTarget = giver; }
+    else if (Math.hypot(cp.x - (-6.2), cp.z - (-6.6)) < 1.9) { action = 'donate'; label = '💝 Donate 5 🪙'; }
     else if (Math.hypot(cp.x - (-8), cp.z - 5.4) < 2.0) { action = 'sleepshelter'; label = '😴 Nap here'; }
     else { const sc = nearestShelterCat(cp, 1.8); if (sc) { action = 'shelterplay'; label = '🧶 Play with ' + (sc.name || 'the cat'); state.playTarget = sc; } }
   } else if (state.inHouse) {
@@ -921,6 +922,7 @@ function doContextAction() {
   else if (state.context === 'play') playWithCat(state.playTarget);
   else if (state.context === 'shelterplay') playWithCat(state.playTarget);
   else if (state.context === 'sleepshelter') sleepAtHome();
+  else if (state.context === 'donate') donateAtShelter();
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
@@ -1976,6 +1978,19 @@ function buyDecor(id) {
     if (typeof schoolEvent === 'function') schoolEvent('buyDecor');
     showNotif('🛋️ Added the ' + it.name + ' to ' + DECOR_CTX[ck].label + '!');
   });
+}
+// 💝 the shelter donation box — 5 🪙 for the cats; pays in reputation, not coins
+function donateAtShelter() {
+  if (state.coins < 5) { showNotif('You need 5 🪙 to donate…'); return; }
+  state.coins -= 5; document.getElementById('coin-count').textContent = state.coins;
+  state.goodDeeds = (state.goodDeeds || 0) + 1;
+  if (typeof sfx === 'function') sfx('coin');
+  _catHappyT = 1.2; spawnHeart();
+  showNotif('💝 Donated 5 🪙 to the shelter — ❤️ your reputation grows (see 📊)');
+  showDialogue('Dr. Amara 🩺', 'Every coin feeds a cat, little one. Thank you. ❤️', 3600);
+  if (typeof addGoodwill === 'function') addGoodwill(2, 'A shelter donation');
+  if (typeof schoolEvent === 'function') { schoolEvent('give', 5); schoolEvent('goodDeed'); }
+  if (typeof saveGame === 'function') saveGame();
 }
 function sleepAtHome() {
   state.uiOpen = true;

@@ -20,6 +20,28 @@ function levelForCoins(c) { let lv = 0; for (let i = 0; i < HOUSE_TIERS.length; 
 const RENT = { goal: 100, days: 16, triggerCoins: 40, penalty: 18 };
 
 // ─── Miller home interior (with upgrade tiers) ──────────────────────────────────
+// 🎓 Your diplomas hang on the living-room wall — one framed certificate per degree
+let _diplomaGroup = null;
+function refreshDiplomaWall() {
+  if (typeof groundGroup === 'undefined' || !groundGroup) return;
+  if (_diplomaGroup) { groundGroup.remove(_diplomaGroup); _diplomaGroup = null; }
+  const done = (state.school && state.school.done) || [];
+  if (!done.length) return;
+  const icons = { logistics: '💼', business: '📊', civics: '🏛️', humanity: '❤️', art: '🎨', park: '🌳', planning: '🏗️' };
+  _diplomaGroup = new THREE.Group();
+  done.slice(0, 8).forEach((id, i) => {
+    const col = i % 4, row = Math.floor(i / 4);
+    const x = 0.7 + col * 0.68, y = 2.0 - row * 0.55;
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.42, 0.05), pbr(0x6a4a2c, 0.8));
+    frame.position.set(x, y, -2.92); frame.castShadow = true; _diplomaGroup.add(frame);
+    const paper = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.02),
+      (typeof makeTextSign === 'function')
+        ? new THREE.MeshStandardMaterial({ map: makeTextSign((icons[id] || '🎓') + ' DIPLOMA', '#f2ead8', '#4a3a22', 210, 96), roughness: 0.85 })
+        : pbr(0xf2ead8, 0.9));
+    paper.position.set(x, y, -2.885); _diplomaGroup.add(paper);
+  });
+  groundGroup.add(_diplomaGroup);
+}
 function buildInterior() {
   const tiers = [];
   groundGroup = new THREE.Group(); houseScene.add(groundGroup);   // the whole ground floor (hidden when upstairs)
@@ -304,6 +326,7 @@ function millerRejection() {
 function enterHouse() {
   state.inHouse = true;
   setFloor('ground');                       // always arrive on the ground floor
+  refreshDiplomaWall();                     // 🎓 your degrees hang framed on the wall
   houseScene.add(catGroup);                 // moves the cat from the overworld scene
   catGroup.scale.setScalar(CAT_SCALE_IN);   // a real cat is tiny next to the furniture
   catGroup.position.set(0.6, 0, 2.2);
@@ -1320,6 +1343,17 @@ function buildShelterInterior() {
   const rec = buildHuman(NEIGHBOURS['Dr. Amara'] || DEFAULT_PERSON);
   rec.group.position.set(-8.5, 0, -7.1); S.add(rec.group);
   state.shelterPeople = [{ group: rec.group, parts: rec.parts, phase: 2 }];
+
+  // 💝 the donation box beside the desk — drop in 5 🪙 to help the cats (a good deed)
+  B(0.55, 0.55, 0.55, wood, -6.2, 0.85, -6.6);                                   // box…
+  B(0.7, 0.9, 0.7, pbr(0x8a6a4a, 0.9), -6.2, 0.3, -6.6);                         // …on a little stand
+  B(0.3, 0.04, 0.1, pbr(0x241610, 0.95), -6.2, 1.14, -6.5);                      // the coin slot
+  add(new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), pbr(0xd04a5a, 0.6))).position.set(-6.2, 1.32, -6.6);   // a little heart on top
+  if (typeof makeTextSign === 'function') {
+    add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.06),
+      new THREE.MeshStandardMaterial({ map: makeTextSign('💝 DONATIONS', '#5a2a34', '#f6e6d8', 220, 56), roughness: 0.6 })))
+      .position.set(-6.2, 1.75, -6.85);
+  }
 
   // cat beds around the edges (more of them now)
   const catBed = (x, z, c) => { add(new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.78, 0.2, 16), pbr(c, 0.9))).position.set(x, 0.1, z); add(new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 16), pbr(0xeee0d0, 0.9))).position.set(x, 0.2, z); };
