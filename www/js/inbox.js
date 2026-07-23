@@ -63,7 +63,7 @@ function renderTutorial() {
   const s = tut.steps[tut.i];
   el.style.display = 'block';
   document.getElementById('tut-text').innerHTML = s.text;
-  document.getElementById('tut-next').textContent = tut.i < tut.steps.length - 1 ? ('Next ▶ (' + (tut.i + 1) + '/' + tut.steps.length + ')') : '✓ Got it!';
+  document.getElementById('tut-next').textContent = tut.i < tut.steps.length - 1 ? ('Next › (' + (tut.i + 1) + '/' + tut.steps.length + ')') : '✓ Got it!';
   if (s.glow) {
     const target = document.getElementById(s.glow);
     if (target) {

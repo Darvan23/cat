@@ -450,7 +450,7 @@ function bootGame() {
   document.getElementById('intro-portrait').innerHTML = catSVG(state.chosenCat);
   const h1 = intro.querySelector('h1'); if (h1) h1.textContent = 'Welcome Back';
   document.getElementById('intro-sub').textContent = `${state.catName} and the Millers are waiting for you. 🐾`;
-  const btn = document.getElementById('start-btn'); btn.textContent = '▶ Continue'; btn.onclick = resumeGame;
+  const btn = document.getElementById('start-btn'); btn.textContent = 'Continue ›'; btn.onclick = resumeGame;
   if (!document.getElementById('start-over')) {
     const so = document.createElement('button');
     so.id = 'start-over'; so.textContent = 'Start a new game';

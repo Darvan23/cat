@@ -142,11 +142,14 @@ const state = {
 };
 
 // ─── Three.js Setup ───────────────────────────────────────────────────────────
+// Phones get a lighter renderer: lower pixel ratio, cheaper shadows — a steady
+// frame rate feels far better in the paw than extra resolution ever looks.
+const IS_MOBILE = (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
 const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = IS_MOBILE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.15;
@@ -280,7 +283,7 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 60));
 const sun = new THREE.DirectionalLight(0xfff4e0, 2.6);
 sun.position.set(12, 22, 8);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(IS_MOBILE ? 1024 : 2048, IS_MOBILE ? 1024 : 2048);   // phones: half-size shadow map, double the headroom
 sun.shadow.camera.near = 0.1;
 sun.shadow.camera.far = 140;
 sun.shadow.camera.left = -58;
