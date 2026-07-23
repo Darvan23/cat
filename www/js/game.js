@@ -540,6 +540,7 @@ function giveCoins(amount) {
   if (state.rentActive && state.houseFund >= RENT.goal) winDeadline();
   sfx('coin');
   showNotif(`💝 Gave ${amt} 🪙 to the Millers`);
+  if (typeof schoolEvent === 'function') schoolEvent('give', amt);
   if (!state.disowned) showDialogue('🏠 The Millers', amt >= 25 ? 'Bless you, little one… this means everything. ❤️' : 'Thank you — every coin helps.', 3400);
   addGoodwill(Math.min(30, Math.ceil(amt / 8)), 'Your gift of ' + amt + ' 🪙');   // giving counts toward winning them back
   if (state.coins <= 0) closeGive();
@@ -754,6 +755,7 @@ function endEscort(done) {
   if (done) {
     // family kindnesses pay in REPUTATION, not coins — the town notices a cat like that
     state.goodDeeds = (state.goodDeeds || 0) + 1;
+    if (typeof schoolEvent === 'function') schoolEvent('goodDeed');
     if (typeof addGoodwill === 'function') addGoodwill(2, 'Walked a kid to the park');
     if (typeof sfx === 'function') sfx('purr');
     spawnHeart(); setTimeout(spawnHeart, 300);
@@ -975,6 +977,7 @@ function catSitOnBench(prop) {
   state.catSitting = { x: prop.x, z: prop.z, rotY: prop.rotY || 0, y: 0.52 };
   catGroup.position.set(prop.x, 0.52, prop.z); catGroup.rotation.set(0, prop.rotY || 0, 0);
   if (typeof sfx === 'function') sfx('purr');
+  if (typeof schoolEvent === 'function') schoolEvent('sitBench');
   showNotif('🪑 Having a little rest…');
 }
 function catStandUp() {
@@ -1079,6 +1082,7 @@ function hireCleanup(ent) {
   if (!payCleanup(CLEAN_COST)) { showNotif('You need ' + CLEAN_COST + ' 🪙 (or tax money) to hire a cleanup crew'); return; }
   ent.cleaning = true; ent.cleanT = 320;
   const i = worldColliders.indexOf(ent.coll); if (i >= 0) worldColliders.splice(i, 1);   // crew & cat can move in now
+  if (typeof schoolEvent === 'function') schoolEvent('rubble');
   ent.workers = [];
   for (let k = 0; k < 2; k++) {
     const { group, parts } = buildHuman(randomPersonCfg());
@@ -1125,6 +1129,7 @@ function searchTrashCan(can) {
   if (!can) return;
   if (t < (can.refillAt || 0)) { showNotif('🗑️ Already picked this one clean — try another bin.'); return; }
   can.refillAt = t + 90 + Math.random() * 90;
+  if (typeof schoolEvent === 'function') schoolEvent('searchBin');
   if (can.lid) { can.lid.rotation.z = 0.5; setTimeout(() => { if (can.lid) can.lid.rotation.z = 0.14; }, 900); }   // lid flips open then settles
   const roll = Math.random();
   if (roll < 0.3) {
@@ -1154,6 +1159,7 @@ function petByNPC(p) {
   if (!p) return;
   if (t - state.lastPet < 8) { showNotif('They just gave you a treat — back in a moment'); return; }
   state.lastPet = t;
+  if (typeof schoolEvent === 'function') schoolEvent('petted');
   state.needs.hunger = Math.min(100, state.needs.hunger + 35);
   sfx('purr');
   updateNeedsHUD();
@@ -1475,8 +1481,8 @@ function nearestCritter(pos, range) {
 function catchCritter(c) {
   scene.remove(c.group);
   const i = state.parkCritters.indexOf(c); if (i >= 0) state.parkCritters.splice(i, 1);
-  if (c.type === 'mouse') { state.parkMice++; showNotif('🐭 Caught a mouse!  (' + state.parkMice + ')'); }
-  else { state.parkBirds++; showNotif('🐦 Caught a bird!  (' + state.parkBirds + ')'); }
+  if (c.type === 'mouse') { state.parkMice++; showNotif('🐭 Caught a mouse!  (' + state.parkMice + ')'); if (typeof schoolEvent === 'function') schoolEvent('mice'); }
+  else { state.parkBirds++; showNotif('🐦 Caught a bird!  (' + state.parkBirds + ')'); if (typeof schoolEvent === 'function') schoolEvent('bird'); }
   sfx('catch');
   _catHappyT = 1.0; spawnHeart();
   updateParkTally();
@@ -1484,7 +1490,7 @@ function catchCritter(c) {
 }
 function rewardMice(npc) {
   if (state.parkMice <= 0) { showDialogue(npc.name, "The park's spotless? Catch the mice scurrying about and I'll reward you, friend.", 4000); return; }
-  const pay = state.parkMice * 2;
+  const pay = Math.round(state.parkMice * 2 * ((typeof schoolHas === 'function' && schoolHas('park')) ? 1.25 : 1));   // 🌳 ranger course pays better
   state.coins += pay; state.earned += pay;
   document.getElementById('coin-count').textContent = state.coins;
   sfx('coin');
@@ -1514,6 +1520,7 @@ function bargainHaggle() {
   renderBargain();
 }
 function bargainAccept() {
+  if (typeof schoolHas === 'function' && schoolHas('park')) state.bargainOffer = Math.round(state.bargainOffer * 1.25);   // 🌳 ranger course pays better
   state.coins += state.bargainOffer; state.earned += state.bargainOffer;
   document.getElementById('coin-count').textContent = state.coins;
   sfx('sell');
@@ -1557,6 +1564,7 @@ function nearestFreedCat(pos, range) {
 function playWithCat(fc) {
   if (!fc) return;
   if (typeof sfx === 'function') sfx('meow');                  // a happy hello from your friend
+  if (typeof schoolEvent === 'function') schoolEvent('playCat');
   _catHappyT = 2.2;                                            // you bounce along with them the whole time
   fc.playT = 2.6;                                              // play-bow → pounces → happy spin
   spawnHeart(); setTimeout(spawnHeart, 350); setTimeout(spawnHeart, 800); setTimeout(spawnHeart, 1350); setTimeout(spawnHeart, 1900);
@@ -1848,6 +1856,7 @@ function giveBagToElena() {
     state.momRequest = null;
     // running Mum's errand is a kindness, not a paid job — it builds your reputation
     state.goodDeeds = (state.goodDeeds || 0) + 1;
+    if (typeof schoolEvent === 'function') schoolEvent('goodDeed');
     showDialogue('Elena 🏠', 'The ' + b.item.name.toLowerCase() + '! Exactly what we needed — you carried it all that way! You really are one of the family. ❤️', 5600);
     showNotif('❤️ A good deed — your reputation grows (see 📊)');
     if (typeof addGoodwill === 'function') addGoodwill(5, 'You fetched the shopping');
@@ -1948,9 +1957,12 @@ function renderHomeStore() {
     const owned = list.includes(it.id);
     const card = document.createElement('div'); card.className = 'store-card';
     card.innerHTML = `<div class="store-icon">${it.icon}</div><div class="store-name">${it.name}</div>` +
-      (owned ? '<div class="store-owned">✓ In this room</div>' : `<button class="store-buy" onclick="buyDecor('${it.id}')">${it.price} 🪙</button>`);
+      (owned ? '<div class="store-owned">✓ In this room</div>' : `<button class="store-buy" onclick="buyDecor('${it.id}')">${decorPrice(it)} 🪙</button>`);
     grid.appendChild(card);
   });
+}
+function decorPrice(it) {   // 🎨 the Art & Design degree buys furniture at 20% off
+  return Math.round(it.price * ((typeof schoolHas === 'function' && schoolHas('art')) ? 0.8 : 1));
 }
 function buyDecor(id) {
   const ck = (typeof currentDecorCtx === 'function' && currentDecorCtx()) || 'home';
@@ -1958,9 +1970,10 @@ function buyDecor(id) {
   const it = storeCatalog(ck).find(i => i.id === id); if (!it) return;
   if (!it.multi && list.includes(id)) return;                         // most items: one per room
   const instId = it.multi ? (id + '_' + Date.now().toString(36) + Math.floor(Math.random() * 900)) : id;   // walls: unlimited instances
-  payChoice(it.price, 'Buy ' + it.name, () => {                        // President chooses tax or own money
+  payChoice(decorPrice(it), 'Buy ' + it.name, () => {                  // President chooses tax or own money
     list.push(instId); buildDecorItem(instId, ck);
     sfx('upgrade'); renderHomeStore(); saveGame();
+    if (typeof schoolEvent === 'function') schoolEvent('buyDecor');
     showNotif('🛋️ Added the ' + it.name + ' to ' + DECOR_CTX[ck].label + '!');
   });
 }
@@ -2214,6 +2227,7 @@ function animate() {
   if (t - (state._lastSave || 0) > 6) { state._lastSave = t; saveGame(); }   // autosave every ~6s
   updateDayNight(0.016);
   updateNeeds(0.016);
+  if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it
   updateShopSign();   // flip the OPEN/CLOSED sign with the clock

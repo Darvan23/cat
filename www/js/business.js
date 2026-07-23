@@ -122,7 +122,7 @@ function reputation() {
   if (corr >= 55) return { label: 'Corrupt 🦹 (the town is onto you)', cls: 'bad' };
   if (corr >= 25) return { label: 'Shady 😼 (whispers of corruption)', cls: 'neutral' };
   const score = (state.biz.jobsCreated || 0) + catsFreedCount() * 3 + housesBuiltCount() * 4 + (state.workRep || 0)
-              + (state.goodDeeds || 0) * 2;   // 👔 boss chats count — and so does every kindness for the family
+              + (state.goodDeeds || 0) * ((typeof schoolHas === 'function' && schoolHas('humanity')) ? 4 : 2);   // ❤️ the Humanity degree makes kindness count double
   if (score >= 45) return { label: 'Beloved 😻', cls: 'good' };
   if (score >= 15) return { label: 'Respected 🙂', cls: 'good' };
   if (score >= 1)  return { label: 'Known 😐', cls: 'neutral' };
@@ -132,6 +132,7 @@ function reputation() {
 // ── Dashboard ──
 function openBusiness() {
   if (typeof sfx === 'function') sfx('ui');
+  if (typeof schoolEvent === 'function') schoolEvent('openDash');
   if (!state.gameStarted) return;
   state.uiOpen = true; renderBusiness();
   document.getElementById('business').classList.add('show');

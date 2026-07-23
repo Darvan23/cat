@@ -887,6 +887,7 @@ function editorPointerUp() {
 }
 function rotateDecor() {
   if (!editSelected) { showNotif('Tap a piece of furniture first'); return; }
+  if (typeof schoolEvent === 'function') schoolEvent('moveDecor');
   editSelected.rotation.y += Math.PI / 4;
   commitDecorXf(); if (typeof saveGame === 'function') saveGame();
 }

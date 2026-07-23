@@ -803,6 +803,7 @@ function closeMinigame() {
   if (coins > 0) {
     state.coins += coins;
     state.earned += coins;
+    if (typeof schoolEvent === 'function') schoolEvent('minigame');
     sfx('coin');
     document.getElementById('coin-count').textContent = state.coins;
     updateFamilyStatus();

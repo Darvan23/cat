@@ -332,12 +332,17 @@ let _lastRoad = null;
 function doPlace(type, x, z, rot) {
   const item = PLANNER_ITEMS.find(i => i.type === type); if (!item) return false;
   if (Math.abs(x) > 110 || Math.abs(z) > 80) { showNotif('That\'s outside the town'); return false; }
-  if (!plannerPay(item.cost)) { showNotif('Not enough ' + (planPaySrc() === 'tax' ? 'tax money' : 'coins') + ' for a ' + item.name + (planPaySrc() === 'tax' ? ' — switch to 🪙 Coins?' : '')); return false; }
+  const cost = Math.round(item.cost * ((typeof schoolHas === 'function' && schoolHas('planning')) ? 0.9 : 1));   // 🏗️ Town Planning degree: 10% off
+  if (!plannerPay(cost)) { showNotif('Not enough ' + (planPaySrc() === 'tax' ? 'tax money' : 'coins') + ' for a ' + item.name + (planPaySrc() === 'tax' ? ' — switch to 🪙 Coins?' : '')); return false; }
   const rec = { type, x: +x.toFixed(1), z: +z.toFixed(1), rot: rot || 0 };
   (state.placed = state.placed || []).push(rec);
   plannerMeshes.push(buildPlacedMesh(rec.type, rec.x, rec.z, rec.rot, rec));
   if (type === 'road') _lastRoad = { x: rec.x, z: rec.z, rot: rec.rot };   // remember it, to extend from
   if (type === 'house') addPlacedResidents();                              // a new home brings newcomers to town
+  if (typeof schoolEvent === 'function') {                                 // 🏫 planning-course tasks watch the planner
+    schoolEvent(type === 'road' ? 'road' : 'place');
+    if (type === 'house') schoolEvent('placeHouse');
+  }
   if (typeof sfx === 'function') sfx('coin');
   showNotif(item.icon + ' ' + item.name + ' placed');
   updatePlannerBal();

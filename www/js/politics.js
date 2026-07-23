@@ -140,6 +140,7 @@ function updatePoliticsBtn() {
 
 function openPolitics() {
   if (typeof sfx === 'function') sfx('ui');
+  if (typeof schoolEvent === 'function') schoolEvent('openPolitics');
   state.uiOpen = true;
   renderPolitics();
   document.getElementById('politics').classList.add('show');

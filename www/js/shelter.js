@@ -170,6 +170,7 @@ function catMakerConfirm() {
     spawnFreedCat(catData);
     if (typeof sfx === 'function') sfx('purr');
     showNotif('🐾 You created and freed ' + nm + '!');
+    if (typeof schoolEvent === 'function') schoolEvent('createCat');
     if (typeof addGoodwill === 'function') addGoodwill(5, 'You gave a cat a new life');
     if (typeof saveGame === 'function') saveGame();
     document.getElementById('catmaker').classList.remove('show');
@@ -280,6 +281,7 @@ function renderCustomise() {
   document.getElementById('customise-portrait').innerHTML = catSVG(customToCatData());
 }
 function setCustom(field, value) {
+  if (typeof schoolEvent === 'function') schoolEvent('customise');
   const c = state.catCustom;
   if (field === 'collarOff') c.collarOn = false;
   else if (field === 'collar') { c.collarOn = true; c.collarColor = value; }
@@ -347,6 +349,7 @@ function freeCat(i) {
   renderRescue();
   sfx('purr');
   showNotif(`🐾 You set ${cat.name} free!`);
+  if (typeof schoolEvent === 'function') schoolEvent('freeCat');
   showDialogue(cat.name + ' 🐱', cat.hello, 3200);
   if (typeof addGoodwill === 'function') addGoodwill(5, 'You rescued a cat');   // kindness the whole town notices
 }

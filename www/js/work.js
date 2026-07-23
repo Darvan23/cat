@@ -299,6 +299,7 @@ function pickHelpItem(pid) {
     if (typeof sfx === 'function') sfx('coin');
     setCustomerBubble(c, '❤️');
     showNotif('🔎 Found it for them! +' + tip + ' 🪙 tip — they\'re heading to your till.');
+    if (typeof schoolEvent === 'function') schoolEvent('helped');
     setTimeout(() => customerToCounter(c), 900);
   } else {
     c.wrong = (c.wrong || 0) + 1;
@@ -343,6 +344,7 @@ function pickChange(v) {
     if (typeof sfx === 'function') sfx('coin');
     setCustomerBubble(c, '😊');
     showNotif('💰 Perfect change! +' + total + ' 🪙 to the till' + (tip ? ' (+1 tip!)' : '') + ' — stash it in the safe.');
+    if (typeof schoolEvent === 'function') schoolEvent('change');
   } else {
     if (j) { j.till = (j.till || 0) + total; j.sales = (j.sales || 0) + 1; }
     setCustomerBubble(c, '🤨');
@@ -357,6 +359,7 @@ function closeCheckout() { state.uiOpen = false; document.getElementById('checko
 function stashCash() {
   const j = state.job; if (!j || !(j.till > 0)) return;
   j.banked = (j.banked || 0) + j.till;
+  if (typeof schoolEvent === 'function') schoolEvent('stashed', j.till);
   showNotif('🏦 Stashed ' + j.till + ' 🪙 in the safe. Banked today: ' + j.banked + ' 🪙');
   j.till = 0;
   if (typeof sfx === 'function') sfx('coin');
@@ -645,6 +648,7 @@ function applyForJob(e) {
   if (typeof inboxAdd === 'function') inboxAdd(s.boss + ' ' + s.emoji, 'Your employment at ' + s.name.replace(/^the /, ''),
     `Dear ${state.catName} Miller,<br><br>Welcome aboard as our <b>cashier</b>!<br>• 🔓 Open at <b>9:00 am</b><br>• 🔒 Close at <b>5:00 pm</b><br>• 💰 ${wage} 🪙/day + 10% of takings<br><br>Three strikes (late or missed shifts) and we part ways. Do well and ask for a raise.<br>— ${s.boss}`);
   showNotif('📬 You got the job at ' + s.name + '! Read your schedule letter.');
+  if (typeof schoolEvent === 'function') schoolEvent('hired');
   showJobLetter();   // the boss hands you a letter with your schedule
   updateJobHUD();
   if (typeof saveGame === 'function') saveGame();

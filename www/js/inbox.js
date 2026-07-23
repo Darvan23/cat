@@ -27,7 +27,7 @@ function openInbox() {
 function closeInbox() { state.uiOpen = false; document.getElementById('inbox').classList.remove('show'); }
 function inboxOpenMail(id) {
   const m = inboxList().find(x => x.id === id);
-  if (m) { m.read = true; state._inboxOpen = (state._inboxOpen === id) ? null : id; }
+  if (m) { if (!m.read && typeof schoolEvent === 'function') schoolEvent('readMail'); m.read = true; state._inboxOpen = (state._inboxOpen === id) ? null : id; }
   renderInbox(); updateInboxBadge();
   if (typeof saveGame === 'function') saveGame();
 }
@@ -90,7 +90,8 @@ function renderMyCV() {
   const cv = state.cvJobs || [];
   const totalShifts = cv.reduce((s, r) => s + (r.shifts || 0), 0);
   const degrees = (state.school && state.school.done) || [];
-  const degName = { logistics: '💼 Logistics Diploma', business: '📊 Business Degree', civics: '🏛️ Civics & Law' };
+  const degName = { logistics: '💼 Logistics Diploma', business: '📊 Business Degree', civics: '🏛️ Civics & Law',
+    humanity: '❤️ Humanity & Kindness', art: '🎨 Art & Design', park: '🌳 Park Ranger', planning: '🏗️ Town Planning' };
   let h = `<div class="cv-card"><div class="cv-title">📄 Curriculum Vitae</div>`;
   h += `<div class="cv-name">${state.catName || 'Whiskers'} Miller</div>`;
   h += `<div class="cv-line">${myOccupation()}</div>`;
