@@ -124,6 +124,19 @@ function toggleToolbar(force) {
 canvas.addEventListener('mousedown', () => toggleToolbar(false));
 canvas.addEventListener('touchstart', () => toggleToolbar(false), { passive: true });
 
+// ⛶ Real fullscreen (hides the browser bars) — button only shows where the API exists
+function toggleFullscreen() {
+  const d = document.documentElement;
+  const req = d.requestFullscreen || d.webkitRequestFullscreen;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) { if (req) req.call(d); }
+  else (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
+}
+(() => {
+  const b = document.getElementById('fullscreen-btn');
+  const d = document.documentElement;
+  if (b && !d.requestFullscreen && !d.webkitRequestFullscreen) b.style.display = 'none';   // iOS Safari has no fullscreen API
+})();
+
 // ─── Voice (browser text-to-speech) ─────────────────────────────────────────────
 const synth = window.speechSynthesis;
 let ttsVoices = [], pickedVoice = null;

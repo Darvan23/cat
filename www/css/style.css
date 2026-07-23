@@ -1,5 +1,13 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #1a1a2e; overflow: hidden; font-family: 'Georgia', serif; }
+  /* the page itself must NEVER scroll or rubber-band on a phone — the game is the page */
+  html { overflow: hidden; height: 100%; overscroll-behavior: none; }
+  body { background: #1a1a2e; overflow: hidden; font-family: 'Georgia', serif; overscroll-behavior: none; touch-action: none; }
+  /* …but panels with lists still scroll INSIDE themselves */
+  .modal-card, #shelter, #cat-grid, #customise-rows, #catmaker-rows, #politics-body, #business-body,
+  #homestore-grid, #rescue-grid, #inbox-body, #school-body, #map-wrap {
+    touch-action: pan-y; -webkit-overflow-scrolling: touch;
+  }
+  #plan-palette { touch-action: pan-x; }
   #canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
 
   /* HUD */
