@@ -244,7 +244,7 @@
 
   /* ☰ menu button — the ONLY utility button always on screen */
   #menu-toggle {
-    position: fixed; top: calc(128px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); z-index: 12;
+    position: fixed; top: calc(152px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); z-index: 12;
     width: 40px; height: 40px; border-radius: 10px;
     background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
     color: #f0d080; font-size: 1.15rem; cursor: pointer;
@@ -258,7 +258,7 @@
   }
   /* Toolbar tray — every utility button lives here; hidden until ☰ slides it out */
   #toolbar {
-    position: fixed; top: calc(128px + env(safe-area-inset-top)); left: calc(66px + env(safe-area-inset-left)); z-index: 11;
+    position: fixed; top: calc(152px + env(safe-area-inset-top)); left: calc(66px + env(safe-area-inset-left)); z-index: 11;
     display: flex; flex-wrap: wrap; gap: 6px; width: 190px;
     opacity: 0; pointer-events: none; transform: translateX(-10px);
     transition: opacity 0.18s, transform 0.18s;
@@ -308,9 +308,9 @@
   #shelter-btn { bottom: calc(270px + env(safe-area-inset-bottom)); background: rgba(90,150,160,0.92); border: 2px solid #c0e8f0; }
   #shelter-btn.show { display: block; } #shelter-btn:active { background: #3a7a88; }
 
-  /* Needs (hunger / thirst / energy) */
+  /* Needs (hunger / thirst / energy) — starts BELOW the coin box (iOS renders it tall) */
   #needs {
-    position: fixed; top: calc(56px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left));
+    position: fixed; top: calc(72px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left));
     display: flex; flex-direction: column; gap: 4px; z-index: 10;
   }
   .need { display: flex; align-items: center; gap: 5px; }
@@ -319,14 +319,19 @@
   .need-fill { height: 100%; width: 100%; background: #6ac06a; transition: width 0.3s linear, background 0.4s; }
   .need-fill.low { background: #e0a83a; }
   .need-fill.critical { background: #d0463a; }
+  /* one tight centre-top stack — pills pack under each other, no overlaps ever */
+  #status-stack {
+    position: fixed; top: calc(12px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+    z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    pointer-events: none;
+  }
+  #status-stack > * { pointer-events: auto; }
   #clock {
-    position: fixed; top: calc(16px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
-    z-index: 10; font-size: 0.92rem; color: #f0e6cc; background: rgba(20,12,5,0.82);
+    font-size: 0.92rem; color: #f0e6cc; background: rgba(20,12,5,0.82);
     border: 1px solid #5a4a3a; border-radius: 12px; padding: 5px 12px; white-space: nowrap; letter-spacing: 0.03em;
   }
   #population {
-    position: fixed; top: calc(52px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
-    z-index: 10; display: none; align-items: center; gap: 8px; font-size: 0.82rem; color: #f0e0c0;
+    display: none; align-items: center; gap: 8px; font-size: 0.82rem; color: #f0e0c0;
     background: rgba(20,12,5,0.7); border: 1px solid #5a4a3a; border-radius: 12px; padding: 4px 12px; white-space: nowrap;
   }
 
@@ -537,14 +542,12 @@
 
   /* Presidency: happiness HUD, governance dashboard, jail */
   #happy {
-    position: fixed; top: calc(82px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
     display: none; align-items: center; gap: 6px; background: rgba(20,12,5,0.72); border: 1px solid #5a4a3a; border-radius: 12px; padding: 3px 10px;
   }
   .happy-face { font-size: 0.95rem; }
   .happy-bar { width: 96px; height: 8px; background: #3a2e22; border-radius: 5px; overflow: hidden; }
   .happy-fill { height: 100%; width: 60%; background: #5fbf6a; transition: width 0.4s, background 0.4s; }
   #anger {
-    position: fixed; top: calc(110px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
     display: none; align-items: center; gap: 6px; background: rgba(20,12,5,0.72); border: 1px solid #5a4a3a; border-radius: 12px; padding: 3px 10px;
   }
   .anger-face { font-size: 0.95rem; }
@@ -552,14 +555,12 @@
   #anger.danger { border-color: #c8443a; animation: angerPulse 1s ease-in-out infinite; }
   @keyframes angerPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(200,68,58,0); } 50% { box-shadow: 0 0 10px 2px rgba(200,68,58,0.6); } }
   #winback {
-    position: fixed; top: calc(194px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
     display: none; align-items: center; gap: 6px; background: rgba(30,14,20,0.78); border: 1px solid #a05a6a; border-radius: 12px; padding: 3px 10px;
   }
   .winback-face { font-size: 0.95rem; }
   .winback-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c85a7a, #f090a8); transition: width 0.4s; }
   .winback-pct { color: #f0c0cc; font-size: 0.72rem; min-width: 30px; text-align: right; }
   #jobhud {
-    position: fixed; top: calc(138px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
     display: none; align-items: center; gap: 6px; background: rgba(14,22,30,0.82); border: 1px solid #3a6a8a; border-radius: 12px; padding: 4px 12px; cursor: pointer;
   }
   .jobhud-text { color: #bfe0f0; font-size: 0.74rem; white-space: nowrap; }
@@ -651,8 +652,7 @@
 
   /* Park catch tally */
   #park-tally {
-    position: fixed; top: calc(166px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
-    z-index: 10; display: none; background: rgba(20,12,5,0.82); border: 2px solid #5a8a3a; border-radius: 12px;
+    display: none; background: rgba(20,12,5,0.82); border: 2px solid #5a8a3a; border-radius: 12px;
     padding: 6px 16px; color: #cfe8b0; font-size: 0.95rem; letter-spacing: 0.04em; white-space: nowrap;
   }
   #park-tally.show { display: block; }

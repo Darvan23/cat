@@ -44,7 +44,17 @@
   <div class="need"><span class="need-icon">💧</span><div class="need-bar"><div id="thirst-fill" class="need-fill"></div></div></div>
   <div class="need"><span class="need-icon">😴</span><div class="need-bar"><div id="energy-fill" class="need-fill"></div></div></div>
 </div>
-<div id="clock">🌞</div>
+
+<!-- every centre-top pill lives in ONE stack — they pack tightly and can never overlap -->
+<div id="status-stack">
+  <div id="clock">🌞</div>
+  <div id="population" title="Town population — humans vs cats">👤 0 🐱 0</div>
+  <div id="jobhud" title="Your 9-to-5 job — follow the schedule!" onclick="openJobPanel()"><span class="jobhud-text">💼</span></div>
+  <div id="happy" title="Town prosperity — how well-run the town is"><span class="happy-face">🙂</span><div class="happy-bar"><div class="happy-fill"></div></div></div>
+  <div id="anger" title="Public anger at you — hits 100 and you're jailed"><span class="anger-face">😌</span><div class="happy-bar"><div class="anger-fill"></div></div></div>
+  <div id="winback" title="Win the Millers back with good deeds"><span class="winback-face">❤️‍🩹</span><div class="happy-bar"><div class="winback-fill"></div></div><span class="winback-pct">0%</span></div>
+  <div id="park-tally">🐭 0   🐦 0</div>
+</div>
 
 <div id="minimap" onclick="openMap()" title="Open the full map"><canvas id="minimap-canvas" width="240" height="240"></canvas><span class="mm-hint">🗺️</span></div>
 <button id="menu-toggle" onclick="toggleToolbar()" title="Menu"><span id="menu-icon">☰</span><span id="menu-badge">0</span></button>
@@ -159,12 +169,6 @@
   <button onclick="exitDecorEdit()">✓ Done</button>
 </div>
 <button id="property-btn" onclick="buyProperty()">🏷️ For Sale</button>
-<div id="park-tally">🐭 0   🐦 0</div>
-<div id="population" title="Town population — humans vs cats">👤 0 🐱 0</div>
-<div id="happy" title="Town prosperity — how well-run the town is"><span class="happy-face">🙂</span><div class="happy-bar"><div class="happy-fill"></div></div></div>
-<div id="anger" title="Public anger at you — hits 100 and you're jailed"><span class="anger-face">😌</span><div class="happy-bar"><div class="anger-fill"></div></div></div>
-<div id="winback" title="Win the Millers back with good deeds"><span class="winback-face">❤️‍🩹</span><div class="happy-bar"><div class="winback-fill"></div></div><span class="winback-pct">0%</span></div>
-<div id="jobhud" title="Your 9-to-5 job — follow the schedule!" onclick="openJobPanel()"><span class="jobhud-text">💼</span></div>
 
 <div id="jail-hud">
   <div class="jail-count">Day 1 of 20</div>
