@@ -550,26 +550,53 @@ function updateBossCheckin(ow, t) {
     }
   }
 }
-function openBossCheckin() {
-  const ow = state.workOwner, j = state.job; if (!ow || !j) return;
-  const q = BOSS_CHECKINS[Math.floor(Math.random() * BOSS_CHECKINS.length)];
-  state._bossQ = q;
-  state.uiOpen = true;
-  const tt = document.getElementById('job-title'); if (tt) tt.textContent = '👔 ' + ow.name + ' checks in';
+// The shared little Q&A chat modal (used by your shift boss AND Daniel at the family shop).
+// Answers are {t: button text, rep: reputation change, r: their reply}; onPick gets the choice.
+function openCheckinModal(title, sub, answers, onPick) {
+  state.uiOpen = true; state._chkAnswers = answers; state._chkOn = onPick;
+  const tt = document.getElementById('job-title'); if (tt) tt.textContent = title;
   document.getElementById('job-body').innerHTML =
-    `<div class="modal-sub">${j.emoji} <b>${ow.name}</b> wanders over for a chat:<br>“${q.q}”</div>` +
+    `<div class="modal-sub">${sub}</div>` +
     `<div class="modal-row" style="flex-direction:column;gap:8px">` +
-    q.a.map((a, i) => `<button class="cust-pat" onclick="answerBossCheckin(${i})">${a.t}</button>`).join('') +
+    answers.map((a, i) => `<button class="cust-pat" onclick="pickCheckinAnswer(${i})">${a.t}</button>`).join('') +
     `</div>`;
   document.getElementById('job').classList.add('show');
 }
-function answerBossCheckin(i) {
-  const ow = state.workOwner, q = state._bossQ;
-  state._bossQ = null;
+function pickCheckinAnswer(i) {
+  const a = (state._chkAnswers || [])[i], on = state._chkOn;
+  state._chkAnswers = null; state._chkOn = null;
   state.uiOpen = false; document.getElementById('job').classList.remove('show');
-  const a = q && q.a[i]; if (!a || !ow) return;
-  showDialogue('👔 ' + ow.name, a.r, 5200);
-  bossCheckinDone(a.rep);
+  if (a && on) on(a);
+}
+function openBossCheckin() {
+  const ow = state.workOwner, j = state.job; if (!ow || !j) return;
+  const q = BOSS_CHECKINS[Math.floor(Math.random() * BOSS_CHECKINS.length)];
+  state._bossQ = q;   // updateBossCheckin watches this to know the chat is still open
+  openCheckinModal('👔 ' + ow.name + ' checks in',
+    `${j.emoji} <b>${ow.name}</b> wanders over for a chat:<br>“${q.q}”`,
+    q.a,
+    (a) => { state._bossQ = null; showDialogue('👔 ' + ow.name, a.r, 5200); bossCheckinDone(a.rep); });
+}
+// 🔧 Daniel's version, for when he drops by the family shop while you're there —
+// same chat, warmer questions (he's family, not your boss).
+const DANIEL_CHECKINS = [
+  { q: "How's our little shop looking, partner?", a: [
+    { t: "😺 Business is purring along!",        rep: 1, r: "That's the spirit! This place saved us — let's keep it shining." },
+    { t: "😼 The staff are doing a fine job.",   rep: 1, r: "Aren't they just? I'll bring them something nice tomorrow." },
+    { t: "😿 It's been a slow day…",             rep: 0, r: "Slow days happen. We've weathered far worse together, eh?" },
+  ] },
+  { q: "Everything alright with you, little one?", a: [
+    { t: "😻 Never better!",                     rep: 1, r: "Good. Elena worries about you out here, you know." },
+    { t: "😼 Busy — lots to look after.",        rep: 1, r: "Ha — the hardest worker in this family has four paws." },
+    { t: "😿 A bit tired, honestly…",            rep: 0, r: "Then rest, you daft thing. The shop will keep. Family first." },
+  ] },
+];
+function openDanielCheckin() {
+  const q = DANIEL_CHECKINS[Math.floor(Math.random() * DANIEL_CHECKINS.length)];
+  openCheckinModal('🔧 Daniel drops by',
+    `🏪 <b>Daniel</b> looks the family shop over, then down at you:<br>“${q.q}”`,
+    q.a,
+    (a) => { showDialogue('🔧 Daniel', a.r, 5200); if (a.rep) addWorkRep(a.rep); if (typeof saveGame === 'function') saveGame(); });
 }
 function bossCheckinDone(rep) {
   const ow = state.workOwner;

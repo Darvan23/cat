@@ -364,6 +364,10 @@ function updateFamilyStatus() {
   document.getElementById('family-status').textContent = HOUSE_TIERS[lv].status + '  ·  🏠 ' + lv + '/5';
   updateRentHUD();
   if (!state.crickMet && state.earned >= RENT.triggerCoins) triggerDeadline();
+  // The ONE win check for the rent: however the fund reached the goal (gifts, minigames,
+  // a reloaded save that was already full), Crick comes to settle up. winDeadline() itself
+  // guards against firing twice.
+  if (state.rentActive && state.houseFund >= RENT.goal) winDeadline();
   if (typeof checkPolitics === 'function') checkPolitics();
   if (lv !== state.houseLevel) {
     const wentUp = lv > state.houseLevel;
@@ -607,6 +611,7 @@ function millerTalk(f) {
 }
 
 // ── Kids' escort quest: a kid asks you to walk them to the park & back for a reward ──
+function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail); }
 function anyKidWantsPark() { return state.family.some(f => f.wantsPark); }
 function startEscort(kid) {
   kid.wantsPark = false;
@@ -618,7 +623,7 @@ function endEscort(done) {
   const e = state.escort; if (!e) return;
   const kid = e.kid;
   if (kid.parts) { if (kid.parts.legs) kid.parts.legs.forEach(l => l.rotation.x = 0); if (kid.parts.arms) kid.parts.arms.forEach(a => a.rotation.x = 0); }
-  if (kid.group) kid.group.position.set(MILLER_HOME_SPOT.x, 0, MILLER_HOME_SPOT.z);   // back at the front door
+  if (kid.group) { const H = millerHomeSpot(); kid.group.position.set(H.x, 0, H.z); }   // back at their front door
   kid.phase = 'home';
   state.escort = null;
   if (done) {
@@ -666,7 +671,8 @@ function updateEscort() {
   if (e.phase === 'toPark') {
     if (cp.x > PARK.x0 + 1 && cp.z > PARK.z0 && cp.z < PARK.z1 && d < 3.2) { e.phase = 'play'; e.playT = 150; showDialogue(kid.name + ' 🏠', 'The park! Thank you, thank you! 🌳🎉', 3600); }
   } else if (e.phase === 'toHome') {
-    if (Math.hypot(cp.x - MILLER_HOME_SPOT.x, cp.z - MILLER_HOME_SPOT.z) < 5.5 && d < 3.2) endEscort(true);
+    const H = millerHomeSpot();   // walk them back to wherever the family lives NOW
+    if (Math.hypot(cp.x - H.x, cp.z - H.z) < 5.5 && d < 3.2) endEscort(true);
   }
 }
 function updateContextButton() {
@@ -1111,6 +1117,15 @@ function updateNightMode() {
 // ── The Millers walk a real daily routine outside the house ──
 // A clip-safe waypoint path from the front door to each member's daytime spot.
 const MILLER_HOME_SPOT = { x: -3, z: -7.0 };
+// Where the family LIVES right now — the old poor house, or the bought home you moved them
+// into. Every walk (leaving, coming home, escort drop-off) starts and ends here.
+function millerHomeSpot() {
+  if (typeof millersMovedOut === 'function' && millersMovedOut() && typeof PROPERTIES !== 'undefined') {
+    const p = PROPERTIES.find(pp => pp.id === state.millerHome);
+    if (p) return { x: p.x, z: p.z + 2.6 };   // their new front doorstep
+  }
+  return MILLER_HOME_SPOT;
+}
 const MILLER_DEST = {
   Daniel: { route: [{ x: -3, z: -6.3 }, { x: -18, z: -6.3 }], hideAtDest: () => state.owned.shop },  // to the shop (vanishes inside if he owns it)
   Elena:  { route: [{ x: -3, z: -6.3 }, { x: 10, z: -6.3 }] },                                         // off to the shops
@@ -1133,10 +1148,25 @@ function millerPath(f, route) {   // the shared route, shifted onto this member'
   const W = MILLER_WALK[f.name] || { ox: 0, oz: 0 };
   return route.map(w => ({ x: w.x + W.ox, z: w.z + W.oz }));
 }
+// This Miller's day-out route, computed fresh each trip. Elena's "the shops" endpoint
+// follows the REAL shops (the player can move them across town with the planner) instead
+// of a spot fixed in the old town layout.
+function millerDayRoute(name) {
+  const D = MILLER_DEST[name]; if (!D) return null;
+  const route = D.route.map(w => ({ x: w.x, z: w.z }));
+  if (name === 'Elena' && typeof JOB_SITES !== 'undefined' && JOB_SITES.length) {
+    const H = millerHomeSpot();
+    let best = null, bd = 1e9;
+    for (const s of JOB_SITES) { const d2 = (s.x - H.x) ** 2 + (s.z - H.z) ** 2; if (d2 < bd) { bd = d2; best = s; } }
+    if (best) route[route.length - 1] = { x: best.x + 2.6, z: best.z + 1.2 };   // on the pavement by the shopfront
+  }
+  return route;
+}
 function stepFamilyTo(f, tx, tz) {
   const p = f.group.position;
   const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz);
   if (d < 0.15) {
+    f.blockT = 0;
     if (f.parts.legs) f.parts.legs.forEach(l => l.rotation.x *= 0.8);
     if (f.parts.arms) f.parts.arms.forEach(a => a.rotation.x *= 0.8);
     f.group.rotation.z *= 0.8; p.y *= 0.7;
@@ -1144,7 +1174,16 @@ function stepFamilyTo(f, tx, tz) {
   }
   const W = MILLER_WALK[f.name];
   const step = Math.min((W && W.sp) || 0.028, d);
-  p.x += dx / d * step; p.z += dz / d * step;
+  // Respect walls & trees like everyone else (the player can move buildings onto the
+  // family's route). Blocked too long → treat the waypoint as reached and move on,
+  // so a Miller can neither ghost through a building nor shove it forever.
+  const nx = p.x + dx / d * step, nz = p.z + dz / d * step;
+  const wc = collide(nx, nz, worldColliders, 0.2);
+  if (Math.hypot(wc.x - nx, wc.z - nz) > 0.02) {
+    f.blockT = (f.blockT || 0) + 1;
+    if (f.blockT > 55) { f.blockT = 0; return true; }
+  } else f.blockT = 0;
+  p.x = wc.x; p.z = wc.z;
   const heading = Math.atan2(dx, dz);
   f.group.rotation.y += (((heading - f.group.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * 0.2;
   f.walkT = (f.walkT || 0) + 0.3; const sw = Math.sin(f.walkT);
@@ -1192,7 +1231,13 @@ function updateFamilyRoutine(t) {
   const hour = state.dayTime * 24;
   state.family.forEach(f => {
     updateParkMarker(f, t);   // 🌳 shows over a kid who wants the park
-    if (state.escort && state.escort.kid === f) return;           // the escort quest controls this kid
+    if (state.escort && state.escort.kid === f) {                 // the escort quest controls this kid
+      if (playerIndoors()) {                                      // …but if you pop inside somewhere, they wait patiently
+        if (!state.escort.waitNotified) { state.escort.waitNotified = true; showNotif('🧒 ' + f.name + ' is waiting for you outside!'); }
+        idleHuman(f, t);
+      } else state.escort.waitNotified = false;
+      return;
+    }
     if (typeof petUpdate === 'function' && petUpdate(f)) return;   // being petted → don't walk
     if (f.talkPause && f.talkPause-- > 0) {   // just talked to you — pause & face you a moment
       f.group.rotation.y = Math.atan2(catGroup.position.x - f.group.position.x, catGroup.position.z - f.group.position.z);
@@ -1208,8 +1253,9 @@ function updateFamilyRoutine(t) {
     if (!f.phase) f.phase = 'home';
     // transitions — everyone gets their own offset line + a staggered start, so nobody overlaps
     const W = MILLER_WALK[f.name] || { ox: 0, oz: 0, delay: 0 };
-    if (out && f.phase === 'home') { f.phase = 'toWork'; f.delay = W.delay || 0; f.group.position.set(MILLER_HOME_SPOT.x + W.ox * 0.4, 0, MILLER_HOME_SPOT.z + W.oz * 0.4); f.path = millerPath(f, D.route); f.wp = 0; }
-    if (!out && (f.phase === 'toWork' || f.phase === 'atWork')) { f.phase = 'toHome'; f.delay = W.delay || 0; f.path = millerPath(f, D.route.slice().reverse().concat([MILLER_HOME_SPOT])); f.wp = 0; }
+    const HOME = millerHomeSpot();
+    if (out && f.phase === 'home') { f.phase = 'toWork'; f.delay = W.delay || 0; f.group.position.set(HOME.x + W.ox * 0.4, 0, HOME.z + W.oz * 0.4); f.path = millerPath(f, millerDayRoute(f.name)); f.wp = 0; }
+    if (!out && (f.phase === 'toWork' || f.phase === 'atWork')) { f.phase = 'toHome'; f.delay = W.delay || 0; f.path = millerPath(f, millerDayRoute(f.name).slice().reverse().concat([HOME])); f.wp = 0; }
     // behaviour
     if (f.phase === 'home') { f.group.visible = false; return; }
     if (f.phase === 'toWork') {
@@ -1235,7 +1281,8 @@ function applyFamilyPresence() {
     const out = millerPlan(f.name, hour).loc === 'out';
     const D = MILLER_DEST[f.name]; if (!D) return;
     if (out) {
-      const dest = D.route[D.route.length - 1];
+      const route = millerDayRoute(f.name);
+      const dest = route[route.length - 1];
       f.group.position.set(dest.x, 0, dest.z);
       f.phase = 'atWork';
       f.group.visible = !(D.hideAtDest && D.hideAtDest());
@@ -2247,7 +2294,13 @@ function animate() {
           if (d.visitT <= 0) {
             d.visiting = !d.visiting;
             d.visitT = d.visiting ? 13 : 55 + Math.random() * 45;   // ~13s visit every minute or so
-            if (d.visiting) { d.group.position.set(-2.5, 0, 1.2); d.group.rotation.y = Math.PI; showNotif('🔧 Daniel dropped by to check on the shop. "All fine here — good work, everyone!"'); }
+            if (d.visiting) {
+              d.group.position.set(-2.5, 0, 1.2); d.group.rotation.y = Math.PI;
+              // every other visit he comes over for a proper chat (same Q&A as the shift bosses)
+              d.visitN = (d.visitN || 0) + 1;
+              if (d.visitN % 2 === 1 && !state.uiOpen && typeof openDanielCheckin === 'function') openDanielCheckin();
+              else showNotif('🔧 Daniel dropped by to check on the shop. "All fine here — good work, everyone!"');
+            }
           }
           d.group.visible = !!d.visiting;
           if (d.visiting) idleHuman(d, t);
