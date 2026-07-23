@@ -312,4 +312,89 @@
 - [x] for the presidency debate i want an actual stage — **STAGED DEBATE built**: the debate now plays on a drawn **2D stage** above the questions — red curtains, "★ THE TOWN DEBATE ★" banner, three podiums with **Grubb 🤵, YOUR cat (painted in your colours), and Ada 👩‍🌾**, and a **crowd along the front**. When you answer, the scene **reacts**: a great answer gets 👏 raining over the crowd, Grubb **fumes 😠** and Ada nods 🙂; a bad one gets 👎 and murmurs — with your running **Approval x/10** on the banner. Beat the field (8/10) → President.
 - [x] you can not open the planner in the beginning — **PLANNER GATED**: the 🏗️ planner refuses to open unless you're **Mayor or President** ("get elected first!"). The **Mayor builds with their own coins only** — the 🏛️ tax-money option remains President-only (as before).
 - [x] instead of the screen telling you to rotate your phone it should already be rotated the user will automatically know how to play also work on the sounds effects I keep hearing these sound effect improve them and also add new ones 
-- [ ] we need to add more jobs like you can work at the park clean the park put things in the trash also add more things to school like tutorials of how to free cats teaching about reputation morals how to build stuff how to be a good mayor and these cursuse should not be days of waiting it should be teaching you stuff everyday diffrent thing for what you choose to studdy and give you tasks and practice like you need to finish the tasks then you unlock the next lesson for example you want to learn about humanity the first lesson will tell you to go to the cat shelter and donate 5 coins second lesson gives you a task to free a cat the next one it tells you to create a cat of your choice name it then free it. if you choose art & design the first lesson is to change the colour of your cat and buy a hat the second is to decorate your house and buy a couch and tv he third is to move and place things you already own. for business it the first lesson should teach how to buy a business the second how to run it the third how to hire people for prisedency it should be more lessons and tasks 
+- [ ] we need to add more jobs like you can work at the park clean the park put things in the trash also add more things to school like tutorials of how to free cats teaching about reputation morals how to build stuff how to be a good mayor and these cursuse should not be days of waiting it should be teaching you stuff everyday diffrent thing for what you choose to studdy and give you tasks and practice like you need to finish the tasks then you unlock the next lesson for example you want to learn about humanity the first lesson will tell you to go to the cat shelter and donate 5 coins second lesson gives you a task to free a cat the next one it tells you to create a cat of your choice name it then free it. if you choose art & design the first lesson is to change the colour of your cat and buy a hat the second is to decorate your house and buy a couch and tv he third is to move and place things you already own. for business it the first lesson should teach how to buy a business the second how to run it the third how to hire people for prisedency it should be more lessons and tasks
+
+  ### 🎓 School rework — full design (expanded)
+
+  **Core idea: no more waiting days.** A course is a **chain of lessons**. Each lesson = a short teaching card (like the tutorial cards) + a **real task in the world**. Finish the task → the next lesson unlocks. Finish every lesson → sit the **final exam** → pass → **degree**. You learn by DOING, not by sleeping.
+
+  **How a lesson works:**
+  - Enroll at the 🏫 school (pay tuition once, for the whole course)
+  - Lesson card appears (re-readable anytime): 2–3 sentences of teaching in Ms. Plume's voice, then **"Your task: …"**
+  - The task tracks itself (like the mayor checklist): shows ⬜ → ✅ with a progress count where needed ("2/3 bins emptied")
+  - A glowing arrow / tut-glow points at the button or place the task needs (same system the tutorials use)
+  - When the task completes: 🔔 the school bell rings, "+📗 Lesson passed!" notification, next lesson unlocks
+  - You can only study **one course at a time**, but you can abandon a course (tuition lost) and start another
+
+  **The final exam (every course ends with one):**
+  - Held AT the school — walk into the classroom, sit at a desk (the camera settles like the debate stage)
+  - **Part 1 — written:** 5 multiple-choice questions drawn from the lessons, same UI as the presidential debate (Ms. Plume asks, you pick). Wrong answers are allowed but…
+  - **Part 2 — practical:** one timed real-world task themed to the course (see per-course below)
+  - **Pass mark: 4/5 written + practical done.** Fail → no penalty, but you must wait until the **next morning** to retake (Ms. Plume: "sleep on it, little one")
+  - Pass → 🎓 **graduation moment**: the school bell rings, confetti, your cat gets a little **graduation cap** for the rest of the day, a **framed diploma** is mailed to your 📬 inbox, and the degree appears on your CV + 📊 dashboard forever
+
+  **The courses (existing 3 reworked into lessons+exam, plus 4 new):**
+
+  - **💼 Logistics Diploma** (400🪙) — perk: cashier wage **+25%**
+    - L1: what a job is → task: read the "WE'RE HIRING!" board at any shop
+    - L2: applying → task: get hired (ask an owner for the job)
+    - L3: the shift → task: help 3 customers find what they need in one shift
+    - L4: the till → task: give perfect change 3 times
+    - L5: banking → task: stash 200🪙 in the safe across your shifts
+    - Exam practical: run one full shift with **no wrong change and no missed customers**
+
+  - **📊 Business Degree** (800🪙) — perk: **unlocks buying businesses**, self-run tills fill **25% faster**
+    - L1: what a business is → task: visit all four businesses for sale in town
+    - L2: buying → task: save up 40,000🪙 (the café price) — the lesson explains income vs price
+    - L3: running it yourself → task: open a business you own and collect 100🪙 from its till
+    - L4: staff → task: hire your first worker (the lesson explains wages vs income)
+    - L5: reputation → task: check your 📊 dashboard and read your own CV
+    - Exam practical: end one day with **positive net income** (takings > wages)
+
+  - **❤️ Humanity & Kindness** (200🪙 — cheap on purpose, everyone should take it) — perk: good deeds count **double** toward reputation
+    - L1: giving → task: donate 5🪙 at the cat shelter donation box *(NEW: add a donation box to the shelter)*
+    - L2: rescue → task: free one cat from the shelter
+    - L3: creation → task: create a cat of your own design, name it, and free it
+    - L4: the family → task: run one errand for Elena (fetch what she needs from a shop)
+    - L5: the small things → task: walk a kid to the park + get petted by 3 different townsfolk
+    - Exam practical: do **3 good deeds in one day** (any mix: donate, escort, errand, free a cat)
+
+  - **🎨 Art & Design** (300🪙) — perk: Home Store & customiser prices **−20%**, unlocks 2 exclusive hats 🎓🎨
+    - L1: your look → task: change your cat's colour AND buy any hat
+    - L2: your home → task: buy a couch and a TV and place them in the Miller home
+    - L3: arranging → task: move/rotate 3 things you already own with the 🛠️ editor
+    - L4: colour theory → a pure teaching card (warm vs cool rooms) → task: place a lamp + a plant in the same room
+    - L5: the town → task: visit the fountain and both parks ("study the town's landmarks")
+    - Exam practical: redecorate one full room (place **5+ items** in it) — Ms. Plume "grades" it with a compliment
+
+  - **🌳 Park Ranger Course** (350🪙) — perk: unlocks the **park-keeper job** (paid litter cleanup — ties into the "work at the park" idea) and park minigames pay +25%
+    - L1: the park → task: catch 3 mice in the park
+    - L2: the birds → task: catch 2 birds and sell them to Bert (or refuse him — both count, refusing counts as a good deed)
+    - L3: litter → task: pick up 3 pieces of litter and put them in a bin *(NEW: litter you can carry to bins for a coin each — the President's litter piles finally have a use)*
+    - L4: the wildlife → task: play with 2 stray cats and the butterflies minigame once
+    - L5: the trees → task: sit under a tree until your energy refills a little
+    - Exam practical: a **2-minute park patrol** — clean every piece of litter in the park before the clock runs out
+
+  - **🏗️ Town Planning** (1,000🪙 — only offered to a Mayor) — perk: planner build prices **−10%**, unlocks the fancy fence & pond pieces
+    - L1: the grid → task: open the planner and place 1 tree and 1 bench
+    - L2: roads → task: extend the road by 2 tiles
+    - L3: homes → task: place and pay for 1 house
+    - L4: moving → task: move an existing structure and rename a street
+    - L5: demolition → a teaching card about rubble + homelessness → task: demolish something AND clean up the rubble after
+    - Exam practical: build a tiny plaza — **1 house + 2 trees + 1 bench + 1 lamp** placed within one session
+
+  - **🏛️ Civics & Law** (1,500🪙 — Mayor with goals met only, unchanged gate) — perk: **required for the presidency**
+    - L1: the ladder → teaching card on Mayor → President → task: read your mayor checklist in the 🗳️ panel
+    - L2: public money → task: as Mayor, build something for the town with your own coins
+    - L3: the treasury → teaching card: tax money belongs to the PEOPLE; corruption meter explained → task: answer a 3-question mini-quiz on it
+    - L4: the press → task: read 2 letters in your 📬 inbox (the lesson mails you two "case study" letters about a corrupt mayor from history)
+    - L5: the debate → task: practice round — 3 debate questions vs a training dummy rival, need 2/3 good answers
+    - L6: morals → teaching card on reputation & what jail costs you → task: hold a "Beloved" or "Respected" reputation when you sit the exam
+    - Exam: **written is 8 questions** (hardest in the game, needs 6/8) + practical: give a speech at the town square podium (pick the 3 speech lines that help most people — debate UI)
+
+  **Extra rules & polish:**
+  - Course progress is saved per-lesson (reload mid-course = resume exactly where you were)
+  - Ms. Plume teaches every course, but each course gets its own guest voice for flavour (Elena for Humanity, Old Tom for Park Ranger, Mayor Pickle for Civics…)
+  - The 🏫 school panel shows all courses with 🔒/▶/✅ states, your current lesson, and a "📖 Re-read the lesson" button (keep)
+  - Diplomas hang as **framed pictures on the Miller home wall** as you earn them (visible in the house!)
+  - Earning ALL 7 degrees → secret title on the CV: **"Professor Paws"** + a one-time 🎉 town celebration at the square
