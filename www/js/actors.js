@@ -135,6 +135,21 @@ function idleHuman(o, time) {
   if (o.group) o.group.rotation.z = Math.sin(time * 0.7 + ph) * 0.012;                              // gentle weight shift
 }
 
+// Can a walker go in a straight line from (x0,z0) to (x1,z1) without shoving a wall?
+// Samples the line against the world colliders. Buildings can sit anywhere (the player
+// moves them with the planner), so a random target must be CHECKED, never assumed clear —
+// an unreachable target left folk marching into a wall forever.
+function walkLineClear(x0, z0, x1, z1) {
+  const d = Math.hypot(x1 - x0, z1 - z0);
+  const steps = Math.min(120, Math.max(1, Math.ceil(d / 1.5)));
+  for (let i = 1; i <= steps; i++) {
+    const x = x0 + (x1 - x0) * i / steps, z = z0 + (z1 - z0) * i / steps;
+    const c = collide(x, z, worldColliders, 0.28);
+    if (Math.hypot(c.x - x, c.z - z) > 0.03) return false;
+  }
+  return true;
+}
+
 // Gentle wander: stroll to a random spot near home, pause, repeat
 function initWander(o, radius, speed) {
   o.home = { x: o.group.position.x, z: o.group.position.z };
@@ -164,18 +179,25 @@ function updateWander(o) {
     if (o.parts.arms) o.parts.arms.forEach(a => { a.rotation.x *= 0.8; });
     o.group.position.y *= 0.8; o.group.rotation.z *= 0.8;
     if (o.wtimer <= 0) {
-      const ang = Math.random() * Math.PI * 2, r = o.radius * (0.35 + Math.random() * 0.65);
-      o.target.x = o.home.x + Math.cos(ang) * r;
-      o.target.z = o.home.z + Math.sin(ang) * r;
-      if (o.baseSpeed == null) o.baseSpeed = o.wspeed;
-      o.wspeed = o.baseSpeed * (0.65 + Math.random() * 0.8);   // sometimes ambling, sometimes hurrying
-      o.wstate = 'walk';
+      // pick a spot they can actually WALK TO — a target inside or behind a building
+      // (easy once the player moves structures around) had them shoving the wall forever
+      for (let k = 0; k < 8; k++) {
+        const ang = Math.random() * Math.PI * 2, r = o.radius * (0.35 + Math.random() * 0.65);
+        const tx = o.home.x + Math.cos(ang) * r, tz = o.home.z + Math.sin(ang) * r;
+        if (!walkLineClear(o.wx, o.wz, tx, tz)) continue;
+        o.target.x = tx; o.target.z = tz;
+        if (o.baseSpeed == null) o.baseSpeed = o.wspeed;
+        o.wspeed = o.baseSpeed * (0.65 + Math.random() * 0.8);   // sometimes ambling, sometimes hurrying
+        o.wstate = 'walk';
+        break;
+      }
+      if (o.wstate !== 'walk') o.wtimer = 60 + Math.random() * 120;   // boxed in right now — idle & retry later
     }
     return;
   }
   // walking toward the target
   const dx = o.target.x - o.wx, dz = o.target.z - o.wz, dist = Math.hypot(dx, dz);
-  if (dist < 0.08 || (o.blockT || 0) > 100) {              // arrived — or hopelessly stuck on an obstacle
+  if (dist < 0.08 || (o.blockT || 0) > 45) {               // arrived — or stuck on an obstacle, so stop shoving it
     o.blockT = 0;
     if (o.exiting) { o.group.visible = false; o.exiting = false; }   // 🌙 slipped indoors for the night
     o.wstate = 'idle'; o.wtimer = 70 + Math.random() * 160; return;
@@ -328,14 +350,22 @@ function updateCommuter(o) {
     o.group.position.y *= 0.8; o.group.rotation.z *= 0.8;
     if (o.wtimer <= 0) {
       const r = o.route;
-      o.target.x = r.xmin + Math.random() * (r.xmax - r.xmin);
-      o.target.z = r.lanes[Math.random() < 0.5 ? 0 : 1];
-      o.wstate = 'walk';
+      // only stroll to a spot with a clear line — a building dropped onto the street
+      // must be walked AROUND (by picking this side of it), not marched into
+      for (let k = 0; k < 6; k++) {
+        const tx = r.xmin + Math.random() * (r.xmax - r.xmin);
+        const tz = r.lanes[Math.random() < 0.5 ? 0 : 1];
+        if (!walkLineClear(o.x, o.z, tx, tz)) continue;
+        o.target.x = tx; o.target.z = tz;
+        o.wstate = 'walk';
+        break;
+      }
+      if (o.wstate !== 'walk') o.wtimer = 60 + Math.random() * 120;   // no clear stroll right now — wait a bit
     }
     return;
   }
   const dx = o.target.x - o.x, dz = o.target.z - o.z, dist = Math.hypot(dx, dz);
-  if (dist < 0.1 || (o.blockT || 0) > 100) {
+  if (dist < 0.1 || (o.blockT || 0) > 45) {
     o.blockT = 0;
     if (o.exiting) { o.group.visible = false; o.exiting = false; }   // 🌙 home for the night
     o.wstate = 'idle'; o.wtimer = 50 + Math.random() * 170; return;

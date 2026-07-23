@@ -1091,6 +1091,10 @@ function updateNightMode() {
       o.target = o.target || {};
       o.target.x = best.x + (Math.random() - 0.5) * 1.4;
       o.target.z = best.z + (best.rotY ? -3.4 : 3.4);   // their front doorstep
+      // eject the doorstep out of any wall it landed in (rotated/moved houses) —
+      // an unreachable doorstep left folk marching into the wall instead of slipping inside
+      const safe = collide(o.target.x, o.target.z, worldColliders, 0.34);
+      o.target.x = safe.x; o.target.z = safe.z;
       o.wstate = 'walk'; o.exiting = true; o.blockT = 0;
       if (o.act && typeof endAct === 'function') endAct(o);   // drop whatever they were doing
     };
