@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Paws & Pennies</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="rotate-hint">
+  <div class="rotate-icon">🔄</div>
+  <div class="rotate-title">Please rotate your device</div>
+  <div class="rotate-sub">🐾 Paws &amp; Pennies plays best sideways — turn your phone to landscape.</div>
+</div>
+
+<div id="shelter">
+  <h1>🐾 Choose Your Cat</h1>
+  <div class="subtitle">The Millers can only take one home. Ten cats are waiting at the shelter — which one will you give a new life?</div>
+  <div id="cat-grid"></div>
+  <div id="shelter-footer">
+    <input id="cat-name-input" maxlength="16" placeholder="Name your cat…" autocomplete="off" spellcheck="false">
+    <button id="adopt-btn" disabled onclick="confirmAdopt()">Choose a cat…</button>
+  </div>
+</div>
+
+<div id="intro" style="display:none">
+  <div id="intro-portrait" class="intro-portrait">🐱</div>
+  <h1>Paws &amp; Pennies</h1>
+  <div class="subtitle" id="intro-sub">You've been adopted by a struggling family. Help them by working odd jobs around the neighbourhood.</div>
+  <button id="start-btn" onclick="beginAdventure()">Start Adventure</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div id="hud">
+  <div id="coin-display"><span class="coin-icon">🪙</span><span id="coin-count">0</span> coins</div>
+  <div id="family-panel">
+    <div class="fam-title">🏠 The Millers</div>
+    <div id="family-status">Hungry & cold…</div>
+    <div id="rent-line" class="rent-line">
+      <div class="rent-text">❄️ Rent <span id="rent-cur">0</span>/<span id="rent-goal">100</span> · <span id="rent-days">16</span>d left</div>
+      <div class="rent-barwrap"><div id="rent-bar" class="rent-bar"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="needs">
+  <div class="need"><span class="need-icon">🍖</span><div class="need-bar"><div id="hunger-fill" class="need-fill"></div></div></div>
+  <div class="need"><span class="need-icon">💧</span><div class="need-bar"><div id="thirst-fill" class="need-fill"></div></div></div>
+  <div class="need"><span class="need-icon">😴</span><div class="need-bar"><div id="energy-fill" class="need-fill"></div></div></div>
+</div>
+<div id="clock">🌞</div>
+
+<div id="minimap" onclick="openMap()" title="Open the full map"><canvas id="minimap-canvas" width="240" height="240"></canvas><span class="mm-hint">🗺️</span></div>
+<button id="voice-toggle" onclick="toggleVoice()" title="Toggle voice">🔊</button>
+<button id="dark-toggle" onclick="toggleDarkMode()" title="Comfort lighting (easier on the eyes)">🌙</button>
+<button id="inbox-btn" onclick="openInbox()" title="Your mail">📬<span id="inbox-count">0</span></button>
+<button id="customise-btn" onclick="openCustomise()" title="Customise your cat">🎨</button>
+<button id="politics-btn" onclick="openPolitics()" title="Your campaign" style="display:none">🗳️</button>
+<button id="business-btn" onclick="openBusiness()" title="Business & reputation">📊</button>
+<button id="map-btn" onclick="openMap()" title="Town map">🗺️</button>
+<button id="build-btn" onclick="openPlanner()" title="Town planner — build from the map">🏗️</button>
+
+<div id="map" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">🗺️ Town Map</div>
+    <div class="modal-sub">Everything in town — you're the 🐱. Tap Close to head back.</div>
+    <div id="map-wrap"><canvas id="map-canvas"></canvas></div>
+    <button class="modal-close" onclick="closeMap()">Close</button>
+  </div>
+</div>
+
+<div id="plan-ui">
+  <div id="plan-top">
+    <span id="plan-hint">🏗️ Build mode · drag to look around · aim the crosshair</span>
+    <span id="plan-bal">🪙 0</span>
+  </div>
+  <div id="plan-reticle">✛</div>
+  <div id="plan-roadpad" title="Extend the road tile by tile">
+    <div class="rp-label">🛣️ Extend road</div>
+    <div class="rp-grid">
+      <div></div><button onclick="planExtendRoad('n')">▲</button><div></div>
+      <button onclick="planExtendRoad('w')">◀</button><div class="rp-mid">＋</div><button onclick="planExtendRoad('e')">▶</button>
+      <div></div><button onclick="planExtendRoad('s')">▼</button><div></div>
+    </div>
+  </div>
+  <div id="plan-bar">
+    <div id="plan-palette"></div>
+    <div id="plan-actions">
+      <button onclick="planZoom(-1)" title="Zoom in">🔍＋</button>
+      <button onclick="planZoom(1)" title="Zoom out">🔍－</button>
+      <button id="plan-pay" onclick="planTogglePaySrc()" title="Pay with tax money or your own coins" style="display:none">🏛️ Tax</button>
+      <button id="plan-move" onclick="planToggleMove()" title="Move existing structures">✋ Move</button>
+      <button id="plan-demolish" onclick="planToggleDemolish()" title="Demolish a house">💥</button>
+      <button onclick="plannerRotate()" title="Rotate">↻</button>
+      <button id="plan-place" onclick="planPlaceCenter()">✓ Place</button>
+      <button onclick="plannerUndo()" title="Undo">↶</button>
+      <button onclick="openStreetRename()" title="Rename a street">🚏</button>
+      <button id="plan-done" onclick="closePlanner()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="business" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">📊 Business &amp; Reputation</div>
+    <div id="business-body"></div>
+    <button class="modal-close" onclick="closeBusiness()">Close</button>
+  </div>
+</div>
+
+<div id="customise" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">🎨 Customise Your Cat</div>
+    <div id="customise-portrait" class="cust-portrait"></div>
+    <div id="customise-rows"></div>
+    <button class="modal-close" onclick="closeCustomise()">Done</button>
+  </div>
+</div>
+
+<div id="catmaker" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title" id="catmaker-title">🎨 Create Your Cat</div>
+    <div id="catmaker-portrait" class="cust-portrait"></div>
+    <input id="catmaker-name" maxlength="16" placeholder="Name your cat…" autocomplete="off" spellcheck="false" oninput="renderCatMaker()">
+    <div id="catmaker-rows"></div>
+    <div class="modal-row">
+      <button id="catmaker-confirm" onclick="catMakerConfirm()">🐾 Adopt this cat</button>
+    </div>
+    <button class="modal-close" onclick="cancelCatMaker()">Cancel</button>
+  </div>
+</div>
+
+<div id="politics" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title" id="politics-title">🗳️ Run for President?</div>
+    <div id="politics-body"></div>
+    <button class="modal-close" onclick="closePolitics()">Close</button>
+  </div>
+</div>
+<div id="dialogue"><div class="speaker" id="dlg-speaker"></div><div id="dlg-text"></div></div>
+<div id="notif" id="notif">+1 🪙</div>
+
+<button id="enter-btn" onclick="toggleHouse()">🚪 Enter Home</button>
+<button id="stairs-btn" onclick="toggleStairs()">⬆️ Go Upstairs</button>
+<button id="give-btn" onclick="openGive()">💝 Give Coins</button>
+<button id="shelter-btn" onclick="openRescue()">🐾 Free a Cat</button>
+<button id="context-btn" onclick="doContextAction()">🍽️ Eat</button>
+<button id="decorate-move-btn" onclick="toggleDecorEdit()" title="Rearrange furniture">🛠️</button>
+<div id="build-tools">
+  <span class="hint">🏗️ Tap open ground to build a home</span>
+  <button onclick="cancelPlaceHome()">✕ Cancel</button>
+</div>
+<div id="decor-tools">
+  <span class="hint">🛠️ Drag furniture · </span>
+  <button onclick="openHomeStore()">🛒 Shop</button>
+  <button onclick="rotateDecor()">↻ Rotate</button>
+  <button onclick="removeSelectedDecor()">🗑️ Remove</button>
+  <button onclick="resetDecorLayout()">↺ Reset</button>
+  <button onclick="exitDecorEdit()">✓ Done</button>
+</div>
+<button id="property-btn" onclick="buyProperty()">🏷️ For Sale</button>
+<div id="park-tally">🐭 0   🐦 0</div>
+<div id="population" title="Town population — humans vs cats">👤 0 🐱 0</div>
+<div id="happy" title="Town prosperity — how well-run the town is"><span class="happy-face">🙂</span><div class="happy-bar"><div class="happy-fill"></div></div></div>
+<div id="anger" title="Public anger at you — hits 100 and you're jailed"><span class="anger-face">😌</span><div class="happy-bar"><div class="anger-fill"></div></div></div>
+<div id="winback" title="Win the Millers back with good deeds"><span class="winback-face">❤️‍🩹</span><div class="happy-bar"><div class="winback-fill"></div></div><span class="winback-pct">0%</span></div>
+<div id="jobhud" title="Your 9-to-5 job — follow the schedule!" onclick="openJobPanel()"><span class="jobhud-text">💼</span></div>
+
+<div id="jail-hud">
+  <div class="jail-count">Day 1 of 20</div>
+  <div class="jail-note">🔒 Serving time for corruption</div>
+  <button onclick="jailSleep()">😴 Sleep till morning</button>
+</div>
+
+<div id="pay" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">💳 How will you pay?</div>
+    <div id="pay-body"></div>
+  </div>
+</div>
+
+<div id="scandal" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">📰 Scandal!</div>
+    <div id="scandal-body"></div>
+  </div>
+</div>
+
+<div id="job" class="modal">
+  <div class="modal-card">
+    <div class="modal-title" id="job-title">💼 Your Job</div>
+    <div id="job-body"></div>
+  </div>
+</div>
+
+<div id="checkout" class="modal">
+  <div class="modal-card">
+    <div class="modal-title" id="checkout-title">💰 Ring it up</div>
+    <div id="checkout-body"></div>
+  </div>
+</div>
+
+<div id="school" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">🏫 Town School</div>
+    <div id="school-body"></div>
+    <button class="modal-close" onclick="closeSchool()">Close</button>
+  </div>
+</div>
+
+<div id="inbox" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">📬 Your Mail</div>
+    <div id="inbox-body"></div>
+    <button class="modal-close" onclick="closeInbox()">Close</button>
+  </div>
+</div>
+
+<div id="tutorial">
+  <div id="tut-text">Welcome!</div>
+  <div id="tut-btns">
+    <button id="tut-next" onclick="tutNext()">Next ▶</button>
+    <button id="tut-skip" onclick="tutSkip()">Skip</button>
+  </div>
+</div>
+<div id="fade"></div>
+<div id="flash"></div>
+<div id="gloom"></div>
+
+<div id="cutscene">
+  <canvas id="cs-canvas"></canvas>
+  <div id="cs-bars"><div class="cs-bar-top"></div><div class="cs-bar-bottom"></div></div>
+  <div id="cs-caption"></div>
+  <button id="cs-skip" onclick="csSkip()">Skip ▶</button>
+</div>
+
+<div id="homestore" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">🛋️ Home Store</div>
+    <div class="modal-sub">Buy comforts for the Miller home — they appear right away. Your coins: <span id="homestore-wallet">0</span> 🪙</div>
+    <div id="homestore-grid"></div>
+    <button class="modal-close" onclick="closeHomeStore()">Close</button>
+  </div>
+</div>
+
+<div id="bargain" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">🔪 Bert the Butcher</div>
+    <div class="modal-sub" id="bargain-text">—</div>
+    <div class="modal-row">
+      <button onclick="bargainAccept()">Accept</button>
+      <button id="bargain-haggle" onclick="bargainHaggle()">Haggle (2)</button>
+    </div>
+    <button class="modal-close" onclick="closeBargain()">Walk away</button>
+  </div>
+</div>
+
+<div id="give" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">💝 Give to the Millers</div>
+    <div class="modal-sub">Your coins: <span id="give-wallet">0</span> 🪙<br>Giving money is how you fix up their home — and pay the rent.</div>
+    <div class="modal-row">
+      <button onclick="giveCoins(10)">10 🪙</button>
+      <button onclick="giveCoins(25)">25 🪙</button>
+      <button onclick="giveCoins(50)">50 🪙</button>
+      <button onclick="giveCoinsAll()">All</button>
+    </div>
+    <button class="modal-close" onclick="closeGive()">Close</button>
+  </div>
+</div>
+
+<div id="rescue" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">🐾 Cat Rescue Shelter</div>
+    <div class="modal-sub">Spend your coins to buy a cat its freedom. Your coins: <span id="rescue-wallet">0</span> 🪙</div>
+    <div id="rescue-grid"></div>
+    <button class="modal-close" onclick="closeRescue()">Close</button>
+  </div>
+</div>
+
+<div id="controls">
+  <div id="dpad">
+    <div></div>
+    <div class="dpad-btn" id="btn-up">▲</div>
+    <div></div>
+    <div class="dpad-btn" id="btn-left">◀</div>
+    <div class="dpad-btn dpad-center">🐾</div>
+    <div class="dpad-btn" id="btn-right">▶</div>
+    <div></div>
+    <div class="dpad-btn" id="btn-down">▼</div>
+    <div></div>
+  </div>
+  <div id="action-area">
+    <div id="stamina"><div id="stamina-fill"></div></div>
+    <button class="action-btn" id="btn-jump"><span class="btn-icon">🦘</span>Jump</button>
+    <button class="action-btn" id="btn-run"><span class="btn-icon">🏃</span>Run</button>
+  </div>
+  <div id="lookpad">
+    <div></div>
+    <div class="dpad-btn" id="btn-tiltU">▲</div>
+    <div></div>
+    <div class="dpad-btn" id="btn-rotL">◀</div>
+    <div class="dpad-btn dpad-center">🎥</div>
+    <div class="dpad-btn" id="btn-rotR">▶</div>
+    <div></div>
+    <div class="dpad-btn" id="btn-tiltD">▼</div>
+    <div></div>
+  </div>
+</div>
+
+<div id="minigame">
+  <div id="mg-top">
+    <div id="mg-title">🐭 Catch the Mice!</div>
+    <div id="mg-stats"><span id="mg-score">0</span> caught&nbsp;·&nbsp;<span id="mg-time">20</span>s</div>
+  </div>
+  <div id="mg-barwrap"><div id="mg-bar"></div></div>
+  <canvas id="mg-canvas"></canvas>
+  <div id="mg-hint">Tap the mice to pounce! 🐾</div>
+  <div id="mg-result">
+    <div class="mg-card">
+      <div id="mg-res-emoji">🐾</div>
+      <div id="mg-res-title">Job done!</div>
+      <div id="mg-res-text">You caught 0 mice.</div>
+      <div id="mg-res-coins">+0 🪙</div>
+      <button id="mg-collect" onclick="closeMinigame()">Collect Coins</button>
+    </div>
+  </div>
+</div>
+
+<script src="three.min.js"></script>
+<script src="js/core.js"></script>
+<script src="js/world.js"></script>
+<script src="js/cat.js"></script>
+<script src="js/actors.js"></script>
+<script src="js/life.js"></script>
+<script src="js/house.js"></script>
+<script src="js/game.js"></script>
+<script src="js/shelter.js"></script>
+<script src="js/jobs.js"></script>
+<script src="js/politics.js"></script>
+<script src="js/business.js"></script>
+<script src="js/civic.js"></script>
+<script src="js/gov.js"></script>
+<script src="js/planner.js"></script>
+<script src="js/cutscene.js"></script>
+<script src="js/work.js"></script>
+<script src="js/school.js"></script>
+<script src="js/inbox.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

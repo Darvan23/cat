@@ -1,0 +1,12 @@
+{
+  "appId": "com.pawsandpennies.app",
+  "appName": "Paws & Pennies",
+  "webDir": "www",
+  "backgroundColor": "#1a1a2e",
+  "ios": {
+    "contentInset": "always"
+  },
+  "android": {
+    "backgroundColor": "#1a1a2e"
+  }
+}

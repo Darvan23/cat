@@ -1,0 +1,313 @@
+# 🐾 Paws & Pennies — Notes & Progress
+
+## Core ideas
+- [x] Rescued shelter cats look exactly like the cats we made (same model, coat & whiskers)
+- [x] Being petted by NPCs — a different motion for each (gentle touch, kiss, pat, scratch, cuddle, nuzzle) + hearts
+- [x] More minigames (mice, groceries, rats, bakery, vet, garden — plus park hunting)
+  - [x] The grocery-list game now lives in Dad's shop: Mrs. Chen shops there (gold bubble over her head), walk up and tap 🛒 Help Mrs. Chen to play (available once you own the shop)
+- [x] A stray mouse you chase and bring to the Millers — they go "Ewww!"
+- [x] Kids playing football in the street that you can join (2 teams — keepers guard goals, strikers chase, players keep their spacing so they don't clump; you play striker for the blue team, boot it into the right goal for +3 🪙)
+- [x] A highway with cars passing — you can see it but a barrier keeps you out
+- [x] Night: street lamps on, most NPCs go indoors, no jobs, the Millers stay inside
+- [x] Home customisation — buy furniture, better food & cat toys for the house (Home Store)
+- [x] Houses for sale you can buy for the Millers (and now walk inside them)
+- [x] A shop for sale — buy it so Dad gets a job (works by day, home at night; shop is enterable)
+  - [x] Real earning system: customers come IN the front door, grab items off shelves, pay Dad at the till, and LEAVE again through the door — then new ones arrive; the till fills all day (passive) — go to Dad to collect your share (💰 button); the longer it runs the more it holds (up to a cap)
+  - [x] Real opening hours: shop is OPEN 8am–8pm / CLOSED otherwise, with an OPEN/CLOSED sign on the door that flips with the clock; you can only enter & it only earns during open hours, and Dad stays at work until 8pm then comes home
+- [x] Stray dogs that chase you at night, so you feel the need to get inside
+- [x] Play with the cats you've rescued
+- [x] The park: catch mice (rewarded by the Mayor) & hunt birds (bargain with the Butcher)
+
+## Next phase — full customisation & the presidency arc
+- [x] Customise your cat: eye colour, fur/skin colour, nose, pattern (🎨 button — live 3D + portrait preview, saved)
+- [x] Buy clothes / accessories to make it more fun (collar + bell, coin-gated hats 🎀🧢🎉🎩 & 👓 glasses in the 🎨 customiser)
+- [x] Sims-style: freely move & place objects, decorate & buy things for your home, your bought properties AND Dad's shop (🛠️ mode: 🛒 Shop → buy → tap → drag → rotate/reset; per-room, saved)
+  - [x] Move the built-in furniture too (things you didn't buy): couch, dining table, bed, stairs at home + all the shop shelves — colliders & the "go upstairs" spot follow the pieces
+  - [x] More furniture in the buy list: 🗄️ bookshelf, 💡 floor lamp, 📺 TV, 🕰️ clock, 🐠 fish tank, 📦 crates (works in home, shop & bought homes)
+  - [x] The Millers are poor: the house starts EMPTY — only the cat's plate (food/water bowls) & a cat bed. Everything else (🛋️ couch, 🍽️ dining set, 🛌 bed, 🧑‍🍳 counter, 🍳 stove, 🧊 fridge, + all decor) must be bought and can be moved. Walls/lights/stairs still improve as you give money.
+- [x] Presidency arc: (🗳️ button appears once famous)
+  - [x] Get rich → become famous (500 coins earned) → "Vote for President" poster in the square
+  - [x] Apply for the race (250-coin registration fee to enter)
+  - [x] Debates: multiple-choice policy questions — rivals answer first, then your turn
+  - [x] Human opponents: Mayor Grubb (villain) + Ada Fairweather (nice); hard to beat
+  - [x] Becoming president shouldn't be easy — needs 8/10 approval (pick the answers that help most people)
+  - [x] As president: build public homes for families Sims-style — 🏗️ Build, then tap any open ground in town to place the house yourself (validates the spot; positions saved)
+  - [x] See the human population vs cats in the city (👤 / 🐱 pill under the clock) — and the more homes you build as President, the more humans & cats move to town (freeing shelter cats grows the cat count too)
+  - [x] Business economy + reputation dashboard (📊 button):
+    - Own Dad's shop = your first business (earns ~10k/day); buy more businesses (☕ café, 🥐 bakery, 🏬 market, 🏭 factory) for tens/hundreds of thousands, each earning a fixed daily income
+    - [x] Every in-game day: businesses pay income, you pay each hired worker a 1300/day wage; net goes to your coins
+    - Hire/lay off as many workers (humans or cats) as you like — hiring creates jobs (good reputation) but costs wages; hire more than you earn and, once you can't pay, the government SEIZES a business (extras first, Dad's shop last resort)
+    - 📊 dashboard shows jobs created, cats freed, homes built, daily income/wages/net, your coins, and a reputation rating (good/neutral)
+    - [x] Businesses are now REAL buildings: when you buy one (café/bakery/market/factory) it appears in town (south row) with its own sign, and you can walk up and ENTER it
+    - [x] Hire cats OR humans (per business, from the 📊 dashboard) — walk into that business and you SEE your staff working the counter & shelves (Dad's shop shows its hired staff too)
+    - [x] Workers actually look busy now: humans restock shelves / serve at the counter / sweep; cats paw at shelves, groom, or patrol (each gets a real task, not just standing)
+- [x] 🗺️ Full town map — tap the minimap (or the 🗺️ button) to open a big labelled map showing your home, Dad's shop, the shelter, park, square, football, all your businesses & for-sale/president homes, with a "YOU" marker
+- [x] Football plays naturally now: kicks have a cooldown + a real leg-swing (no more ball vibrating/rocketing), players ease up as they reach the ball, and there's a kickoff pause after each goal — and the ball is now a proper black-&-white football (pentagon texture) instead of a blobby sphere
+    - [x] House/property prices rescaled to be a real investment: Dad's shop 800 (your affordable first business), Miller homes 60,000 & 150,000, President public homes 80,000 each — funded from business income (prices shown with commas)
+    - STILL TODO: "bad" reputation from corruption (ties into the tax-money arc below)
+    - [~] Dad's shop now sells SHOP things (🗄️ stock shelf, 🛍️ display stand, 🧺 produce, ☕ coffee machine, 🧊 display fridge, 🧾 counter, crates, plant, clock, lamp, walls) instead of couches/beds. STILL TODO: give each business TYPE (café vs bakery vs market vs factory) its own themed decor list
+  - [x] Presidency governance / tax-money arc (gov.js):
+    - As President you get a 🏛️ TAX TREASURY that grows by ~millions each day (a happier town pays more tax)
+    - A 😀→😡 TOWN HAPPINESS meter (HUD bar + in the 🗳️ panel). It drifts down daily — you must keep investing
+    - Spend tax money to HELP THE COUNTRY (🧹 clean streets, 👮 police, 🌳 parks, 🏫 school, 🏥 healthcare, 🏗️ public homes) → happiness goes UP. Or take the CORRUPT path — 💎 "treat yourself" turns tax money into your personal coins but tanks happiness
+    - 📬 City mail arrives with requests (cleaning, police, hospital…) — PAY it (from tax money) or IGNORE it (happiness drops)
+    - Public homes now build from the TREASURY when you're President
+    - If happiness hits ZERO → the police JAIL you: you lose all your money, treasury, businesses & the presidency, serve ~20 days (tap through), and come out DISGRACED (reputation ruined)
+    - Threshold messages: town loves you / getting uneasy / protesting
+    - [x] You can SEE the mood: litter piles up on the streets as happiness falls, and an angry PROTEST crowd (with 😾/RESIGN/SHAME signs) gathers at your door when the town's furious; clean when they're happy
+    - [x] Tax-or-own-money choice: buying a property or a business as President pops a "💳 How will you pay?" prompt — 🏛️ tax money (costs a little town faith) or 🪙 your own coins; public homes still build from the treasury
+    - [x] The fall & redemption: jail wipes your money, businesses, properties & title (for-sale signs go back up); you come out HOMELESS at the cat shelter, disgraced — work your way back up (re-buy Dad's shop → income → a home of your OWN), and buying your own home redeems you (clears the disgrace)
+    - [x] An ACTUAL jail: corruption sends you to a real barred cell (you can walk around it but not leave) and you serve real days — the day-cycle counts them down, or tap "😴 Sleep till morning" to skip; when your 20 days are up you're released to the shelter, homeless & disgraced
+    - [x] The whole town visibly DARKENS (gloom overlay) as happiness drops
+    - [x] Townsfolk GREET you ("Hello, President!") when the town loves you, or SNUB you when they don't
+    - [x] Each business TYPE now has its own interior: ☕ café (tables, chairs, coffee machine, menu), 🥐 bakery (glass bread cases + big oven), 🏬 market (produce stands piled with fruit/veg), 🏭 factory (machines with pipes, conveyor & crates)
+    - [x] Deeper tax/own-money system: EVERYTHING you buy as President (properties, businesses, AND decor) pops the "💳 tax or own money?" choice
+    - [x] President SALARY: you earn +8,000 coins/day in office (honest personal income to buy things with your OWN money)
+    - [x] CORRUPTION meter (🚨 bar in the 👑 panel): paying for personal things with TAX money raises it — bigger spends corrupt you more; corruption then drags town happiness down faster each day (so the more tax you spend on yourself, the angrier the town gets → jail). It slowly fades if you stay clean.
+    - STILL TODO (minor): per-business BUYABLE decor lists
+  
+  
+
+## Miller daily routines & activities (started 2026-07-15)
+- [x] Move & buy furniture in bought properties too (couch, coffee table, dining table, bed, wardrobe are now draggable; 🛠️ + 🛒 Shop works there like the Miller home)
+- [x] Per-Miller daily schedule (each does DIFFERENT things at different hours, and USES the furniture you buy):
+  - Mum cooks at the 🍳 stove/counter (breakfast ~7am, dinner ~6pm) — stirs while cooking
+  - Dad watches 📺 TV on the 🛋️ couch in the evening
+  - Whole family sits & eats 🍽️ at the dining set for breakfast & dinner
+  - Kids play in the evening; everyone reads 📖 on the couch / by the bookshelf late
+  - Everyone sleeps 🛏️ in the bed at night (kids earlier ~9:30pm, parents ~11pm); out of the house 8am–5pm
+  - Each activity needs the matching furniture — no bed = sleep on floor, no stove = can't cook, etc. (buying it "unlocks" the behaviour)
+- [x] Fixed: the Millers are never in two places at once — ONE schedule decides out / downstairs / upstairs, and drives the outside, downstairs & upstairs copies together (sleep upstairs in their bedrooms once those exist, downstairs otherwise)
+- [x] Upstairs is now fully editable like the rest of the house:
+  - Buy & place furniture upstairs (🛠️ + 🛒 Shop works up there; saved separately)
+  - The upstairs beds, wardrobe, toy chest AND the partition walls are movable — drag them around; the family sleeps in the beds wherever you put them
+  - 🧱 Buyable walls (Wall Section / Short Wall) — buy as many as you like, drag/rotate to divide rooms; they actually block the cat (collider follows position & rotation). New 🗑️ Remove button in the editor to delete bought pieces/walls
+- [x] Deeper schedule + the Millers actually WALK their day (no more instant spawning):
+  - Staggered day: mum makes breakfast → everyone leaves at ~8:30 → kids home ~4pm, mum ~3:30pm (to cook), dad works at the shop until it shuts at 8pm
+  - They physically walk OUT the front door in the morning and to their spot (dad → the shop, mum → the shops on Main St, both kids → the town-square football pitch), then walk BACK and enter in the evening — clip-safe waypoint routes, with a smooth door hand-off to the indoor version
+  - Dad literally commutes: walks to the shop (vanishes inside once you own it), then walks home when it closes at 8pm
+- [ ] Still to deepen later:
+  - Kids ask YOU to walk them to the park and back for a reward (escort mini-quest)
+  - Nicer sleeping/sitting poses (current lie-flat & bent-legs are rough)
+  - Paint/repaint walls; wall-editing for the shop & bought homes too
+  - Tap a Miller to hear what they're up to ("each furniture has its own story")
+
+- [x] 🏗️ **Town Planner — SimCity-style build mode** (no walking required):
+  - Tap 🏗️ → the camera lifts up into a **top-down view of the real 3D town** so you can see everything and where it'll go
+  - **Drag** anywhere on the world to look around / pan across town; 🔍 buttons zoom in & out
+  - A **translucent 3D preview** of the piece floats under a centre crosshair — you see exactly how it'll look before you commit
+  - Palette of pieces: House, Cat Shelter, Tree, Bench, Lamp, Fence, Road (each with a price) — pick one and the preview changes
+  - **✓ Place** drops it where the crosshair is · **↻** rotates (45° steps, collider rotates too) · **↶** undo · **Done** exits
+  - Pays from the town **treasury** when you're President (public works), otherwise from your own coins
+  - 🚏 Rename street — change Main St / North Ave / South Lane; the 3D signs re-letter live
+  - Everything you build (and the street names) is saved and rebuilt on load
+- [x] ✋ **Move existing structures** (inside build mode): rearrange the town you already have
+  - Tap **✋ Move** in build mode → pan a structure under the crosshair → **✊ Grab** → pan to slide it anywhere → **↻** rotate → **✓ Drop**
+  - Works on the backdrop houses & shop-fronts (bakery, grocery… their name-board + shopkeeper follow), standalone & park trees, benches, lamps and picnic blankets
+  - Colliders move with each piece; your rearrangements are saved and re-applied on load
+  - (Enterable buildings — your home, Dad's shop, the shelter — stay put so their doors keep working; lay fresh roads with the Road piece instead)
+- [x] 🧑‍🤝‍🧑 **NPCs use the things around them** — townsfolk now notice nearby props and use them:
+  - **Sit on benches** (square & park) and **rest under trees**
+  - **Picnic** on blankets laid out on the park lawn (basket + food)
+  - **Photograph each other at the fountain** — one holds up a little camera, the other poses, and there's a flash 📸
+  - They wander between activities and pack up and head home at dusk
+  - Benches & trees YOU build (in the planner) are used too — NPCs sit/rest on the ones you place
+- [x] 🪑 **You can sit on benches** — walk up to any bench and tap **🪑 Sit**; the cat hops up, curls into a rest (recovers a little energy), and **🐾 Get up** or moving stands you back up
+- [x] 🛣️ **Roads snap together** — pick the Road piece and a ▲▼◀▶ pad appears; each tap lays the next tile flush against the last one, so you can draw a straight road fast (roads are cheap now — 300)
+- [x] Fixed: **you couldn't enter businesses you bought** — the town's south edge was walled off 6m short of the business row (z-46), so you could never reach the doors. The boundary now reaches them.
+- [x] Fixed: **building houses didn't raise the population** — planner-built houses now bring newcomers (2 people + a cat each), just like the President's public homes
+- [x] 💥 **Demolish & rebuild the town** (in build mode):
+  - New **💥 Demolish** tool — aim a house under the crosshair and knock it down (works on backdrop houses & the ones you built)
+  - The only things you **can't** demolish: your own home and the minigame/shop houses (the job-givers) — they're protected
+  - A demolished building leaves **rubble & ruins** on the spot (with a barrier so you can't walk through it)
+  - Walk up to the rubble and **🧹 Clear rubble (500🪙)** — a cleanup crew shows up, sweeps, and the ground goes back to clean like nothing was there
+  - **Homelessness system:** every demolition puts ~2 people out on the street. The 📊 dashboard shows the 🏚️ Homeless count. Building homes **takes the homeless back in first** — and the town **only grows again once homelessness reaches zero**. (Homelessness also dents town happiness.)
+  - Rubble and the homeless count are saved with your game
+
+- [x] Fixed: **the Millers were floating above their chairs** — the dining set now has **4 stools** (one per seat) and everyone actually drops onto the seat with folded legs, at the table and on the couch
+- [x] 🏪 **Businesses now have to be run:**
+  - Buy a business with **no staff** → *you* run it: go inside, stand at the register, tap **🔓 Open**, and the till fills while you're there during trading hours (8am–8pm). Collect it at the register. No staff = no passive income.
+  - **Hire someone** and it runs itself (passive daily income, no need to be there). The **first hire becomes the cashier** and stands at the till.
+  - The 📊 dashboard shows **👤 Self-run** vs staff counts.
+- [x] 🛠️ **Business editor** — inside any business you own, the 🛠️ move button + 🛒 shop work just like at home:
+  - Drag any fitting to rearrange it; buy **themed gear per business type** — café (espresso machine, café tables, pastry stand), bakery (oven, bread rack, cake display), market (produce stands, chiller), factory (machines, barrels, conveyor) — plus shared bits (crates, plants, walls…)
+  - Each business is decorated **separately** and saved per business
+
+- [x] 🗺️ **The town map got a full modern redesign** — it now reads like a real city map: high-resolution, a fresh grass gradient with a soft grid, **proper cased roads** (light fill + casing + dashed centre lines) and the highway, a **rounded park** with a dashed fence, **blue water** for every fountain/pond/lake, **rounded building footprints** with soft shadows (homes vs shops vs businesses vs civic each colour-coded, your Miller home highlighted), little trees & benches, **clean pill labels** for the landmarks (emoji-only for minor spots to cut clutter), a glowing **YOU** pin, a **compass** and a rounded frame. Reflects the *actual* town (moved buildings, things you've built).
+  - Made it **much better** again: **street names printed along the roads** (they update when you rename a street), a **legend** (colour key for homes/shops/business/civic/water/you), and labels now **stack to avoid overlapping**.
+  - 🧭 **The always-on minimap** got the SAME modern styling so it's **easy to read without opening the map**: bright grass, cased roads + highway, the park/square, blue water, colour-coded building blocks, little landmark icons (🏠🏪🐾⛲🌳), and a clear **YOU arrow that shows which way you're facing** — bigger (118px) and crisp.
+
+- [x] 🐈 **Better animation + a fix**: the tuxedo cats' white paw **"socks" were stationary blobs** (built on the body, not the legs) — now they **live on the leg groups and swing with the legs** (fixed on both your cat and every rescued/street cat). Also nicer motion all round: the cat now **trots with a springy bounce, a gentle body roll and its tail carried up**; **playing with a rescued cat** is far livelier (excited hops, wiggles, pawing, tail flick); rescued cats walk/idle more naturally; the hero cat does **happy little hops when petted/played with**; and townsfolk got a subtle breathing + weight-shift in their idle.
+
+- [x] 🏥🏫🏘️ **Civic interiors overhauled + actually used by people**:
+  - Way less bare/white: **coloured floors with a checker tint + a central runner**, a **wainscot band, a wall clock & framed pictures**, warmer softer lighting, a **soft-coloured backdrop** (no more harsh black void), nicer furniture (hospital beds get sheets/blankets/pillows/headboards, school desks get colourful chairs, shelter bunks get coloured blankets & pillows).
+  - **People use them, time-aware:** 🏥 **patients lie in the beds** + injured folk wait with an arm in a sling; 🏫 during **school hours (9–5) kids sit at their desks facing a teacher** at the board (empty after hours); 🏘️ at **night people sleep in the bunks** (a few sit around by day).
+  - **They enter & leave:** visitors walk in the front door, cross to a spot, linger, and head back out.
+
+- [x] 🏗️ **President building unified into the Town Planner**: the 🗳️ panel's "Build a public home" button now **opens the planner** (build homes *and everything else* from a proper top-down view). New **💰 pay toggle** (🏛️ Tax ↔ 🪙 Coins) lets the President choose which purse funds each piece. Spending **tax on city infrastructure NEVER raises corruption** (it's legitimate public works — only spending tax on *yourself* does). Planner-built homes now count toward your "homes built" reputation too.
+
+- [x] ☕ **More life in the businesses you buy** — each type now has its own ambient crowd on top of the till customers & staff: **☕ Café** — patrons **sit at the tables sipping coffee**; **🥐 Bakery** — customers **browse the display cases**; **🏬 Market** — shoppers **pick at the produce stands**; **🏭 Factory** — extra **hands work the machines & sweep the line**. (Reuses the civic occupant/pose system.)
+
+- [x] Fixed: **cashiers stood on the wrong (customer) side of the counter** — now every till worker (shops, businesses) and every civic **receptionist stands BEHIND the counter/desk facing the customers**; the cat cashier faces the right way too.
+- [x] 🏙️ **Busier town** — added a dozen more strollers and several more street commuters, so the streets, square and park feel properly alive (they all use the ambient-activity system, so more of them = more sitting/chatting/window-shopping/picnicking going on).
+
+## Also added along the way (bonus, not on the original list)
+- [x] Save & load — the game persists (coins, house fund, rescued cats, needs, time, story)
+- [x] Sound & music — procedural SFX + gentle day/night music, tied to the mute button
+- [x] Day–night cycle with an on-screen clock showing the actual time
+- [x] Hunger, thirst & sleep needs — eat/drink at home, drink at the fountain, get treats from NPCs
+- [x] The cat shelter is enterable — a big room full of cats (more at night); sleep or play there
+- [x] Street cats roaming the whole town
+- [x] A Run/sprint button; Jump replaced the old Pounce
+- [x] Bigger multi-street town + a big park; code split into clean modules
+#### things that needs fixing
+- [x] when poeple sit on benches their legs go backwards — FIXED (legs now fold forward; same fix applied to the cat's sit)
+- [x] millers are at their other properties and their main home at the same time — FIXED, and now player-controlled: buying a home NO LONGER auto-moves them. They stay in the poor house until YOU go inside a home you own and tap **🏡 Move the Millers in** — and you can **🏠 Send Millers back** or move them to a different house anytime (decorate first, then move them in). The family shows only in their chosen home (and follows the daily schedule); the poor house empties only when they've moved.
+- [x] the plank-like sleeping pose — softened: they now lie with a slight roll, knees drawn up and head on the pillow (upstairs & downstairs)
+
+- [x] 💧 **Water features in the planner + drink anywhere**: new ⛲ Fountain, 💧 Pond and 🌊 Lake pieces in the 🏗️ planner. **All water on the map is drinkable now** — the town-square fountain, the park pond, and any fountain/pond/lake you build (walk up to the edge → 💧 Drink to refill thirst). Placed water blocks the cat (drink from the shore) and is saved/rebuilt with your town.
+
+- [x] Worker wage raised to **1300/day** each (from 300)
+- [x] Fixed: **Miller kids glitching at the football field** — their walking copies were sent right onto the pitch where the football players are built as their exact lookalikes; two identical models in the same spot z-fought (flickering / "losing body parts"), and it lingered on the walk home while they were still near the pitch. Now they walk to the **sideline** and hide there (they've "joined the game" the football players already represent), so there's no overlap.
+
+- [x] 🎮 **More minigames across the map + no more "Act" button**:
+  - The on-screen **⚡ Act button is gone**. Minigames & people-interactions now **appear automatically as a prompt when you walk up** to someone (they already had a glowing ✨ over their head). Everything routes through the one auto-appearing context button now — no hunting for a separate button. (Keyboard **E** still works.)
+  - New **generic "chase & tap" minigame factory** (reuses the mouse-game movement) → lots of cheap themed games. Added: **🦋 butterflies** & **🫧 bubbles** in the park, **🎈 balloons** (Sunny, west stroll) & **🍂 leaves** (Willow, east square) on the streets, and **🧶 yarn** with a volunteer in the shelter. (✈️ paper-planes & 🦠 germs are built & registered too — earmarked for the school & hospital interiors next.)
+- [x] 🏰 **Bigger cat shelter + a playable cat castle**: the shelter interior grew from 18×12 to **24×16** (more beds, cat trees, a wider door). In the middle is a **climbable stepped cat castle** — walk into the tiers to hop up them, stand on top by the plush crown & flag, and **🦘 Jump** around on it. A dangling feather toy sways off the side.
+- [x] ✨ **Smoother jump animation**: the hop now has **squash & stretch** (compress on take-off/landing, stretch at the peak), the tail streams up and the legs tuck/kick — and the cat correctly rides the castle tiers while walking, idling and hopping.
+- [x] 📱 **All minigames made mobile/touch-friendly** (this is a phone game — they were built mouse-first):
+  - **Tap OR swipe**: drag a finger across the screen to **bat your paw through targets** (catches on the move, not just on a precise tap). Works with mouse-drag on desktop too. The grocery grid stays tap-only (so a swipe can't rack up wrong-item penalties).
+  - **Touch input fixed**: added `touchmove`/`touchend` handling (before, the mice's "flee the cursor" relied on `mousemove`, which never fires on a phone). Targets now only scatter from your finger while it's down, and relax when you lift off.
+  - **Bigger finger-friendly hit targets** everywhere (radii bumped ~40→54–60px; factory-game emoji drawn at 42px), and a **satisfying pop + sound** on every catch.
+  - **Gentler pacing for thumbs**: mice/park/street/shelter critters move slower and scatter less fiercely; falling bakes drop slower; rats stay up a touch longer — so everything's catchable on a small screen.
+  - The hint line now says **“tap or swipe! 👆”** so players discover the swipe.
+
+- [x] 🎨 **Create-your-own cat + name any cat** (intro): the "Choose Your Cat" screen now has a **name box** (call your cat anything, up to 16 chars — even the preset cats can be renamed) and a **"Create your own 🎨" card** that opens a **cat maker** (fur / markings / eyes / nose / pattern with a live portrait) to design a one-of-a-kind cat, then adopt it. Custom cats now save their full look, so they survive reloads.
+- [x] 🐱 **Create & free your own cats at the shelter**: the 🐾 Rescue board has a **"Create a cat ➕"** option — design a cat and give it any name, then **set it free** for 20🪙. It spawns and roams the town like the rescued cats, shows on the board as "🐾 Free!", counts as a good deed (goodwill), and is **saved & respawned on reload**.
+
+- [x] 🐛 **Fixed the pitch-black cutscenes (earn money AND "the house is paid off")**: there were **two** `playCutscene` functions — the old rent-deadline dialogue one (game.js) and the new cinematic director (cutscene.js). The director loaded last and shadowed the old one, so **all three** Mr. Crick scenes rendered a **black screen + Skip button**: `triggerDeadline` (he arrives once you've *earned* enough), `winDeadline` (rent *paid* → "the house is yours", i.e. the "update the Millers' house" one), and `failDeadline`. Renamed the old function to `playDialogueScene` (+ its 3 callers) so they play as speech bubbles again. **Also hardened the director** (`csDrawBeat`): any malformed/`draw`-less beat now shows a warm backdrop + caption instead of a black void, and draw errors are caught — so a black-screen cutscene can't happen again.
+- [x] 🚪 **Workplace shops are now enterable by anyone** (not just when employed): walk to a shop's door → **🚪 Enter** to look around the themed interior. If it's the shop you work at, the **🔓 open / 🔒 close** shift actions appear at the counter inside (or from the shopfront). Shops you don't work at are just browsable.
+- [x] 🗺️ **Map shows where you work & live**: the full 🗺️ map now marks all four work-shops (your current **💼 job** highlighted) alongside "Your Home", and the always-on **minimap** shows the shop blocks + a **💼** at your workplace — so you can spot your job and house at a glance.
+
+- [x] 🛎️ **Your workplace is ALIVE during your shift** (work.js — the "real cashier" update):
+  - **Redesigned interior**: dedicated shop layout with a counter that's **open on the left so you can actually walk behind it** — register on the counter, **stock shelves on the staff side**, a **🏦 safe in the back corner**, and product shelves along the walls with **price signs** (each shop stocks its own goods: ☕ coffee/cake… 🥐 bread/pies… 🍎 apples/beans/fish… 🧼 soap/rope/matches…).
+  - **💭 Customers with thoughts**: while your shop is open, customers wander in. Some stop at a shelf with a **thought bubble showing what they're after** (like "💭🥫"). Walk up → **🔎 See what they need** → pick the right product from the shop's list (just like Mrs. Chen's game, but live in the shop). Right = **+1–2 🪙 tip**, they head to your till to buy it. 3 wrong guesses = they storm out 💢.
+  - **💰 Real cashier work**: buyers queue at the counter with their items shown in a bubble. Stand **behind the counter** → **💰 Ring up** → you see an itemised receipt (2× apples = 4 🪙 etc.), they hand you a note (say 5 🪙) and **you must pick the right change** (e.g. give back 1). Correct = sale + sometimes a tip; wrong = "that's not right…" and no tip. Sale money goes into your **till**.
+  - **🏦 The safe**: walk to the safe with cash in the till → **Stash N 🪙 in the safe**. At close-up, the till sweeps into the safe automatically and you're paid **wage + 10% commission on the day's takings** — so serving customers well genuinely pays.
+  - Customers have **patience** (~45s) and leave grumpy if ignored; the 💼 panel now shows today's sales / helps / till / safe.
+- [x] 🏪 **Dad's shop & all buyable businesses redesigned + smarter staffing**:
+  - **Walk-behind counters everywhere**: Dad's shop and all four buyable businesses (☕🥐🏬🏭) got the same counter redesign as the work-shops — the counter is **open at the ends so you can walk behind it**, with the register on top, a **staff-side stock shelf**, and (in Dad's shop) a **safe** in the back corner. The self-run 🔓/💰 register prompt now works best from behind the counter.
+  - **Dad runs his shop himself**: with no staff hired, Daniel works the till all day (as before). **Hire someone and Dad steps back** — the staff run the shop and Dad only **drops by every minute or so to check on things** ("All fine here — good work, everyone!"), then heads off again.
+  - **🏭 The factory needs a full crew**: it now takes **at least 10 workers** to run the production line. Below that it produces **nothing** (no income, CLOSED plaque), and it **can't be run by paw** like the small shops. The 📊 dashboard warns you ("have 3 of 10"). Fully crewed: 40k/day − 13k wages = a solid profit.
+- [x] 🏠 **The welcome-home line finally matches the house**: entering the Miller home no longer always says "cold and empty" — the cat's line grows with the house level (0→5), from "so little here…" up to "cosy, bright and full of love ❤️".
+- [x] 🚶 **Miller family movement fixed** (they walked stacked inside each other, esp. the kids heading to the park): each Miller now walks their **own offset line** (side-by-side, not superimposed), at their **own pace**, with **staggered departures** (Daniel leaves first, then Elena, then the kids), plus a **shoulder-room separation** nudge so nobody can overlap mid-walk. They also got the hip-sway walk + arms that relax on arrival like the townsfolk.
+- [x] 🐛 **Millers losing their head & arms when you talk to them — FIXED**: the idle animation computed `sin(time + phase)`, but the Millers' `phase` is a word ("toWork"/"home"), which made the maths return **NaN** and wiped their head/arm rotations — so the parts vanished exactly when you talked to them (talking triggers the idle pose). The idle animation now guards against non-numeric phases, so every Miller (and any future actor) keeps their body.
+- [x] 🌙 **Comfort lighting / dark mode** (colours were too white & bright, hurting the eyes):
+  - A new **🌙 button** (left toolbar) toggles **comfort lighting**: every light in the game — sun, ambient, interiors, lamps — dims to ~55%, and the sky/fog/civic backdrops soften too. One tap back to ☀️ standard. Saved with your game.
+  - **Base interiors softened for everyone**: the business & work-shop interiors swapped their glaring near-white walls for a warmer parchment tone and gentler light levels, even without comfort mode.
+- [x] 🌳 **You can now SEE which kid wants the park**: when Lily or Noah hopes for a park trip, a **bouncing 🌳 thought bubble floats over their head**, the **minimap pings 🌳 at their position**, and the big 🗺️ map shows **"🧒 Lily → park 🌳"** — no more wandering around wondering where they are.
+- [x] 🧹 **Big glitch & polish audit** (screen text over buttons, trees in houses, stray bins):
+  - **UI overlaps fixed**: the 💬 dialogue box moved to the free bottom-centre strip (between d-pad & action buttons) and — like the notification banner — is now **click-through** (`pointer-events: none`), so text can never block a button again. The 🐦 park tally and ❤️‍🩹 win-back meter were sitting exactly on top of the 😡 anger and 🌟 prosperity bars — restacked (166px / 194px).
+  - **Misplaced props fixed by audit**: 2 trees sat in the café/bakery storefronts (one right on the "WE'RE HIRING" board) — moved; 4 trash bins were on the road / inside house footprints — moved to pavements & verges.
+- [x] 🏗️ **EVERYTHING is movable in the planner now**: the 🏫 school, all four **work shops** (owner, hiring board, prompts & your job follow the building!), your **bought businesses** (enter/exit spots, OPEN sign & map markers follow), **trash bins** (still searchable where you drop them), and **every planner-placed piece** (trees, benches, lamps, fences, fountains/ponds/lakes — the drinkable water follows too). Placed pieces persist their new spot in their own save record; buildings use the structure-move save. Roads stay snapped to the grid on purpose. Under the hood: props now carry their own footprint size + an `onMove` hook so game systems track the building wherever it goes.
+- [x] 🌲 **New planner pieces**: **🌲 Pine** (stacked evergreen), **🌸 Blossom tree** (pink canopy), **🌼 Flower bed** (walk-through, no collider), and **🗑️ Trash bin** (a real rummage-able bin — cats can search the ones you place). NPCs rest under the new tree types just like normal trees.
+- [x] 🏠 **Much richer Miller home routine** (millerPlan + new held props):
+  - **📰 Dad reads the newspaper** after work (a real folded broadsheet in his hands, head following the page; couch if you've bought one) — and again late at night.
+  - **🧹 Mum hoovers the whole house** when she gets home (~15:30–16:30): pushes a little red vacuum back and forth, covering the room before she starts dinner.
+  - **📚 Kids do homework first** (~16:00–17:15): sat at the dining table with little books, noses down.
+  - **🧸 Then the kids play on the floor**: criss-cross facing each other, **rolling a little blue ball back and forth** between them, taking turns reaching for it.
+- [x] 🎲 **Townsfolk are more unpredictable**: idle NPCs now have random micro-moments — a **yawn**, a big **two-arm stretch**, a slow **look around**, or a friendly **wave** — and each walk leg picks a fresh pace (sometimes ambling, sometimes hurrying), so crowds stop looking like clockwork.
+- [x] 🐈 **The jump is a real cat leap now**: instead of a straight vertical hop, the cat **pitches through an arc** (nose up on the rise, level at the top, nose down into the landing) and **lunges forward** along the leap (outdoors; collision-checked). Indoors it stays a neat vertical hop so you can't clip through walls.
+- [x] 💗 **Playing with cats is a proper cute routine** now, in three beats: the **play-bow** (chest down, bottom up, tail high) → **bouncy pounces** toward you and back with batting paws → a **joyful spin** finish — they face you the whole time, five hearts float up, and you bounce along with them.
+- [x] 🧶 **Shelter is livelier**: a striped **play ball rolls around the shelter** and cats take turns scampering after it and **batting it** off in a new direction (it bounces off walls & the cat castle); idle shelter cats also randomly **chase their tails**, **groom** (head dipped to a raised paw), and do the **big cat stretch**.
+- [x] 📬 **Inbox with an unread badge** (`inbox.js`): a new 📬 button (left toolbar) with a **red unread counter** so you know exactly when there's mail worth opening. Letters arrive for the big beats: the council's **invitation to run for Mayor**, your **duties list when elected**, a letter **each time you deliver a mayor promise**, the school's **"you qualify for Civics"** note, every **diploma**, and your **job offer/schedule letters**. Tap a letter to read it (bold = unread). Saved with the game.
+- [x] 🎓 **Tutorials with glowing arrows**: a guided tip-card system (`showTutorial`) — cards step you through with the **relevant button pulsing/glowing**:
+  - **First shift at your workplace** → walk behind the counter → 🔓 open at 9 → 🔎 help browsers → 💰 ring up with correct change → 🏦 stash & close at 5.
+  - **First look at the dashboard with a business** → how hiring works, first-hire-is-cashier, wage warnings, staff CVs.
+  - **Becoming President** → the do's (spend tax on the people) and don'ts (corruption never fades → anger → jail).
+  - **The school actually TEACHES**: each course ends with a real multi-step lesson (💼 how jobs & raises work · 📊 how/where to buy & run businesses · 🏛️ presidential law & consequences) — re-readable anytime via **📖 Re-read the lesson** at the school.
+- [x] 📄 **Your CV in the 📊 dashboard** — auto-written, **not editable**: name **"{CatName} Miller"**, current occupation (cashier/mayor/president/business owner), 🎓 degrees, full **work history** (each job + shifts worked, "let go" if fired), and achievements (businesses owned, cats freed, homes). It updates itself as you live.
+- [x] 👥 **Every hire has a name & CV**: hired humans/cats get real names (Sam Reed, Mrs. Paws…), a trait ("great with customers") and a previous job ("the docks"). The dashboard lists **your staff by business** — tap a name to unfold their little CV (role, days with you, wage). Old-save workers get names automatically.
+- [x] 🚧 **NPCs no longer ghost through walls & trees**: every walker — wanderers, commuters, activity-goers, freed cats AND street cats — now collides with the world (pushed out of houses, trees, fences…). If someone's target is unreachable they give up after a moment instead of grinding against a wall forever.
+- [x] 🪑 **Bench sitting fixed**: sitters now settle their hips exactly ON the seat (height computed from their body size, so kids and adults both sit right) and scoot slightly back toward the backrest instead of perching oddly at the front edge.
+- [x] 🏡 **Houses look nicer**: every town house got **flower boxes with blooms under the windows**, a cream **trim band** under the roofline, a **capped chimney**, and a little **paved path** from the doorstep.
+- [x] 🌙 **Night feels inhabited now**: at dusk the townsfolk **walk to the nearest front door and slip inside** (no more blinking out of existence), and **every window in town glows warm** through the night — the whole street reads "everyone's home". At dawn they come back out.
+- [x] 🪜 **REAL stairs in the Miller home**: the old teleport-y step prop is now a proper **ten-step staircase with a rail** that you physically **walk up, step by step** (same tier-climbing tech as the cat castle) — reach the top and you arrive upstairs; walk into the upstairs stairwell and you **stroll back down the steps**. Jumping on the stairs works too. The ⬆️/⬇️ button still exists as a shortcut, and the staircase is still movable in 🛠️ mode (the climb follows it).
+- [x] 🚶 **No more infinite wall-walkers**: activity walkers (bench/picnic/photo-goers) now count blocked frames like everyone else and **give up & re-plan after ~1.5s** of pushing on a wall, instead of marching into it forever.
+- [x] 🏪 **Shop owners now RUN their shops from inside** (big employment rework):
+  - The owner no longer stands outside facing a wall — you see the **"WE'RE HIRING!" board outside, walk in the door, and find the owner behind the counter working the till** (facing the room, with the 💼 bubble overhead).
+  - **Apply at the counter**: walk up → "💼 Ask {boss} for the job".
+  - The shops feel **open even when you don't work there** — owner at the register + shoppers browsing.
+  - When YOU work the shift, **the boss chills like Miller dad** — off the floor, dropping in every minute or so ("Everything running smoothly? Good work!") before wandering off again.
+- [x] 🛍️ **Buy things from the shops & carry them home in your mouth**: at any owner-run counter → **"🛍️ Buy something for home"** → pick a product → the owner bags it and a real **paper bag hangs from your mouth**. While carrying: you **walk slow and CAN'T run**. You can **⬇️ put the bag down** anywhere (it waits there; walk back → pick it up) or deliver it.
+- [x] 💭 **Elena's shopping requests**: some mornings Elena (at home) has a **thought bubble** showing what she needs (💭🥛). Walk up → **"💬 See what Elena needs"** → she tells you the item AND which shop sells it. Fetch it, plod home with the bag, **give it to her** → hearts, a thank-you tip (+20–30 🪙) and goodwill. Bringing her anything else still earns a warm thanks. Bag & request survive reloads.
+- [ ] 🛎️ **Work-shop improvements still to do** (the polish list):
+  - [ ] Customers should physically **carry their items** (little meshes in their hands) instead of only a bubble
+  - [ ] A **rush hour** (~midday) with more customers + a hectic-day bonus
+  - [ ] **Restocking**: shelves empty as things sell; a "restock the shelf" chore between customers
+  - [ ] The **boss walks the floor** sometimes — serving well while they watch boosts raise chances; strikes if they catch idle queues
+  - [ ] Wrong change should **cost the till** the difference (real consequences), with a day-end till-vs-receipts reconciliation
+  - [ ] Sales/helps should feed the **raise system** (great days = ask sooner), not just the flat 5-shift counter
+  - [ ] Different **coin denominations** in the change puzzle (give back 1×5 + 2×1, not just a number)
+  - [ ] Occasional **rude customer / shoplifter** event for drama (chase them down?)
+
+#### still open / ideas to work on next
+- [x] 🏫🏥 **School & hospital interior minigames** — DONE: **Nurse Pip** stands in the hospital lobby (🦠 Germ Patrol) and **Ms. Plume** in the civic school lobby (✈️ Paper Planes), each with a golden ✨ bubble. Walk up inside → the play prompt appears, just like the shelter volunteer.
+- [x] Corruption now shows in the 📊 reputation: pocket enough tax money and you read as **😼 Shady** then **🦹 Corrupt** long before jail (based on the live corruption meter)
+- [x] 🏛️ **Corruption / Prosperity / Anger split into THREE separate meters** (fixes "stole 13M and got away with it"). Before, corruption only nudged one happiness bar that good deeds could out-spend, so theft had no teeth. Now:
+  - **🌟 Prosperity** (was "happiness") — purely how well-run the town is: good deeds & public works raise it, neglect lowers it. No longer tangled with your crimes.
+  - **🚨 Corruption** — YOUR rap sheet. Only pocketing tax raises it, **scaled to how much** (600k→+15, 2M→+50, ≥4M maxes it — a 13M grab pins it at 100). It **never fades on its own** anymore (the old −0.7/day passive decay is gone), and **good deeds don't touch it** — you can't launder crimes with parks.
+  - **😡 Public anger** (new, shown on the HUD under prosperity + in the 🗳️ panel) — the thing that jails you. It **climbs in REAL TIME** (every frame, not once a day): corruption drives it up continuously (corruption 100 → boils over to jail in ~3 min of play), and stealing gives an **instant visible spike** the moment you do it. A thriving, honest town lets it fade; a corrupt one can't out-run it with parks. Reaches **100 → the police jail you** (jail is no longer triggered by prosperity hitting 0). *(First version updated anger only at in-game midnight (~9 min), so it looked frozen — now it moves live so you can actually see corruption → anger.)*
+  - **📰 Scandals** — once you're dirty (corruption ≥45) the press can break a story: a modal forces a choice — **🤫 bury it** (hush money = *more* corruption, buys time), **📢 deny it** (+22 anger now), or **🙏 confess & resign** (step down, dodge jail, keep your coins/home).
+  - **🙏 Reparations** — the ONLY way corruption comes down: a **"Return stolen funds"** button in the 🗳️ panel lets you pay the stolen money back from your **own coins**, which lowers corruption at the same rate it rose (and cools anger a little). Keep the 13M *or* stay clean — not both. (Litter still tracks neglect; protests/gloom/snubs now track anger.)
+- [ ] Paint / repaint walls & floors in the 🛠️ editor
+- [x] Kids' escort quest — DONE: while out & about a kid (Lily/Noah) sometimes wants the park (you get a hint notif). Find them, tap **💬**, and they **follow you** as you walk ahead — lead them into the park (they cheer & jump), then walk them **back home** for a **+60🪙** reward. Bails politely at night / if it drags on.
+- [x] Tap a Miller (out & about) → **💬 Talk** shows a speech bubble of what they're up to (per-Miller lines, they pause & face you); Daniel/Elena/Lily/Noah each have their own voice & lines
+- [x] Cashiers take coins from customers — DONE: in a **staffed** business, shoppers walk in, queue at the till, **pay the cashier** (a gold coin pops up + a *ka-ching*), then leave and new ones arrive. Plus an **OPEN/CLOSED plaque** on every business building: **OPEN** when it has staff (runs itself), **CLOSED** when it's self-run and needs you to open it.
+- [x] build hospitals\schools\shelters as President — DONE: a **🏛️ Public Works** section in the 🗳️ panel lets the President build a **🏥 Hospital, 🏫 School and 🏘️ Shelter** from the treasury. Each is a real building in town (north strip) you can **walk up to and ENTER** (staffed interior), each **creates jobs** (feeds the employment meter & caps hiring), **pays the government a daily income** into the treasury, and **raises happiness**. The Shelter also **takes in homeless** people. Saved & rebuilt on load; shown on the 🗺️ map.
+- [x] you can not hire more poeple or cats than the papulation — DONE: hiring is now capped at the town's out-of-work humans / free cats (grow the town / rescue cats for more)
+- [x] in the dashboard there should be job meters — DONE: the 📊 dashboard now has a **🧑‍🏭 Town employment** panel with bars showing 🧑 people & 🐱 cats *working* vs *looking for work* (and the % employed)
+- [x] **Population growth loop closed**: building a business or a public work now **draws new townsfolk to town** to fill the jobs (a business brings ~3+a cat; each civic building brings its workers + families). The town grows, the 🧑‍🏭 employment meter reflects it, and the growth is saved across reloads.
+- [x] more life — townsfolk now do a wider range of activities: **read books on benches & under trees** (they hold an actual book & turn the pages), **stop for a chat** in pairs (face each other, gesture & nod), **window-shop / admire buildings** (walk up to a building, gaze up & point), and **stretch** on the spot — on top of the existing bench-sitting, tree-resting, park picnics and fountain photos.
+- [x] hospital/school/shelter interiors are now **much bigger & multi-room** (24×18): a front **lobby with a reception desk & waiting chairs**, then **two rooms behind a central wall with doorways** — 🏥 wards of beds + medicine cabinets, 🏫 two classrooms with chalkboards & rows of desks, 🏘️ dorms of bunk beds + common tables. Bigger walk-around bounds, proper room walls, and the **exit glitch is fixed** (civic doors face the town, so you now leave on the south side instead of behind the building).
+- [x] make another file for notes on how to improve everything — DONE: see **IMPROVEMENTS.md** (a prioritised roadmap per system, tagged 🟢 quick / 🟡 medium / 🔴 big)
+- [x] cutscene notes file — DONE: see **CUTSCENES.md** (a full cutscene-system design + scripted beats for the intro "Rescue" and the big story moments).
+- [x] 🎬 **Intro cutscene built** (`cutscene.js`): a skippable, painted-panel "The Rescue" story plays when you tap **Start Adventure** on a NEW game — rainy alley box → the shelter (your cat, in YOUR chosen colours) → the Millers → they choose you (hearts) → walking home at dawn. Cross-fades + slow Ken-Burns zoom + captions; **Skip ▶** anytime; resuming a save skips it. The director is data-driven so the other cutscenes in CUTSCENES.md can be added as beat-lists.
+- [x] 🎬 **"Elected!" cutscene** — the director now also does **camera cinematics** (technique A): when you win the presidency, the panel clears and the **camera sweeps around you over the live 3D town with letterbox bars, 3D confetti, a flash and captions** ("By the will of the people… President!"), then the celebration message. Movement is locked during any cinematic. This proves the in-engine path, so The Fall / Redemption / ribbon-cuttings can follow the same pattern.
+- [x] 🎬 **Four more cutscenes wired to existing story hooks** (see CUTSCENES.md):
+  - **⛓️ The Fall** (camera, on `goToJail`) — a dark, stormy jail march: the screen dims with a storm tint, the camera pushes in low on you then pulls up high (small & alone), **red/blue police lights flash**, then it cuts to the cell. Replaces the old plain "under arrest" popup.
+  - **🏪 Dad's Shop Reopens** (camera, on buying the shop) — the camera sweeps to the store, the OPEN sign lights up, **confetti + a flash**, "Daniel Miller has honest work again ❤️".
+  - **🌱 Redemption** (painted panels, on buying your OWN home while homeless/disgraced after jail) — four panels: alone under fading stars → earning honest coins → a key in your own door → sunrise & a fresh start. The comeback payoff for the corruption arc.
+  - **🎪 Ribbon-cutting** (camera, on `buildCivic` for 🏥/🏫/🏘️) — the town gathers, "✂️ Snip! The ribbon falls," confetti over the new public work. (Only plays if you're out in town to see it, and it closes the 🗳️ panel first.)
+  - **💔 Disowned** (painted panels, first time you try the Miller door after jail) — see the dedicated note below.
+  - All are **skippable** (Skip ▶) and reuse the same data-driven director; the only remaining piece in CUTSCENES.md is the optional **endings/epilogue** montage (#7).
+- [x] 💔 **The Millers disown you after jail** — once you're jailed for corruption you're `disowned`: the family still lives in their little house, but you can't just walk back in. The **first time** you try the door (one time only) a dramatic 4-panel cutscene plays — you approach hopefully, **Daniel blocks the door** ("You stole from this whole town while we defended you"), **Elena and the kids are in tears** ("We loved you like family… please, just go"), then the door **closes for good** over a breaking heart in the rain. After that, tapping the door just gives a sad "they don't want to see you" notice. It sticks across saves. (Your redemption path is unchanged — earn an honest home of your own.)
+- [x] ❤️‍🩹 **Win the Millers back after they disown you**: being disowned is no longer permanent. While disowned, a **pink goodwill meter** (top of screen) fills up as you **do good things**: give them coins, buy them a home / a business / Dad's shop, do honest work (any job/minigame), rescue shelter cats, or leave a caught mouse at their door. Soft milestone lines at 25/50/75% show them slowly softening (Lily waves, Elena watches from the window, Daniel wavers). Fill it to 100% → a **"Forgiven" reconciliation cutscene** plays (the family welcomes you back at the open door, hearts) and `disowned` clears, so you can **enter their home again**. Saved across reloads. *(This came from the player noticing you could still buy the Millers businesses while shut out — so buying/helping now visibly earns your way back.)*
+- [x] 🎮 **Minigames made varied & more fun** (they were becoming samey "chase & tap"):
+  - **Real variety of game modes**: the map games now play differently — **🦋 butterflies / 🧶 yarn / 🦠 germs** skitter & flee (chase), **🫧 bubbles / 🎈 balloons** float **up** (pop them before they escape the top), **🍂 leaves / ✈️ paper planes** drift **down** (catch before they hit the floor).
+  - **"Avoid the bad one" games**: 🎈 balloons hide **💣 bombs** and 🦠 germ-patrol hides **💊 medicine** — tap one by mistake and you lose a point + time (these are tap-only so a swipe can't set them off).
+  - **Combo/streak scoring on every game**: quick consecutive catches build a streak (**x2! x3!** pops), and streaks pay **bonus coins** (shown as "🔥 +N streak bonus!" on the result card) — rewards fast, skilful play.
+- [x] 🔥 **Made the minigames more challenging & fun** (difficulty now *builds*):
+  - **Escalating difficulty ramp** on every game — targets get **faster, spawn quicker and swarm thicker as the clock runs down** (mice bolt harder, bakes rain down, snails swarm, bubbles/planes speed up). Starts gentle, ends frantic.
+  - **✨ Golden targets** — rare, fast, glowing targets worth **+2 bonus coins**; chase them down for a big score.
+  - **Bigger, escalating combos** — a live **“🔥 Combo x3”** counter on screen, a tighter streak window, and **more bonus coins the longer your streak** (x6 → +2, x10 → +3 each). Hitting a bomb/miss breaks it.
+  - **Harder aim** — slightly tighter hit tolerance and bolder fleeing, and the **trophy now needs a real score** (💯 “Purrfect!” at 15+ coins incl. bonuses), so combos & golden grabs actually matter.
+- [x] 🐕 **Removed the stray night dogs** (they were a bad idea) — no more dogs spawning after dark, no chase/scare, no bark. The night is now just a calm "head home soon" beat. All the dog code (`spawnDogs`/`updateDogs`/`buildDog`/the `dog` SFX) is gone; the demolish/scandal/jail sounds that borrowed the bark now use a low thud instead. (The vet-minigame's dog patient is a separate thing and stays.)
+- [~] we need to add more places you can enter more shops other people owning businesses people looking for others to hire so you can work as a cashier have a 9 to 5 job... — **9-to-5 CASHIER JOBS built** (`work.js`): four shop owners around town (☕ Café, 🥐 Bakery, 🏬 Market, 🏪 General Store) each stand outside with a **💼 hiring bubble**. Walk up → **apply**; wages **380–900/day** by shop. You get a **schedule** (open ~9am, close ~5pm) shown in a **💼 HUD badge** that reminds you when to open & close (🔔). Go to your workplace and tap **🔓 Start shift** in the morning and **🔒 End shift** at five to get **paid daily**. **Late = docked pay + a strike; miss a shift = a strike; 3 strikes → FIRED.** A clean on-time day earns trust back. After 5 good shifts you can **⭐ ask for a raise** (+20%, up to 3 times; boss may say "not yet"). You **can't work while campaigning / President** (winning the presidency auto-ends the job). Quit anytime from the 💼 panel. Saved across reloads.
+  - **NOW ALSO**: each workplace has a real **enterable shop building** (themed café/bakery/market/store interior, reusing the business-interior art, with a few ambient shoppers). Walk up → **🚪 Enter** to look around; **open/close your shift at the service counter inside** (or from the shopfront). Opening steps you inside; closing pays you and sends you home.
+  - **IMPROVED storefronts**: the four shops now look like real shops — striped **awnings**, big **display windows**, a lit **name board**, and type-specific props out front (café umbrella tables, bakery bread baskets, market produce crates, general-store barrels). The **owners look like aproned shopkeepers** (in their shop's colours) standing by the door.
+  - **"WE'RE HIRING!" signs**: each shop with an opening has a standing **green sandwich-board sign** out front (plus the ✨ bubble over the owner). Take a job and **all the signs/bubbles disappear** (you can only hold one job); quit or get fired and they come back.
+  - **NOW ALSO**: the schedule arrives as a proper **📬 letter** on hire (from the boss, with your hours, pay & the strikes rule) — re-readable anytime from the 💼 panel.
+- [x] 🗑️ **Rummage-able trash bins all over town** (`buildTrashCans`): ~14 bins dotted around the streets & alleys. Walk up to one → **🗑️ Search bin**. Outcomes are random per search: **~30% empty** (nothing but rubbish), **~42% scraps** (a small +hunger snack), **~28% a whole fish** (big +hunger, a happy hop, sometimes a stray 🪙). Each bin's lid flips open when you dig, and it **needs time to refill** before it's worth searching again (so you roam to different bins). A free food source for a hungry street cat.
+- [x] 🎀 **Cat maker now includes a collar**: the create-your-own / create-a-shelter-cat maker has a **collar row** (none + colours). Custom hero cats and designed shelter cats both render the collar + bell in 3D. (Hats & glasses stay in the post-adopt 🎨 customiser since they're coin-purchased.)
+- [x] 📱 **Landscape-first for phones**: a portrait phone now shows a **"🔄 rotate your device"** hint (the game plays sideways), and a **landscape layout** repacks the stacked contextual buttons to fit the short height, caps modals to the viewport with scroll, and tightens the adopt screen. (Desktop/tablet unaffected.)
+- [x] I want to see the cats names when i play with them — DONE: the prompt now reads **"🧶 Play with {name}"** everywhere — rescued cats, the cats **you created & named**, the ambient **street cats** (they all have names now: Boots, Shadow, Ginger, Mochi…) and the **shelter cats** inside the shelter (Waffles, Nutmeg, Pickle, Domino…). The after-play toast names them too ("You played with Mochi! 💗").
+- [x] 🚧 **Work shops moved OUT of the street**: the four job shops were sitting on Main Street itself (two also clipped houses). They now sit in the clear gaps along the **south side of Main Street** (the z≈-9 row: General Store x-66, Café x-42, Bakery x8, Market x62), doors facing the road, owners & "WE'RE HIRING!" boards on the pavement. Old saves re-sync your job's location automatically. *(Also restored the storefront/hiring-sign/shopkeeper code that had been accidentally reverted in work.js.)*
+- [x] 🎬 **Animation polish pass**: the cat now **turns smoothly** (eases toward the new heading instead of snapping) and **banks into turns** (more when sprinting); every jump ends with a **landing squash-and-spring** + tail flick; and all walking townsfolk got a subtle **hip sway** + arms that relax when they stop (applied to wanderers, commuters and activity-walkers alike).
+- [x] we need to build a school where you can unlock diffrent skills — **🏫 TOWN SCHOOL built** (`school.js`): a brick schoolhouse with a bell tower on the North Avenue row facing the square (on the 🗺️ map & minimap). Walk to the door → **🎓 Town School** panel with three courses (one at a time; evening classes, graduate after N days):
+  - **💼 Logistics Diploma** (400🪙 · 3d) → cashier jobs pay **+25%** (your current job's wage bumps on graduation too)
+  - **📊 Business Degree** (800🪙 · 4d) → **required to buy any business** beyond Dad's shop, and self-run tills fill **25% faster**
+  - **🏛️ Civics & Law** (1,500🪙 · 5d) → **required to run for President** — and it's only offered to a Mayor who has met their town goals
+- [x] becoming the president should be way more diffecult — **THE FULL LADDER built**: get famous (500 earned) → **run for MAYOR** (100🪙) → as Mayor deliver on a real checklist shown in the 🗳️ panel (💼 15+ jobs created · 🏠 2+ homes built/bought · 🐾 5+ cats freed/created · 🏚️ nobody homeless) → only then does the school offer **Civics & Law** → graduate → **register for the presidential race** (250🪙) → the debate. Jail or resignation knocks you all the way back down the ladder.
+- [x] for the presidency debate i want an actual stage — **STAGED DEBATE built**: the debate now plays on a drawn **2D stage** above the questions — red curtains, "★ THE TOWN DEBATE ★" banner, three podiums with **Grubb 🤵, YOUR cat (painted in your colours), and Ada 👩‍🌾**, and a **crowd along the front**. When you answer, the scene **reacts**: a great answer gets 👏 raining over the crowd, Grubb **fumes 😠** and Ada nods 🙂; a bad one gets 👎 and murmurs — with your running **Approval x/10** on the banner. Beat the field (8/10) → President.
+- [x] you can not open the planner in the beginning — **PLANNER GATED**: the 🏗️ planner refuses to open unless you're **Mayor or President** ("get elected first!"). The **Mayor builds with their own coins only** — the 🏛️ tax-money option remains President-only (as before).
