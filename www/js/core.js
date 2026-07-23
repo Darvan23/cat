@@ -64,6 +64,7 @@ const state = {
   droppedBag: null,    // a bag you set down somewhere in town
   momRequest: null,    // 💭 what Elena needs from the shops
   workOwner: null,     // the shop owner behind the counter of the shop you're in
+  workRep: 0,          // 👔 your standing with employers — built up in the boss's check-in chats
   strayTimer: 18,
   carryingMouse: false,
   owned: { decor: [], decorUpper: [], decorShop: [], decorBought: [], homes: [], shop: false, accessories: [] },   // things you've bought (notes 7–9)

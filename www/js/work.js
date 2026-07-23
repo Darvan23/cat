@@ -428,7 +428,8 @@ function enterWorkplace(id) {
     oc.group.position.set(0.6, 0, -4.2); oc.group.rotation.y = 0; bizScene.add(oc.group);
     const bubble = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), new THREE.MeshStandardMaterial({ color: 0x6ac0f0, emissive: 0x1060a0, emissiveIntensity: 0.8, roughness: 0.4 }));
     bubble.position.y = 2.5; oc.group.add(bubble);
-    state.workOwner = { site: id, name: s.boss, group: oc.group, parts: oc.parts, bubble, phase: Math.random() * 6, visitT: 20, visiting: false };
+    state.workOwner = { site: id, name: s.boss, group: oc.group, parts: oc.parts, bubble, phase: Math.random() * 6,
+      visitT: 45 + Math.random() * 30, visiting: false, mode: null, wx: 0.6, wz: -4.2 };   // first 👔 check-in ~a minute into your shift
     // a couple of ambient shoppers so the place never feels dead
     [[-3, 0], [3, 1]].forEach(([x, z]) => {
       const cfg = (typeof randomPersonCfg === 'function') ? randomPersonCfg() : {};
@@ -467,16 +468,7 @@ function updateWorkOccupants(t) {
   const ow = state.workOwner;
   if (ow && ow.site === state.inWork) {
     if (shiftRunning()) {
-      // YOUR shift: the boss chills — off the floor mostly, dropping by now and then to check on you
-      ow.visitT -= 0.016;
-      if (ow.visitT <= 0) {
-        ow.visiting = !ow.visiting;
-        ow.visitT = ow.visiting ? 11 : 55 + Math.random() * 40;
-        if (ow.visiting) { ow.group.position.set(-2.6, 0, 1.4); ow.group.rotation.y = Math.PI; showNotif('👀 ' + ow.name + ' dropped by: "Everything running smoothly? Good work!"'); }
-      }
-      ow.group.visible = !!ow.visiting;
-      if (ow.bubble) ow.bubble.visible = false;
-      if (ow.visiting && typeof idleHuman === 'function') idleHuman(ow, t);
+      updateBossCheckin(ow, t);   // YOUR shift: the boss drops in every so often to check on you
     } else {
       // owner at the till, running their own shop
       ow.group.visible = true;
@@ -487,6 +479,114 @@ function updateWorkOccupants(t) {
   }
   updateWorkCustomers(t);
 }
+
+// ── 👔 Boss check-ins: during your shift the owner wanders in, walks up to YOU, and asks
+//    how things are going. Pick an answer — upbeat, honest, or grumpy — and your standing
+//    (reputation) with employers shifts accordingly. ──
+const BOSS_CHECKINS = [
+  { q: "How's the shop running today?", a: [
+    { t: "😺 Smooth as cream — all good here!",           rep: 2,  r: "That's what I like to hear. Keep it up! 🐾" },
+    { t: "😼 Busy — but I'm on top of it.",               rep: 2,  r: "A cool head on a busy day. That's rare — well done." },
+    { t: "😿 Honestly… it's been a rough one.",           rep: 1,  r: "Thanks for telling me straight. Hang in there — rough days pass." },
+  ] },
+  { q: "Any trouble with the customers?", a: [
+    { t: "😺 None at all — they leave purring!",          rep: 2,  r: "Wonderful. Happy customers always come back." },
+    { t: "🙀 A few grumpy ones, but I stayed polite.",    rep: 2,  r: "Exactly the right way to handle it. I'm impressed." },
+    { t: "😾 They're driving me up the wall!",            rep: -1, r: "Easy now — we never hiss at customers. Deep breaths." },
+  ] },
+  { q: "Are you happy working here?", a: [
+    { t: "😻 Best job in town!",                          rep: 2,  r: "Ha! And you might be the best cashier I've ever had." },
+    { t: "😐 It's fine… the pay could be better though.", rep: 0,  r: "Everyone says that! Keep your shifts clean and ask me for a raise properly." },
+    { t: "😿 Not really, to be honest…",                  rep: -1, r: "Sorry to hear it. Chin up — or maybe this isn't the place for you." },
+  ] },
+  { q: "Till and safe all adding up?", a: [
+    { t: "😺 Every last coin — counted twice!",           rep: 2,  r: "Music to my ears. Carry on!" },
+    { t: "😼 The takings are stashed safe in the safe.",  rep: 2,  r: "Good habits. That's how a shop stays standing." },
+    { t: "🙀 Umm… I lost count somewhere…",               rep: -1, r: "Hmm. Count it again — carefully. I'm trusting you to sort it." },
+  ] },
+  { q: "Anything you need from me?", a: [
+    { t: "😺 Nothing — it's all under control!",          rep: 2,  r: "Then I'll leave you to it. Good work!" },
+    { t: "🙏 More stock — the shelves are getting bare.", rep: 1,  r: "Good eye! I'll put an order in this evening." },
+    { t: "😾 A day off. And double pay.",                 rep: -1, r: "Ha! Cheeky. Back to work with you." },
+  ] },
+];
+function updateBossCheckin(ow, t) {
+  if (ow.bubble) ow.bubble.visible = false;
+  if (!ow.visiting) {                    // off the floor, minding their own business
+    ow.group.visible = false;
+    ow.visitT -= 0.016;
+    if (ow.visitT <= 0) {                // time for a visit: in through the front door
+      ow.visiting = true; ow.mode = 'walkIn'; ow.asked = false; ow.waitT = 0;
+      ow.wx = 0; ow.wz = 4.6; ow.group.position.set(0, 0, 4.6);
+      showNotif('👀 ' + ow.name + ' came in to see how you\'re getting on…');
+    }
+    return;
+  }
+  ow.group.visible = true;
+  if (ow.mode === 'walkIn') {            // walk over to wherever you are (stopping short of the counter)
+    const cp = catGroup.position;
+    const tx = Math.max(-6, Math.min(6, cp.x)), tz = Math.max(-2.2, Math.min(4.2, cp.z + 1.1));
+    if (walkToward(ow, tx, tz, 0.032) || Math.hypot(ow.wx - cp.x, ow.wz - cp.z) < 1.7) {
+      ow.mode = 'chat';
+      if (typeof standPose === 'function') standPose(ow);
+    }
+  } else if (ow.mode === 'chat') {       // face you and ask — waits politely if you're mid-sale
+    const cp = catGroup.position;
+    ow.group.rotation.y = Math.atan2(cp.x - ow.group.position.x, cp.z - ow.group.position.z);
+    if (typeof idleHuman === 'function') idleHuman(ow, t);
+    if (!ow.asked) {
+      if (!state.uiOpen) { ow.asked = true; openBossCheckin(); }
+      else if ((ow.waitT += 0.016) > 22) {   // you're clearly busy — leaves you to it
+        showNotif('👔 ' + ow.name + ': "You look busy — carry on!"');
+        bossCheckinDone(0);
+      }
+    } else if (!state._bossQ && !state.uiOpen) {
+      ow.mode = 'leave';   // chat resolved (or the dialog was dismissed some other way) — head out
+    }
+  } else if (ow.mode === 'leave') {      // stroll back out through the door
+    if (walkToward(ow, 0, 4.6, 0.032)) {
+      ow.visiting = false; ow.mode = null; ow.group.visible = false;
+      ow.visitT = 85 + Math.random() * 60;   // until the next check-in
+    }
+  }
+}
+function openBossCheckin() {
+  const ow = state.workOwner, j = state.job; if (!ow || !j) return;
+  const q = BOSS_CHECKINS[Math.floor(Math.random() * BOSS_CHECKINS.length)];
+  state._bossQ = q;
+  state.uiOpen = true;
+  const tt = document.getElementById('job-title'); if (tt) tt.textContent = '👔 ' + ow.name + ' checks in';
+  document.getElementById('job-body').innerHTML =
+    `<div class="modal-sub">${j.emoji} <b>${ow.name}</b> wanders over for a chat:<br>“${q.q}”</div>` +
+    `<div class="modal-row" style="flex-direction:column;gap:8px">` +
+    q.a.map((a, i) => `<button class="cust-pat" onclick="answerBossCheckin(${i})">${a.t}</button>`).join('') +
+    `</div>`;
+  document.getElementById('job').classList.add('show');
+}
+function answerBossCheckin(i) {
+  const ow = state.workOwner, q = state._bossQ;
+  state._bossQ = null;
+  state.uiOpen = false; document.getElementById('job').classList.remove('show');
+  const a = q && q.a[i]; if (!a || !ow) return;
+  showDialogue('👔 ' + ow.name, a.r, 5200);
+  bossCheckinDone(a.rep);
+}
+function bossCheckinDone(rep) {
+  const ow = state.workOwner;
+  if (rep) addWorkRep(rep);
+  if (ow) { ow.asked = true; ow.mode = 'leave'; }
+  if (typeof saveGame === 'function') saveGame();
+}
+function addWorkRep(n) {
+  state.workRep = Math.max(-10, Math.min(30, (state.workRep || 0) + n));
+  if (n > 0) showNotif('⭐ Reputation +' + n + ' — the boss left with a good impression.');
+  else if (n < 0) showNotif('💢 Reputation ' + n + ' — grumbling never looks good.');
+}
+function bossOpinion() {
+  const wr = state.workRep || 0;
+  return wr >= 12 ? 'Delighted with you 🌟' : wr >= 5 ? 'Pleased with you 😊' : wr >= 0 ? 'No complaints 🙂' : 'A little grumpy with you 😕';
+}
+
 function shiftState() {
   const j = state.job; if (!j) return 'off';
   const h = state.dayTime * 24;
@@ -575,7 +675,7 @@ function openJobPanel() {
   const tt = document.getElementById('job-title'); if (tt) tt.textContent = '💼 Your Job';
   const rr = raiseReady();
   document.getElementById('job-body').innerHTML =
-    `<div class="modal-sub">${j.emoji} <b>${j.name}</b><br>Cashier · ${j.wage} 🪙/day + 10% of takings · shift 9–5<br>Shifts worked: <b>${j.shifts}</b> &nbsp;·&nbsp; Strikes: <b>${j.strikes}/3</b><br>Today: 🛒 <b>${j.sales || 0}</b> sales · 🔎 <b>${j.helps || 0}</b> helped · 💰 till <b>${j.till || 0}</b> · 🏦 safe <b>${j.banked || 0}</b></div>` +
+    `<div class="modal-sub">${j.emoji} <b>${j.name}</b><br>Cashier · ${j.wage} 🪙/day + 10% of takings · shift 9–5<br>Shifts worked: <b>${j.shifts}</b> &nbsp;·&nbsp; Strikes: <b>${j.strikes}/3</b><br>Today: 🛒 <b>${j.sales || 0}</b> sales · 🔎 <b>${j.helps || 0}</b> helped · 💰 till <b>${j.till || 0}</b> · 🏦 safe <b>${j.banked || 0}</b><br>👔 ${j.boss}'s opinion: <b>${bossOpinion()}</b></div>` +
     `<div class="modal-row" style="flex-direction:column;gap:8px">` +
       (rr ? `<button class="pol-primary" onclick="askForRaise()">⭐ Ask for a raise</button>`
           : `<button class="pol-primary" disabled>⭐ Raise available after ${5 - (j.shifts - (j.lastRaiseShift || 0))} more shift(s)</button>`) +

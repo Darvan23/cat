@@ -187,7 +187,7 @@ function saveGame() {
       catId: state.chosenCat ? state.chosenCat.id : null, catName: state.catName, chosenCat: state.chosenCat,
       catCustom: state.catCustom,
       freed: state.freed, createdCats: state.createdCats, job: state.job, dayCount: state.dayCount, school: state.school, darkMode: state.darkMode,
-      inbox: state.inbox, tutorialsSeen: state.tutorialsSeen, cvJobs: state.cvJobs,
+      inbox: state.inbox, tutorialsSeen: state.tutorialsSeen, cvJobs: state.cvJobs, workRep: state.workRep,
       carryBag: state.carryBag ? { item: state.carryBag.item, from: state.carryBag.from } : null, momRequest: state.momRequest,
       storyAct: state.storyAct, crickMet: state.crickMet, rentActive: state.rentActive, daysLeft: state.daysLeft,
       voiceOn: state.voiceOn, parkMice: state.parkMice, parkBirds: state.parkBirds,
@@ -238,6 +238,7 @@ function applySave(s) {
   state.cvJobs = Array.isArray(s.cvJobs) ? s.cvJobs : [];
   if (typeof updateInboxBadge === 'function') updateInboxBadge();
   state.momRequest = s.momRequest || null;
+  state.workRep = s.workRep || 0;
   if (s.carryBag && s.carryBag.item) setCarryBag(s.carryBag.item, s.carryBag.from);   // the bag survives a reload
   state.job = s.job || null;
   if (state.job && typeof JOB_SITES !== 'undefined') {   // re-sync the workplace position (shops may have moved between versions)
@@ -746,7 +747,11 @@ function updateContextButton() {
       else if (giver.job === 'butcher') { action = 'sellbirds'; label = '🔪 Sell birds'; }
       else { action = 'playgame'; label = (JOBS[giver.job] && JOBS[giver.job].playLabel) || '🎮 Play a game'; }
     }
-    else if (miller) { action = 'millertalk'; label = '💬 Talk'; state.talkTarget = miller; }
+    else if (miller) {   // Elena takes the shopping wherever you find her — not just indoors
+      if (miller.name === 'Elena' && state.carryBag) { action = 'givebag'; label = '🛍️ Give Elena the shopping'; state.talkTarget = miller; }
+      else if (miller.name === 'Elena' && state.momRequest && !state.momRequest.told) { action = 'elenaneed'; label = '💬 See what Elena needs'; state.talkTarget = miller; }
+      else { action = 'millertalk'; label = '💬 Talk'; state.talkTarget = miller; }
+    }
     else if (bench) { action = 'sitbench'; label = '🪑 Sit'; state.sitTarget = bench; }
     else if (fc) { action = 'play'; label = '🧶 Play with ' + ((fc.cat && fc.cat.name) || fc.name || 'the cat'); state.playTarget = fc; }
     else {
@@ -800,10 +805,15 @@ function doContextAction() {
   else if (state.context === 'stashcash') stashCash();
   else if (state.context === 'school') openSchool();
   else if (state.context === 'shopbuy') openShopBuy();
-  else if (state.context === 'givebag') giveBagToElena();
-  else if (state.context === 'elenaneed') tellElenaNeed();
+  else if (state.context === 'givebag') { pauseOutdoorElena(); giveBagToElena(); }
+  else if (state.context === 'elenaneed') { pauseOutdoorElena(); tellElenaNeed(); }
   else if (state.context === 'dropbag') dropCarryBag();
   else if (state.context === 'pickbag') pickUpBag();
+}
+// If you hand Elena the shopping OUT IN TOWN, she stops walking and turns to you for the moment
+function pauseOutdoorElena() {
+  const m = state.talkTarget;
+  if (!state.inHouse && m && m.name === 'Elena') m.talkPause = 220;
 }
 // Tell the Millers which home to live in (or send them back to the old house). Change your mind anytime.
 function millerMoveIn(id) {
@@ -1990,6 +2000,12 @@ function animate() {
 
   if (state.planning) { updatePlannerFrame(); return; }   // SimCity-style top-down build mode
 
+  // The Millers' outdoor routine ALWAYS ticks — even while you're inside a building —
+  // so nobody freezes mid-street with time still passing. Their indoor copies wait for
+  // the outdoor walker to reach the front door (millerStillOutside), so a Miller can
+  // never be seen in two places at once.
+  updateFamilyRoutine(t);
+
   // Camera orbit (look-pad buttons; dragging is handled in the input section)
   if (state.touching['rotL']) state.camYaw += 0.035;
   if (state.touching['rotR']) state.camYaw -= 0.035;
@@ -2253,7 +2269,8 @@ function animate() {
       const hour = state.dayTime * 24;
       const theirHome = state.millerHome && state.millerHome === state.currentBoughtHome;
       state.boughtHomePeople.forEach(p => {
-        const home = theirHome && (!p.name || (typeof millerPlan !== 'function') || millerPlan(p.name, hour).loc !== 'out');
+        const home = theirHome && (!p.name || (typeof millerPlan !== 'function') || millerPlan(p.name, hour).loc !== 'out')
+          && !(typeof millerStillOutside === 'function' && millerStillOutside(p.name));
         p.group.visible = home;
         if (home) idleHuman(p, t);
       });
@@ -2290,7 +2307,7 @@ function animate() {
   updateStrayMouse();  // the loose town mouse
   updateHearts(0.016);
   updateNightMode();
-  updateFamilyRoutine(t);   // the Millers walk their daily routine (leave home, go to shop/shops/football, walk back)
+  // (the Millers' daily walking routine now ticks every frame near the top of animate)
   updateEscort();           // walking a kid to the park & back (the escort quest)
   if (typeof updateAnger === 'function') updateAnger(0.016);     // 😡 public anger climbs in real time while you're corrupt
   if (typeof updateTownMood === 'function') updateTownMood(t);   // litter & protests when the town is unhappy

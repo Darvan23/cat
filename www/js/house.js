@@ -177,8 +177,8 @@ function updateMillerUpstairs() {
   const hour = state.dayTime * 24;
   state.houseFamily.forEach(f => {
     const plan = millerPlan(f.name, hour);
-    f.group.visible = (plan.loc === 'up');
-    if (plan.loc !== 'up') return;
+    f.group.visible = (plan.loc === 'up') && !millerStillOutside(f.name);
+    if (!f.group.visible) return;
     const bed = decorReg.upper && decorReg.upper[f.bed];   // sleep in the (movable) bed if it's there
     const sameBed = (f.name === 'Elena') ? 0.5 : (f.name === 'Daniel') ? -0.5 : 0;   // parents share
     if (bed) f.group.position.set(bed.position.x + sameBed, 0.5, bed.position.z + 0.55);
@@ -1004,6 +1004,13 @@ function sleepPose(f) {
   if (f.parts.arms) f.parts.arms.forEach(a => a.rotation.x = 0.28);
   if (f.parts.head) f.parts.head.rotation.x = 0.3;                                       // head settled on the pillow
 }
+// True while this Miller's outdoor walker is still visible out in town (walking home,
+// idling at the shops, out with you on an escort). The indoor copies must wait for the
+// walker to step through the front door, or you'd see the same Miller in two places at once.
+function millerStillOutside(name) {
+  for (const f of (state.family || [])) if (f.name === name) return !!(f.group && f.group.visible);
+  return false;
+}
 // The Millers only leave the poor house once YOU tell them to move into a home you own
 function millersMovedOut() { return !!(state.millerHome && state.owned && state.owned.homes && state.owned.homes.includes(state.millerHome)); }
 function updateMillerHomeLife(t) {
@@ -1015,7 +1022,7 @@ function updateMillerHomeLife(t) {
   if (state.homePlayBall) state.homePlayBall.visible = false;   // shown again only while the kids are playing
   state.homeFamily.forEach((f, i) => {
     const plan = millerPlan(f.name, hour);
-    f.group.visible = (plan.loc === 'down');
+    f.group.visible = (plan.loc === 'down') && !millerStillOutside(f.name);
     // 💭 Elena's shopping thought: she needs something from town (walk up → 💬 See what Elena needs)
     if (f.name === 'Elena') {
       const want = state.momRequest && !state.momRequest.told && f.group.visible;
@@ -1030,7 +1037,7 @@ function updateMillerHomeLife(t) {
         }
       } else if (f.needBubble) f.needBubble.visible = false;
     }
-    if (plan.loc !== 'down') return;
+    if (!f.group.visible) return;
     const legs = f.parts.legs;
     const h = f.group.scale.y || 1;
     // sit properly: drop the body so the hips rest on the seat, and fold the legs forward

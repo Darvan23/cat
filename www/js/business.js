@@ -121,7 +121,7 @@ function reputation() {
   const corr = (state.gov && state.gov.corruption) || 0;   // pocketing tax money shows up here before it ever reaches jail
   if (corr >= 55) return { label: 'Corrupt 🦹 (the town is onto you)', cls: 'bad' };
   if (corr >= 25) return { label: 'Shady 😼 (whispers of corruption)', cls: 'neutral' };
-  const score = (state.biz.jobsCreated || 0) + catsFreedCount() * 3 + housesBuiltCount() * 4;
+  const score = (state.biz.jobsCreated || 0) + catsFreedCount() * 3 + housesBuiltCount() * 4 + (state.workRep || 0);   // 👔 boss check-in chats count too
   if (score >= 45) return { label: 'Beloved 😻', cls: 'good' };
   if (score >= 15) return { label: 'Respected 🙂', cls: 'good' };
   if (score >= 1)  return { label: 'Known 😐', cls: 'neutral' };
