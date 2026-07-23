@@ -12,8 +12,8 @@ function csEnsureDom() {
 function csResize() {
   if (!_csCanvas) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  _csCanvas.width = Math.floor(window.innerWidth * dpr);
-  _csCanvas.height = Math.floor(window.innerHeight * dpr);
+  _csCanvas.width = Math.floor(viewW() * dpr);
+  _csCanvas.height = Math.floor(viewH() * dpr);
 }
 function playCutscene(beats, onDone) {
   csEnsureDom();

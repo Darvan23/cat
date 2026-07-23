@@ -293,7 +293,8 @@ function pickHelpItem(pid) {
   if (c.want && pid === c.want.id) {
     closeCheckout();
     const tip = 1 + Math.floor(Math.random() * 2);
-    state.coins += tip; document.getElementById('coin-count').textContent = state.coins;
+    state.coins += tip; state.earned = (state.earned || 0) + tip;
+    document.getElementById('coin-count').textContent = state.coins;
     if (state.job) state.job.helps = (state.job.helps || 0) + 1;
     if (typeof sfx === 'function') sfx('coin');
     setCustomerBubble(c, '❤️');
@@ -338,7 +339,7 @@ function pickChange(v) {
   if (v === c._change) {
     if (j) { j.till = (j.till || 0) + total; j.sales = (j.sales || 0) + 1; }
     const tip = Math.random() < 0.35 ? 1 : 0;
-    if (tip) { state.coins += tip; document.getElementById('coin-count').textContent = state.coins; }
+    if (tip) { state.coins += tip; state.earned = (state.earned || 0) + tip; document.getElementById('coin-count').textContent = state.coins; }
     if (typeof sfx === 'function') sfx('coin');
     setCustomerBubble(c, '😊');
     showNotif('💰 Perfect change! +' + total + ' 🪙 to the till' + (tip ? ' (+1 tip!)' : '') + ' — stash it in the safe.');
@@ -375,14 +376,20 @@ function workShiftContext(cp) {
       if ((state.job.till || 0) > 0 && Math.hypot(cp.x - 6.2, cp.z - (-4.4)) < 2.0) return { action: 'stashcash', label: '🏦 Stash ' + state.job.till + ' 🪙 in the safe' };
     }
   }
-  // at the owner's counter (they're running the till)
+  // at the owner's counter (they're running the till) — buying is handled by its own
+  // 🛍️ button (canShopBuy), so shopping never hides behind the job application
   const ow = state.workOwner;
   if (ow && ow.site === state.inWork && ow.group.visible && !ow.visiting && Math.hypot(cp.x - 0.6, cp.z - (-2.8)) < 2.3) {
     const s = JOB_SITES.find(x => x.id === state.inWork);
     if (!state.job && !jobBlocked() && s) { state.jobTarget = findEmployer(s.id); return { action: 'applyjob', label: '💼 Ask ' + ow.name + ' for the job · ' + s.wage + '🪙/day' }; }
-    if (!state.carryBag && !shiftRunning()) return { action: 'shopbuy', label: '🛍️ Buy something for home' };
   }
   return workRegisterContext(cp);
+}
+// Anyone can shop at the owner's counter — customer or employee, job or no job
+function canShopBuy(cp) {
+  const ow = state.workOwner;
+  return !!(ow && ow.site === state.inWork && ow.group.visible && !ow.visiting &&
+    Math.hypot(cp.x - 0.6, cp.z - (-2.8)) < 2.3 && !state.carryBag && !shiftRunning());
 }
 
 // ── 🛍️ Buying from a shop: pick an item, the owner bags it, you carry it home in your mouth ──

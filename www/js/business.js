@@ -121,7 +121,8 @@ function reputation() {
   const corr = (state.gov && state.gov.corruption) || 0;   // pocketing tax money shows up here before it ever reaches jail
   if (corr >= 55) return { label: 'Corrupt 🦹 (the town is onto you)', cls: 'bad' };
   if (corr >= 25) return { label: 'Shady 😼 (whispers of corruption)', cls: 'neutral' };
-  const score = (state.biz.jobsCreated || 0) + catsFreedCount() * 3 + housesBuiltCount() * 4 + (state.workRep || 0);   // 👔 boss check-in chats count too
+  const score = (state.biz.jobsCreated || 0) + catsFreedCount() * 3 + housesBuiltCount() * 4 + (state.workRep || 0)
+              + (state.goodDeeds || 0) * 2;   // 👔 boss chats count — and so does every kindness for the family
   if (score >= 45) return { label: 'Beloved 😻', cls: 'good' };
   if (score >= 15) return { label: 'Respected 🙂', cls: 'good' };
   if (score >= 1)  return { label: 'Known 😐', cls: 'neutral' };
@@ -130,6 +131,7 @@ function reputation() {
 
 // ── Dashboard ──
 function openBusiness() {
+  if (typeof sfx === 'function') sfx('ui');
   if (!state.gameStarted) return;
   state.uiOpen = true; renderBusiness();
   document.getElementById('business').classList.add('show');
@@ -152,6 +154,7 @@ function renderBusiness() {
   h += `<div>🧑‍💼 Jobs created<br><b>${state.biz.jobsCreated || 0}</b></div>`;
   h += `<div>🐱 Cats freed<br><b>${catsFreedCount()}</b></div>`;
   h += `<div>🏠 Homes built<br><b>${housesBuiltCount()}</b></div>`;
+  h += `<div>❤️ Good deeds<br><b>${state.goodDeeds || 0}</b></div>`;
   h += `<div>🏚️ Homeless<br><b>${state.homelessCount || 0}</b></div>`;
   h += `</div>`;
   if ((state.homelessCount || 0) > 0) h += `<div class="biz-note">🏚️ ${state.homelessCount} townsfolk are homeless after demolitions. Build homes (🏗️ planner) to take them in — the town won't grow again until everyone's housed.</div>`;

@@ -338,6 +338,7 @@ function exitHouse() {
 }
 
 function toggleHouse() {
+  if (typeof sfx === 'function' && (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.nearBuilding)) sfx('door');
   if (state.inHouse) exitHouse();
   else if (state.inShop) exitShop();
   else if (state.inShelter) exitShelter();
@@ -805,8 +806,9 @@ function currentDecorCtx() {
 }
 function editModeActive() { return state.editMode && currentDecorCtx() !== null; }
 function ndcFrom(x, y) {
-  const r = canvas.getBoundingClientRect();
-  return new THREE.Vector2(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+  // x,y arrive in GAME space (input handlers convert via gamePoint); the canvas fills
+  // the whole game viewport, so normalize by the game dims — correct in rotated mode too
+  return new THREE.Vector2((x / viewW()) * 2 - 1, -(y / viewH()) * 2 + 1);
 }
 function floorPoint(x, y) {
   _decorRay.setFromCamera(ndcFrom(x, y), camera);

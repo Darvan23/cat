@@ -5,19 +5,47 @@
 document.addEventListener('keydown', e => { state.keys[e.key] = true; });
 document.addEventListener('keyup', e => { state.keys[e.key] = false; });
 
-function bindBtn(id, key) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('touchstart', e => { e.preventDefault(); state.touching[key] = true; el.classList.add('pressed'); });
-  el.addEventListener('touchend', e => { e.preventDefault(); state.touching[key] = false; el.classList.remove('pressed'); });
-  el.addEventListener('mousedown', () => { state.touching[key] = true; el.classList.add('pressed'); });
-  el.addEventListener('mouseup', () => { state.touching[key] = false; el.classList.remove('pressed'); });
+// ─── 360° virtual joystick: drag the knob to walk, push PAST the ring to sprint ───
+const joy = { active: false, id: null, x: 0, y: 0, sprint: false };
+const joyBase = document.getElementById('joystick');
+const joyKnob = document.getElementById('joy-knob');
+function joySet(clientX, clientY) {
+  const R = joyBase.getBoundingClientRect().width / 2;   // square → same size under rotation
+  const rel = gameRelPoint(joyBase, clientX, clientY);   // game-space, works rotated or not
+  let dx = rel.x - R, dy = rel.y - R;
+  const dist = Math.hypot(dx, dy);
+  joy.sprint = dist > R;                      // knob dragged outside the ring → sprint
+  const reach = Math.min(dist, R * 1.35);     // knob may poke a little past the rim
+  if (dist > 0.001) { dx = dx / dist * reach; dy = dy / dist * reach; }
+  joy.x = dx / R; joy.y = dy / R;
+  joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  joyBase.classList.toggle('sprint', joy.sprint);
 }
-bindBtn('btn-up', 'up'); bindBtn('btn-down', 'down');
-bindBtn('btn-left', 'left'); bindBtn('btn-right', 'right');
-bindBtn('btn-rotL', 'rotL'); bindBtn('btn-rotR', 'rotR');
-bindBtn('btn-tiltU', 'tiltU'); bindBtn('btn-tiltD', 'tiltD');
-bindBtn('btn-run', 'run');   // hold to sprint (Shift on a keyboard)
+function joyEnd() {
+  joy.active = false; joy.id = null; joy.x = 0; joy.y = 0; joy.sprint = false;
+  joyKnob.style.transform = '';
+  joyBase.classList.remove('sprint');
+}
+if (joyBase) {
+  joyBase.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (joy.active) return;
+    const t = e.changedTouches[0];
+    joy.active = true; joy.id = t.identifier;
+    joySet(t.clientX, t.clientY);
+  }, { passive: false });
+  joyBase.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (t.identifier === joy.id) joySet(t.clientX, t.clientY);
+  }, { passive: false });
+  const joyTouchDone = e => { for (const t of e.changedTouches) if (t.identifier === joy.id) joyEnd(); };
+  joyBase.addEventListener('touchend', joyTouchDone);
+  joyBase.addEventListener('touchcancel', joyTouchDone);
+  // mouse fallback (playing in a desktop browser)
+  joyBase.addEventListener('mousedown', e => { joy.active = true; joy.id = 'mouse'; joySet(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => { if (joy.id === 'mouse') joySet(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', () => { if (joy.id === 'mouse') joyEnd(); });
+}
 
 // Sprint stamina meter: drains while running, refills while resting
 function updateStaminaUI(sprinting) {
@@ -27,11 +55,7 @@ function updateStaminaUI(sprinting) {
     fill.style.width = (R.stamina / R.max * 100) + '%';
     fill.classList.toggle('cooldown', R.cooldown);
   }
-  const btn = document.getElementById('btn-run');
-  if (btn) {
-    btn.classList.toggle('cooldown', R.cooldown);
-    btn.classList.toggle('active', !!sprinting);
-  }
+  if (joyBase) joyBase.classList.toggle('cooldown', R.cooldown);
 }
 
 // Drag on the 3D view to look around (orbit the camera)
@@ -56,18 +80,49 @@ function camDragEnd() {
   if (typeof editorPointerUp === 'function') editorPointerUp();
   camDrag = false;
 }
-canvas.addEventListener('mousedown', e => camDragStart(e.clientX, e.clientY));
-window.addEventListener('mousemove', e => camDragMove(e.clientX, e.clientY));
+canvas.addEventListener('mousedown', e => { if (joy.id !== 'mouse') { const p = gamePoint(e.clientX, e.clientY); camDragStart(p.x, p.y); } });
+window.addEventListener('mousemove', e => { const p = gamePoint(e.clientX, e.clientY); camDragMove(p.x, p.y); });
 window.addEventListener('mouseup', camDragEnd);
-canvas.addEventListener('touchstart', e => { const tch = e.touches[0]; camDragStart(tch.clientX, tch.clientY); }, { passive: true });
-canvas.addEventListener('touchmove', e => { const tch = e.touches[0]; camDragMove(tch.clientX, tch.clientY); }, { passive: true });
-canvas.addEventListener('touchend', camDragEnd);
+// Whole-screen 360° look: track ONE finger by id, so the joystick thumb never fights the camera thumb
+let camTouchId = null;
+canvas.addEventListener('touchstart', e => {
+  if (camTouchId !== null) return;
+  const t = e.changedTouches[0];
+  camTouchId = t.identifier;
+  const p = gamePoint(t.clientX, t.clientY);
+  camDragStart(p.x, p.y);
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) if (t.identifier === camTouchId) { const p = gamePoint(t.clientX, t.clientY); camDragMove(p.x, p.y); }
+}, { passive: true });
+const camTouchDone = e => {
+  for (const t of e.changedTouches) if (t.identifier === camTouchId) { camTouchId = null; camDragEnd(); }
+};
+canvas.addEventListener('touchend', camTouchDone);
+canvas.addEventListener('touchcancel', camTouchDone);
 
 document.getElementById('btn-jump').addEventListener('click', doJump);
 document.addEventListener('keydown', e => {
   if (e.code === 'Space') doJump();
   if (e.code === 'KeyE') doAction();   // keyboard shortcut still works; the on-screen "Act" button is gone
 });
+
+// ─── ☰ utility tray: the toolbar hides behind one button; tap the world to tuck it away ───
+function toggleToolbar(force) {
+  const tb = document.getElementById('toolbar'), mt = document.getElementById('menu-toggle');
+  if (!tb) return;
+  const open = force != null ? force : !tb.classList.contains('open');
+  tb.classList.toggle('open', open);
+  if (mt) {
+    mt.classList.toggle('open', open);
+    const ic = document.getElementById('menu-icon'); if (ic) ic.textContent = open ? '✕' : '☰';
+    mt.classList.remove('tut-glow');   // opening the tray answers the tutorial arrow
+  }
+  if (typeof updateInboxBadge === 'function') updateInboxBadge();   // badge shows on ☰ only while closed
+  if (open && typeof sfx === 'function') sfx('ui');
+}
+canvas.addEventListener('mousedown', () => toggleToolbar(false));
+canvas.addEventListener('touchstart', () => toggleToolbar(false), { passive: true });
 
 // ─── Voice (browser text-to-speech) ─────────────────────────────────────────────
 const synth = window.speechSynthesis;
@@ -131,7 +186,10 @@ function toggleVoice() {
 }
 
 // ─── Sound: a tiny procedural engine (no asset files — works offline) ─────────────
-let audioCtx = null, masterGain = null, musicTimer = null;
+// Every voice runs through a lowpass filter with soft attack/decay, so nothing has
+// the harsh raw-oscillator edge. Bells are built from real partials; percussive
+// sounds use short filtered noise bursts.
+let audioCtx = null, masterGain = null, musicTimer = null, _noiseBuf = null;
 function initAudio() {
   if (audioCtx) { if (audioCtx.state === 'suspended') audioCtx.resume(); return; }
   const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -141,26 +199,81 @@ function initAudio() {
   masterGain.connect(audioCtx.destination);
   startMusic();
 }
-function tone(freq, start, dur, type = 'sine', vol = 0.3) {
+function tone(freq, start, dur, type = 'sine', vol = 0.3, opts = {}) {
   if (!audioCtx) return;
   const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = type; o.frequency.value = freq;
+  const t0 = audioCtx.currentTime + start;
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t0);
+  if (opts.slideTo) o.frequency.exponentialRampToValueAtTime(opts.slideTo, t0 + dur);   // pitch bends (chirps, meows)
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + (opts.attack != null ? opts.attack : 0.015));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  const f = audioCtx.createBiquadFilter();
+  f.type = 'lowpass'; f.frequency.value = opts.cutoff || 5200; f.Q.value = 0.6;
+  o.connect(f); f.connect(g); g.connect(masterGain);
+  if (opts.vibrato) {   // amplitude/pitch flutter — the heart of a believable purr
+    const lfo = audioCtx.createOscillator(), lg = audioCtx.createGain();
+    lfo.frequency.value = opts.vibrato; lg.gain.value = opts.vibratoDepth || freq * 0.05;
+    lfo.connect(lg); lg.connect(o.frequency);
+    lfo.start(t0); lfo.stop(t0 + dur + 0.05);
+  }
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function noiseBurst(start, dur, vol, cutoff = 3000, ftype = 'lowpass') {
+  if (!audioCtx) return;
+  if (!_noiseBuf) {
+    _noiseBuf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 0.5), audioCtx.sampleRate);
+    const d = _noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const src = audioCtx.createBufferSource(); src.buffer = _noiseBuf; src.loop = true;
+  const f = audioCtx.createBiquadFilter(); f.type = ftype; f.frequency.value = cutoff;
+  const g = audioCtx.createGain();
   const t0 = audioCtx.currentTime + start;
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(vol, t0 + 0.012);
+  g.gain.linearRampToValueAtTime(vol, t0 + 0.008);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g); g.connect(masterGain);
-  o.start(t0); o.stop(t0 + dur + 0.03);
+  src.connect(f); f.connect(g); g.connect(masterGain);
+  src.start(t0); src.stop(t0 + dur + 0.03);
+}
+// A little bell: fundamental + two soft partials — far sweeter than a raw square wave
+function bell(freq, start, dur, vol) {
+  tone(freq, start, dur, 'sine', vol);
+  tone(freq * 2, start, dur * 0.6, 'sine', vol * 0.4);
+  tone(freq * 3, start, dur * 0.35, 'sine', vol * 0.18);
 }
 function sfx(name) {
   if (!audioCtx || !state.voiceOn) return;
   switch (name) {
-    case 'coin':    tone(880, 0, 0.08, 'square', 0.18); tone(1320, 0.06, 0.1, 'square', 0.18); break;
-    case 'catch':   tone(320, 0, 0.1, 'sawtooth', 0.18); tone(640, 0.04, 0.08, 'square', 0.14); break;
-    case 'purr':    tone(120, 0, 0.45, 'sine', 0.22); tone(92, 0, 0.45, 'sine', 0.18); break;
-    case 'eat':     tone(220, 0, 0.09, 'sine', 0.22); tone(170, 0.08, 0.12, 'sine', 0.18); break;
-    case 'upgrade': [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.28, 'triangle', 0.2)); break;
-    case 'sell':    tone(660, 0, 0.09, 'square', 0.18); tone(990, 0.08, 0.14, 'square', 0.18); break;
+    // money in: a sweet double coin-ding
+    case 'coin':    bell(1180, 0, 0.16, 0.16); bell(1568, 0.07, 0.22, 0.14); break;
+    // pounce / success: a soft thump + rising chirp
+    case 'catch':   noiseBurst(0, 0.06, 0.16, 1200); tone(420, 0.02, 0.12, 'triangle', 0.16, { slideTo: 900 }); break;
+    // a real cat purr: low rumble with a ~26Hz flutter
+    case 'purr':    tone(85, 0, 0.7, 'sine', 0.22, { vibrato: 26, vibratoDepth: 22, cutoff: 320 });
+                    tone(130, 0, 0.7, 'sine', 0.10, { vibrato: 26, vibratoDepth: 30, cutoff: 420 }); break;
+    // soft nom-nom
+    case 'eat':     tone(300, 0, 0.07, 'sine', 0.2, { slideTo: 180 }); tone(300, 0.12, 0.09, 'sine', 0.18, { slideTo: 160 }); break;
+    // level-up: warm rising arpeggio with a sparkle on top
+    case 'upgrade': [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.07, 0.3, 'triangle', 0.14, { cutoff: 3200 }));
+                    bell(2093, 0.3, 0.35, 0.08); break;
+    // cash register "ka-ching": mechanical click + bright bell
+    case 'sell':    noiseBurst(0, 0.04, 0.2, 5000, 'highpass'); bell(1318, 0.045, 0.3, 0.16); break;
+    // jump: a quick upward chirp
+    case 'jump':    tone(330, 0, 0.14, 'triangle', 0.16, { slideTo: 660 }); break;
+    // a friendly little meow (two pitch-bent syllables)
+    case 'meow':    tone(620, 0, 0.16, 'triangle', 0.14, { slideTo: 880, cutoff: 2400 });
+                    tone(880, 0.14, 0.28, 'triangle', 0.13, { slideTo: 480, cutoff: 2200 }); break;
+    // a door: soft thunk with a hint of creak
+    case 'door':    noiseBurst(0, 0.09, 0.18, 700); tone(140, 0.01, 0.14, 'sine', 0.16, { slideTo: 90 }); break;
+    // UI tap: a tiny woodblock click
+    case 'ui':      noiseBurst(0, 0.025, 0.1, 2600, 'bandpass'); tone(660, 0, 0.05, 'sine', 0.08); break;
+    // mail arrives: a gentle two-note doorbell
+    case 'mail':    bell(988, 0, 0.3, 0.13); bell(784, 0.16, 0.4, 0.13); break;
+    // something bad: a soft descending "aww"
+    case 'sad':     tone(392, 0, 0.3, 'triangle', 0.13, { slideTo: 294, cutoff: 1800 });
+                    tone(294, 0.26, 0.45, 'triangle', 0.12, { slideTo: 220, cutoff: 1500 }); break;
   }
 }
 function startMusic() {
@@ -170,7 +283,15 @@ function startMusic() {
   musicTimer = setInterval(() => {
     if (!state.voiceOn || !state.gameStarted) return;
     const night = isNight();
-    chords[i % chords.length].forEach((f, k) => tone(f * (night ? 0.5 : 1), k * 0.14, night ? 2.2 : 1.7, 'sine', 0.05));
+    chords[i % chords.length].forEach((f, k) => tone(f * (night ? 0.5 : 1), k * 0.14, night ? 2.2 : 1.7, 'sine', 0.05, { cutoff: 1400 }));
+    // living-town ambience: birdsong by day, crickets by night (quiet & occasional)
+    if (night) {
+      if (Math.random() < 0.55) for (let c = 0; c < 4; c++) tone(4400, 0.3 + c * 0.09, 0.05, 'sine', 0.022);
+    } else if (Math.random() < 0.4) {
+      const b = 2200 + Math.random() * 900;
+      tone(b, 0.2, 0.09, 'sine', 0.03, { slideTo: b * 1.35 });
+      tone(b * 1.1, 0.34, 0.07, 'sine', 0.028, { slideTo: b * 0.9 });
+    }
     i++;
   }, 2600);
 }
@@ -182,7 +303,7 @@ function saveGame() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       v: 1,
-      coins: state.coins, earned: state.earned, houseFund: state.houseFund,
+      coins: state.coins, earned: state.earned, goodDeeds: state.goodDeeds, houseFund: state.houseFund,
       needs: state.needs, dayTime: state.dayTime,
       catId: state.chosenCat ? state.chosenCat.id : null, catName: state.catName, chosenCat: state.chosenCat,
       catCustom: state.catCustom,
@@ -209,7 +330,10 @@ function loadSave() {
   try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; }
 }
 function applySave(s) {
-  state.coins = s.coins || 0; state.earned = s.earned || 0; state.houseFund = s.houseFund || 0;
+  state.coins = s.coins || 0; state.earned = s.earned || 0; state.goodDeeds = s.goodDeeds || 0; state.houseFund = s.houseFund || 0;
+  // Older saves: till/tip income never counted toward `earned`, locking the Mayor race
+  // forever. Lifetime earnings can't be BELOW the coins in your pocket — repair the ledger.
+  if (state.earned < state.coins) state.earned = state.coins;
   if (s.needs) state.needs = s.needs;
   if (typeof s.dayTime === 'number') state.dayTime = s.dayTime;
   state.storyAct = s.storyAct || 1; state.crickMet = !!s.crickMet; state.rentActive = !!s.rentActive;
@@ -291,6 +415,7 @@ function applySave(s) {
   if (typeof applyStructXf === 'function') applyStructXf();        // re-apply structures you moved
   if (typeof rebuildRubble === 'function') rebuildRubble();        // re-raise demolition rubble to clean up
   if (typeof applyPoliticsLoad === 'function') applyPoliticsLoad();
+  if (typeof checkPolitics === 'function') checkPolitics();   // repaired ledgers may cross the fame goal right now
   applyFamilyPresence();
   catGroup.position.set(0, 0, 0); catGroup.rotation.y = 0;
   if (state.gov && state.gov.jailed && typeof enterJail === 'function') enterJail();   // resume a sentence in progress
@@ -610,7 +735,7 @@ function millerTalk(f) {
   showDialogue(f.name + ' 🏠', millerTalkLine(f), 3800);
 }
 
-// ── Kids' escort quest: a kid asks you to walk them to the park & back for a reward ──
+// ── Kids' escort quest: a kid asks you to walk them to the park & back — a kindness that builds your reputation ──
 function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail); }
 function anyKidWantsPark() { return state.family.some(f => f.wantsPark); }
 function startEscort(kid) {
@@ -627,11 +752,14 @@ function endEscort(done) {
   kid.phase = 'home';
   state.escort = null;
   if (done) {
-    const reward = 60;
-    state.coins += reward; state.earned = (state.earned || 0) + reward;
-    document.getElementById('coin-count').textContent = state.coins;
-    if (typeof sfx === 'function') sfx('coin');
-    showDialogue(kid.name + ' 🏠', 'That was the best day ever! Mum said to give you this — thank you! +' + reward + ' 🪙 ❤️', 4600);
+    // family kindnesses pay in REPUTATION, not coins — the town notices a cat like that
+    state.goodDeeds = (state.goodDeeds || 0) + 1;
+    if (typeof addGoodwill === 'function') addGoodwill(2, 'Walked a kid to the park');
+    if (typeof sfx === 'function') sfx('purr');
+    spawnHeart(); setTimeout(spawnHeart, 300);
+    showDialogue(kid.name + ' 🏠', 'That was the best day ever! Mum says you\'re the kindest cat in town. ❤️', 4600);
+    showNotif('❤️ A good deed — your reputation grows (see 📊)');
+    if (typeof saveGame === 'function') saveGame();
   }
 }
 function updateEscort() {
@@ -678,8 +806,14 @@ function updateEscort() {
 function updateContextButton() {
   const btn = document.getElementById('context-btn');
   if (!btn) return;
-  if (state.uiOpen || mg.active) { btn.classList.remove('show'); state.context = null; return; }
+  const bb = document.getElementById('buy-btn');
+  if (state.uiOpen || mg.active) {
+    btn.classList.remove('show'); if (bb) bb.classList.remove('show');
+    state.context = null; return;
+  }
   const cp = catGroup.position;
+  // 🛍️ its own button: at a shop counter you can ALWAYS buy — job or no job
+  if (bb) bb.classList.toggle('show', !!(state.inWork && typeof canShopBuy === 'function' && canShopBuy(cp)));
   if (state.catSitting) { state.context = 'getup'; btn.textContent = '🐾 Get up'; btn.classList.add('show'); return; }
   if (state.inBoughtHome) {   // tell the Millers to move into (or out of) this house
     const here = state.currentBoughtHome;
@@ -1164,9 +1298,19 @@ function millerDayRoute(name) {
 }
 function stepFamilyTo(f, tx, tz) {
   const p = f.group.position;
-  const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz);
+  // a waypoint the player built on top of gets pulled out to the nearest clear spot
+  const safe = collide(tx, tz, worldColliders, 0.25);
+  tx = safe.x; tz = safe.z;
+  // walk via a detour waypoint when something blocks the direct line
+  let gx = tx, gz = tz;
+  if (f.det) {
+    if (Math.hypot(f.det.x - p.x, f.det.z - p.z) < 0.18) f.det = null;
+    else { gx = f.det.x; gz = f.det.z; }
+  }
+  const dx = gx - p.x, dz = gz - p.z, d = Math.hypot(dx, dz);
   if (d < 0.15) {
-    f.blockT = 0;
+    if (f.det) { f.det = null; return false; }   // reached the sidestep — carry on to the waypoint
+    f.blockT = 0; f.detN = 0;
     if (f.parts.legs) f.parts.legs.forEach(l => l.rotation.x *= 0.8);
     if (f.parts.arms) f.parts.arms.forEach(a => a.rotation.x *= 0.8);
     f.group.rotation.z *= 0.8; p.y *= 0.7;
@@ -1175,13 +1319,17 @@ function stepFamilyTo(f, tx, tz) {
   const W = MILLER_WALK[f.name];
   const step = Math.min((W && W.sp) || 0.028, d);
   // Respect walls & trees like everyone else (the player can move buildings onto the
-  // family's route). Blocked too long → treat the waypoint as reached and move on,
-  // so a Miller can neither ghost through a building nor shove it forever.
+  // family's route). Blocked → steer around it; blocked too long → treat the waypoint
+  // as reached and move on, so a Miller can neither ghost through a building nor shove it forever.
   const nx = p.x + dx / d * step, nz = p.z + dz / d * step;
   const wc = collide(nx, nz, worldColliders, 0.2);
   if (Math.hypot(wc.x - nx, wc.z - nz) > 0.02) {
     f.blockT = (f.blockT || 0) + 1;
-    if (f.blockT > 55) { f.blockT = 0; return true; }
+    if (f.blockT >= 8 && (f.detN || 0) < 5 && typeof findDetour === 'function') {
+      const dt = findDetour(p.x, p.z, tx, tz);
+      if (dt) { f.det = dt; f.detN = (f.detN || 0) + 1; f.blockT = 0; }
+    }
+    if (f.blockT > 55) { f.blockT = 0; f.det = null; f.detN = 0; return true; }
   } else f.blockT = 0;
   p.x = wc.x; p.z = wc.z;
   const heading = Math.atan2(dx, dz);
@@ -1408,6 +1556,7 @@ function nearestFreedCat(pos, range) {
 }
 function playWithCat(fc) {
   if (!fc) return;
+  if (typeof sfx === 'function') sfx('meow');                  // a happy hello from your friend
   _catHappyT = 2.2;                                            // you bounce along with them the whole time
   fc.playT = 2.6;                                              // play-bow → pounces → happy spin
   spawnHeart(); setTimeout(spawnHeart, 350); setTimeout(spawnHeart, 800); setTimeout(spawnHeart, 1350); setTimeout(spawnHeart, 1900);
@@ -1461,18 +1610,33 @@ function updateFreedCat(c) {
     c.body.scale.y = 0.96 + Math.sin(t * 2 + c.phase) * 0.02;
     c.group.rotation.y += Math.sin(t * 0.6 + c.phase) * 0.0025;
     if (c.wtimer <= 0) {
-      const a = Math.random() * Math.PI * 2, r = c.radius * (0.3 + Math.random() * 0.7);
-      c.target = { x: c.home.x + Math.cos(a) * r, z: c.home.z + Math.sin(a) * r };
-      c.wstate = 'walk';
+      // like the townsfolk: only prowl to a spot with a CLEAR line — never straight into a tree
+      for (let k = 0; k < 6; k++) {
+        const a = Math.random() * Math.PI * 2, r = c.radius * (0.3 + Math.random() * 0.7);
+        const tx = c.home.x + Math.cos(a) * r, tz = c.home.z + Math.sin(a) * r;
+        if (typeof walkLineClear === 'function' && !walkLineClear(c.wx, c.wz, tx, tz)) continue;
+        c.target = { x: tx, z: tz };
+        c.wstate = 'walk';
+        break;
+      }
+      if (c.wstate !== 'walk') c.wtimer = 2 + Math.random() * 4;   // boxed in — lounge a while & retry
     }
     return;
   }
-  const dx = c.target.x - c.wx, dz = c.target.z - c.wz, dist = Math.hypot(dx, dz);
-  if (dist < 0.12 || (c.blockT || 0) > 100) { c.blockT = 0; c.wstate = 'idle'; c.wtimer = 1.5 + Math.random() * 4; c.group.position.y = 0; return; }
+  const goal = c.detour || c.target;
+  const dx = goal.x - c.wx, dz = goal.z - c.wz, dist = Math.hypot(dx, dz);
+  if (dist < 0.12 && c.detour) { c.detour = null; return; }   // rounded the obstacle — back on course
+  if (dist < 0.12 || (c.blockT || 0) > 40) { c.blockT = 0; c.detour = null; c.detourN = 0; c.wstate = 'idle'; c.wtimer = 1.5 + Math.random() * 4; c.group.position.y = 0; return; }
   const step = Math.min(0.045, dist);
   const px2 = c.wx + dx / dist * step, pz2 = c.wz + dz / dist * step;
   const cc2 = collide(px2, pz2, worldColliders, 0.2);      // cats don't ghost through trees & walls either
-  c.blockT = (Math.hypot(cc2.x - px2, cc2.z - pz2) > 0.02) ? (c.blockT || 0) + 1 : 0;
+  if (Math.hypot(cc2.x - px2, cc2.z - pz2) > 0.02) {
+    c.blockT = (c.blockT || 0) + 1;
+    if (c.blockT >= 8 && (c.detourN || 0) < 5 && typeof findDetour === 'function') {
+      const dt = findDetour(c.wx, c.wz, c.target.x, c.target.z);
+      if (dt) { c.detour = dt; c.detourN = (c.detourN || 0) + 1; c.blockT = 0; }
+    }
+  } else c.blockT = 0;
   c.wx = cc2.x; c.wz = cc2.z;
   c.group.position.x = c.wx; c.group.position.z = c.wz;
   const heading = Math.atan2(dx, dz);
@@ -1576,9 +1740,11 @@ function collectShopEarnings() {
   const amt = Math.floor(state.shopTill || 0);
   if (amt < 1) { showNotif('The till is empty — let the shop trade a while'); return; }
   state.coins += amt; state.shopTill -= amt;
+  state.earned = (state.earned || 0) + amt;                    // honest income — counts toward your fame (the road to Mayor)
   document.getElementById('coin-count').textContent = state.coins;
   sfx('coin');
   showDialogue('Daniel 🔧', `Here's your share, ${state.catName} — ${amt} coins! The more the shop runs, the more it makes. 😺`, 4200);
+  if (typeof checkPolitics === 'function') checkPolitics();
   saveGame();
 }
 
@@ -1607,9 +1773,11 @@ function collectBizTill() {
   const amt = Math.floor((state.bizTill && state.bizTill[id]) || 0);
   if (amt < 1) { showNotif('The till is empty — open up and let it trade a while'); return; }
   state.coins += amt; state.bizTill[id] -= amt;
+  state.earned = (state.earned || 0) + amt;                    // honest income — counts toward your fame (the road to Mayor)
   document.getElementById('coin-count').textContent = state.coins;
   sfx('coin');
   showNotif('💰 Collected ' + amt + ' 🪙 from the ' + bizDef(id).name + '! Hire staff so it runs without you.');
+  if (typeof checkPolitics === 'function') checkPolitics();
   saveGame();
 }
 // ─── 🛍️ The shopping bag: bought at a shop, carried home in your mouth ───────────
@@ -1678,9 +1846,10 @@ function giveBagToElena() {
   if (typeof sfx === 'function') sfx('purr');
   if (match) {
     state.momRequest = null;
-    const thanks = 20 + Math.floor(Math.random() * 11);
-    state.coins += thanks; document.getElementById('coin-count').textContent = state.coins;
-    showDialogue('Elena 🏠', 'The ' + b.item.name.toLowerCase() + '! Exactly what we needed — you carried it all that way! Here, a little thank-you. ❤️ (+' + thanks + ' 🪙)', 5600);
+    // running Mum's errand is a kindness, not a paid job — it builds your reputation
+    state.goodDeeds = (state.goodDeeds || 0) + 1;
+    showDialogue('Elena 🏠', 'The ' + b.item.name.toLowerCase() + '! Exactly what we needed — you carried it all that way! You really are one of the family. ❤️', 5600);
+    showNotif('❤️ A good deed — your reputation grows (see 📊)');
     if (typeof addGoodwill === 'function') addGoodwill(5, 'You fetched the shopping');
   } else {
     showDialogue('Elena 🏠', b.item.e + ' ' + b.item.name + '… for us? You sweet little thing. Every bit helps. ❤️', 4800);
@@ -1821,7 +1990,7 @@ function doJump() {
   const inside = state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail;
   const fx = Math.sin(catGroup.rotation.y), fz = Math.cos(catGroup.rotation.y);
   state.jumpVx = inside ? 0 : fx * 0.05; state.jumpVz = inside ? 0 : fz * 0.05;
-  if (typeof sfx === 'function') sfx('catch');
+  if (typeof sfx === 'function') sfx('jump');
   if (!state.inHouse) {
     const c = nearestCritter(catGroup.position, 1.7); if (c) catchCritter(c);   // pounce on park critters
     const m = state.strayMouse;                                                  // …or the stray town mouse
@@ -1994,6 +2163,7 @@ function drawFullMap() {
   g.strokeStyle = 'rgba(90,74,58,0.45)'; g.lineWidth = 7; rr(5, 5, D - 10, D - 10, 16); g.stroke();
 }
 function openMap() {
+  if (typeof sfx === 'function') sfx('ui');
   if (!state.gameStarted) return;
   state.uiOpen = true; drawFullMap();
   document.getElementById('map').classList.add('show');
@@ -2057,25 +2227,24 @@ function animate() {
   // never be seen in two places at once.
   updateFamilyRoutine(t);
 
-  // Camera orbit (look-pad buttons; dragging is handled in the input section)
-  if (state.touching['rotL']) state.camYaw += 0.035;
-  if (state.touching['rotR']) state.camYaw -= 0.035;
-  if (state.touching['tiltU']) state.camHeight = Math.min(16, state.camHeight + 0.18);
-  if (state.touching['tiltD']) state.camHeight = Math.max(3, state.camHeight - 0.18);
-
-  // Movement (relative to where the camera is facing)
-  const up    = state.keys['ArrowUp']   || state.keys['w'] || state.touching['up'];
-  const down  = state.keys['ArrowDown'] || state.keys['s'] || state.touching['down'];
-  const left  = state.keys['ArrowLeft'] || state.keys['a'] || state.touching['left'];
-  const right = state.keys['ArrowRight']|| state.keys['d'] || state.touching['right'];
-  const inF = (up ? 1 : 0) - (down ? 1 : 0);
-  const inS = (right ? 1 : 0) - (left ? 1 : 0);
-  const moving = !state.uiOpen && !state.cinematic && (inF !== 0 || inS !== 0);
+  // Movement (relative to where the camera is facing) — keyboard OR the 360° joystick
+  const up    = state.keys['ArrowUp']   || state.keys['w'];
+  const down  = state.keys['ArrowDown'] || state.keys['s'];
+  const left  = state.keys['ArrowLeft'] || state.keys['a'];
+  const right = state.keys['ArrowRight']|| state.keys['d'];
+  let inF = (up ? 1 : 0) - (down ? 1 : 0);
+  let inS = (right ? 1 : 0) - (left ? 1 : 0);
+  let moveMag = (inF !== 0 || inS !== 0) ? 1 : 0;
+  if (joy.active && Math.hypot(joy.x, joy.y) > 0.18) {   // dead zone so a resting thumb doesn't drift
+    inF = -joy.y; inS = joy.x;                           // stick up = walk away from the camera
+    moveMag = Math.min(1, Math.hypot(joy.x, joy.y));     // gentle tilt = slow prowl, full tilt = full stride
+  }
+  const moving = !state.uiOpen && !state.cinematic && moveMag > 0;
   if (state.catSitting && (moving || state.isJumping)) catStandUp();   // get up to walk/hop
 
   // ── Sprint: hold Run to dash for up to 5s, then a 3s rest before running again ──
   const R = state.run, RDT = 0.016;
-  const runHeld = state.keys['Shift'] || state.touching['run'];
+  const runHeld = state.keys['Shift'] || joy.sprint;   // keyboard Shift, or the knob pushed past the ring
   // too hungry or sleepy to sprint
   const tired = state.needs.energy < 12 || state.needs.hunger < 12;
   const sprinting = runHeld && moving && R.stamina > 0 && !R.cooldown && state.needs.energy > 10 && state.needs.hunger > 10 && !state.carryBag;   // can't run with a bag in your mouth
@@ -2087,7 +2256,7 @@ function animate() {
     if (R.cooldown && R.stamina >= R.max) R.cooldown = false;
   }
   updateStaminaUI(sprinting);
-  const speed = (sprinting ? 0.13 : 0.07) * (tired ? 0.6 : 1) * (state.carryBag ? 0.55 : 1);   // sluggish when run-down; a careful plod with the shopping
+  const speed = (sprinting ? 0.17 : 0.095) * moveMag * (tired ? 0.6 : 1) * (state.carryBag ? 0.55 : 1);   // sluggish when run-down; a careful plod with the shopping
   if (moving) {
     const fX = -Math.sin(state.camYaw), fZ = -Math.cos(state.camYaw);
     const rX =  Math.cos(state.camYaw), rZ = -Math.sin(state.camYaw);
@@ -2104,7 +2273,7 @@ function animate() {
     state._lean = (state._lean || 0) * 0.82 + turnStep * (sprinting ? 0.9 : 0.6);   // lean builds with sharp turns, relaxes after
     state._lean = Math.max(-0.3, Math.min(0.3, state._lean));
     // Walking/running gait — a springy diagonal trot, faster & bouncier when sprinting
-    const gait = sprinting ? 15 : 8.5, amp = sprinting ? 0.72 : 0.52;
+    const gait = sprinting ? 17 : 10, amp = sprinting ? 0.72 : 0.52;   // paws keep pace with the quicker stride
     legs.forEach((leg, i) => { const phase = (i === 0 || i === 3) ? 0 : Math.PI; leg.rotation.x = Math.sin(t * gait + phase) * amp; });
     const bounce = Math.abs(Math.sin(t * gait));
     catGroup.position.y = (state.catBaseY || 0) + bounce * (sprinting ? 0.08 : 0.045);   // springy bob (rides the castle tier in the shelter)

@@ -9,17 +9,21 @@ function inboxAdd(from, subject, body) {
   inboxList().unshift({ id: 'm' + Date.now() + Math.floor(Math.random() * 1e4), from, subject, body, read: false, day: state.dayCount || 0 });
   updateInboxBadge();
   showNotif('📬 New mail: ' + subject);
-  if (typeof sfx === 'function') sfx('coin');
+  if (typeof sfx === 'function') sfx('mail');
   if (typeof saveGame === 'function') saveGame();
 }
 function updateInboxBadge() {
+  const u = inboxUnread(), label = u > 9 ? '9+' : u;
   const n = document.getElementById('inbox-count');
-  if (!n) return;
-  const u = inboxUnread();
-  n.textContent = u > 9 ? '9+' : u;
-  n.style.display = u > 0 ? 'flex' : 'none';
+  if (n) { n.textContent = label; n.style.display = u > 0 ? 'flex' : 'none'; }
+  // mirror on the ☰ button while the tray is tucked away, so new mail is never missed
+  const m = document.getElementById('menu-badge');
+  const trayOpen = (document.getElementById('toolbar') || {}).classList ? document.getElementById('toolbar').classList.contains('open') : false;
+  if (m) { m.textContent = label; m.style.display = (u > 0 && !trayOpen) ? 'flex' : 'none'; }
 }
-function openInbox() { state.uiOpen = true; renderInbox(); document.getElementById('inbox').classList.add('show'); }
+function openInbox() {
+  if (typeof sfx === 'function') sfx('ui');
+  state.uiOpen = true; renderInbox(); document.getElementById('inbox').classList.add('show'); }
 function closeInbox() { state.uiOpen = false; document.getElementById('inbox').classList.remove('show'); }
 function inboxOpenMail(id) {
   const m = inboxList().find(x => x.id === id);
@@ -60,7 +64,15 @@ function renderTutorial() {
   el.style.display = 'block';
   document.getElementById('tut-text').innerHTML = s.text;
   document.getElementById('tut-next').textContent = tut.i < tut.steps.length - 1 ? ('Next ▶ (' + (tut.i + 1) + '/' + tut.steps.length + ')') : '✓ Got it!';
-  if (s.glow) { const target = document.getElementById(s.glow); if (target) target.classList.add('tut-glow'); }
+  if (s.glow) {
+    const target = document.getElementById(s.glow);
+    if (target) {
+      target.classList.add('tut-glow');
+      // target tucked inside the closed ☰ tray? glow the ☰ button so the player can find it
+      const tb = document.getElementById('toolbar'), mt = document.getElementById('menu-toggle');
+      if (tb && mt && tb.contains(target) && !tb.classList.contains('open')) mt.classList.add('tut-glow');
+    }
+  }
 }
 function tutNext() { if (state._tut) { state._tut.i++; renderTutorial(); } }
 function tutSkip() { state._tut = null; renderTutorial(); }

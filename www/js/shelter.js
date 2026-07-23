@@ -239,6 +239,7 @@ function ensureCatCustom() {
   return true;
 }
 function openCustomise() {
+  if (typeof sfx === 'function') sfx('ui');
   if (!ensureCatCustom()) { showNotif('Adopt a cat first 🐾'); return; }
   state.uiOpen = true;
   renderCustomise();

@@ -190,6 +190,7 @@ function openPlannerForHome() {
 
 // ── Enter / leave build mode ──
 function openPlanner() {
+  if (typeof sfx === 'function') sfx('ui');
   if (!state.gameStarted) return;
   // town planning is an OFFICE: only the Mayor or the President may use it (mayor pays own coins; tax is President-only)
   const ph = state.politics && state.politics.phase;
@@ -226,7 +227,7 @@ function updatePlannerFrame() {
   camera.lookAt(c.x, 0, c.z);
   camera.updateMatrixWorld(true);
   const bob = 0.15 + 0.05 * Math.sin(performance.now() * 0.004);
-  const fp = (typeof floorPoint === 'function') ? floorPoint(window.innerWidth / 2, window.innerHeight / 2) : null;
+  const fp = (typeof floorPoint === 'function') ? floorPoint(viewW() / 2, viewH() / 2) : null;
   if (state.planMove && _grabbed) {                 // a grabbed structure follows the crosshair
     if (fp) moveProp(_grabbed, fp.x, fp.z, _grabbed.rotY);
     _grabbed.group.position.y = _grabBaseY + 0.6 + bob;
@@ -255,7 +256,7 @@ function planToggleDemolish() {
   updatePlanButtons(); updateRoadPad();
 }
 function planDemolishCenter() {
-  const fp = (typeof floorPoint === 'function') ? floorPoint(window.innerWidth / 2, window.innerHeight / 2) : null;
+  const fp = (typeof floorPoint === 'function') ? floorPoint(viewW() / 2, viewH() / 2) : null;
   const cx = fp ? fp.x : state.planCenter.x, cz = fp ? fp.z : state.planCenter.z;
   let best = null, bd = 90;
   townProps.forEach(p => { if (p.kind !== 'house' || !p.destroyable) return; const d = (p.x - cx) ** 2 + (p.z - cz) ** 2; if (d < bd) { bd = d; best = p; } });
@@ -278,7 +279,7 @@ function demolishHouse(prop) {
   if (typeof saveGame === 'function') saveGame();
 }
 function planGrabNearest() {
-  const fp = (typeof floorPoint === 'function') ? floorPoint(window.innerWidth / 2, window.innerHeight / 2) : null;
+  const fp = (typeof floorPoint === 'function') ? floorPoint(viewW() / 2, viewH() / 2) : null;
   const cx = fp ? fp.x : state.planCenter.x, cz = fp ? fp.z : state.planCenter.z;
   let best = null, bd = 90;   // within ~9.5 units of the crosshair
   townProps.forEach(p => { if (!p.movable) return; const d = (p.x - cx) ** 2 + (p.z - cz) ** 2; if (d < bd) { bd = d; best = p; } });
@@ -407,7 +408,7 @@ let _panning = false, _panLX = 0, _panLY = 0;
 function plannerPointerDown(x, y) { if (!state.planning) return false; _panning = true; _panLX = x; _panLY = y; return true; }
 function plannerPointerMove(x, y) {
   if (!state.planning || !_panning) return false;
-  const k = state.planHeight / window.innerHeight * 1.4;
+  const k = state.planHeight / viewH() * 1.4;
   state.planCenter.x = Math.max(-110, Math.min(110, state.planCenter.x - (x - _panLX) * k));
   state.planCenter.z = Math.max(-80, Math.min(80, state.planCenter.z - (y - _panLY) * k));
   _panLX = x; _panLY = y;

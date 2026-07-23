@@ -59,30 +59,30 @@
   #dialogue.show { opacity: 1; }
   #dialogue .speaker { color: #f0d080; font-size: 0.8rem; margin-bottom: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
 
-  /* Controls */
+  /* Controls — 360° joystick (drag past the ring to sprint) + Jump */
   #controls {
-    position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); left: 0; right: 0;
-    display: flex; justify-content: space-between; align-items: flex-end;
-    padding: 0 10px; z-index: 10;
+    position: fixed; bottom: calc(18px + env(safe-area-inset-bottom)); left: calc(16px + env(safe-area-inset-left));
+    display: flex; align-items: flex-end; gap: 14px; z-index: 10;
   }
-  #dpad, #lookpad {
-    display: grid; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px);
-    gap: 4px;
+  #move-cluster { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  #joystick {
+    position: relative; width: 124px; height: 124px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(20,12,5,0.28) 55%, rgba(20,12,5,0.55) 100%);
+    border: 2.5px solid #5a4a3a;
+    touch-action: none; user-select: none; -webkit-user-select: none;
   }
-  .dpad-btn {
-    background: rgba(20,12,5,0.75);
-    border: 2px solid #5a4a3a;
-    border-radius: 10px;
-    color: #f0d080;
-    font-size: 1.3rem;
+  #joy-knob {
+    position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px;
+    border-radius: 50%;
+    background: rgba(200,146,42,0.88); border: 2px solid #f0d080;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.45);
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; user-select: none;
-    active-color: #c8922a;
-    transition: background 0.1s;
+    font-size: 1.5rem; pointer-events: none; will-change: transform;
   }
-  .dpad-btn:active, .dpad-btn.pressed { background: rgba(200,146,42,0.35); border-color: #c8922a; }
-  .dpad-center { background: rgba(200,146,42,0.12); }
-  #action-area { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+  #joystick.sprint { border-color: #4ad06a; box-shadow: 0 0 16px rgba(74,208,106,0.55); }
+  #joystick.sprint #joy-knob { background: rgba(74,208,106,0.85); border-color: #bff0c8; }
+  #joystick.cooldown { border-color: #d0564a; }
+  #joystick.cooldown #joy-knob { background: rgba(150,90,60,0.8); border-color: #f0b0a0; }
   .action-btn {
     background: rgba(200,146,42,0.22);
     border: 2px solid #c8922a;
@@ -96,15 +96,12 @@
     cursor: pointer; user-select: none;
     text-align: center; line-height: 1.2;
     transition: background 0.1s;
+    margin-bottom: 34px;   /* jump floats beside the upper half of the joystick */
   }
   .action-btn:active, .action-btn.active { background: rgba(200,146,42,0.5); }
   .action-btn .btn-icon { font-size: 1.4rem; }
-  /* Run button + stamina */
-  #btn-run { border-color: #4ad06a; color: #bff0c8; background: rgba(74,208,106,0.18); }
-  #btn-run:active, #btn-run.active { background: rgba(74,208,106,0.45); }
-  #btn-run.cooldown { border-color: #d0564a; color: #f0b0a0; opacity: 0.55; }
   #stamina {
-    width: 54px; height: 7px; margin-bottom: 2px;
+    width: 100px; height: 7px;
     background: rgba(20,12,5,0.7); border: 1px solid #5a4a3a;
     border-radius: 5px; overflow: hidden;
   }
@@ -245,13 +242,35 @@
   .intro-portrait { width: 120px; height: 120px; filter: drop-shadow(0 0 18px #c8922a); }
   .intro-portrait svg { width: 100%; height: 100%; }
 
-  /* Voice toggle */
-  #voice-toggle {
-    position: fixed; top: calc(112px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); z-index: 11;
+  /* ☰ menu button — the ONLY utility button always on screen */
+  #menu-toggle {
+    position: fixed; top: calc(128px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); z-index: 12;
     width: 40px; height: 40px; border-radius: 10px;
     background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.1rem; cursor: pointer;
+    color: #f0d080; font-size: 1.15rem; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
+  }
+  #menu-toggle.open { border-color: #c8922a; background: rgba(200,146,42,0.25); }
+  #menu-badge {
+    position: absolute; top: -7px; right: -7px; min-width: 19px; height: 19px; border-radius: 10px;
+    background: #c8443a; color: #fff; font-size: 0.66rem; font-weight: bold; font-family: Georgia, serif;
+    display: none; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid #1a0d05;
+  }
+  /* Toolbar tray — every utility button lives here; hidden until ☰ slides it out */
+  #toolbar {
+    position: fixed; top: calc(128px + env(safe-area-inset-top)); left: calc(66px + env(safe-area-inset-left)); z-index: 11;
+    display: flex; flex-wrap: wrap; gap: 6px; width: 190px;
+    opacity: 0; pointer-events: none; transform: translateX(-10px);
+    transition: opacity 0.18s, transform 0.18s;
+  }
+  #toolbar.open { opacity: 1; pointer-events: auto; transform: translateX(0); }
+  #toolbar button {
+    position: relative;
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
+    color: #f0d080; font-size: 1.05rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 auto;
   }
 
   /* Enter / leave house button */
@@ -320,6 +339,15 @@
   }
   #context-btn.show { display: block; } #context-btn:active { background: #d0b060; }
 
+  /* 🛍️ Buy button — its own button at the shop counter, never hidden behind the job offer */
+  #buy-btn {
+    position: fixed; bottom: calc(320px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+    z-index: 12; display: none; color: #1a0800; background: rgba(120,200,150,0.95); border: 2px solid #e0f8e8;
+    border-radius: 14px; padding: 10px 22px; font-family: Georgia, serif; font-weight: bold; font-size: 0.95rem;
+    cursor: pointer; box-shadow: 0 4px 18px #00000066; white-space: nowrap;
+  }
+  #buy-btn.show { display: block; } #buy-btn:active { background: #58a878; }
+
   /* For-sale property button */
   #property-btn {
     position: fixed; bottom: calc(420px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
@@ -339,11 +367,6 @@
   .store-owned { color: #7adf8a; font-size: 0.68rem; font-weight: bold; padding: 6px 0; }
 
   /* Cat customisation */
-  #customise-btn {
-    position: fixed; top: calc(112px + env(safe-area-inset-top)); left: calc(66px + env(safe-area-inset-left)); z-index: 11;
-    width: 40px; height: 40px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
   .cust-portrait { width: 108px; height: 108px; margin: 0 auto 12px; }
   .cust-portrait svg { width: 100%; height: 100%; }
   #customise-rows { max-height: 46vh; overflow-y: auto; }
@@ -358,11 +381,6 @@
   .cust-pat.locked.sel { color: #1a0800; }
 
   /* Presidency arc */
-  #politics-btn {
-    position: fixed; top: calc(112px + env(safe-area-inset-top)); left: calc(114px + env(safe-area-inset-left)); z-index: 11;
-    width: 40px; height: 40px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.1rem; cursor: pointer; align-items: center; justify-content: center;
-  }
   #politics-body { max-height: 56vh; overflow-y: auto; text-align: left; }
   .pol-lead { color: #e8d4b0; font-size: 0.86rem; line-height: 1.5; margin-bottom: 12px; }
   .pol-stat { color: #d4b896; font-size: 0.8rem; margin: 5px 0; }
@@ -386,11 +404,6 @@
   .pol-primary:disabled { background: #5a4a3a; color: #9a8a78; cursor: default; }
 
   /* Business & reputation dashboard */
-  #business-btn {
-    position: fixed; top: calc(112px + env(safe-area-inset-top)); left: calc(162px + env(safe-area-inset-left)); z-index: 11;
-    width: 40px; height: 40px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
   #business-body { text-align: left; max-height: 62vh; overflow-y: auto; }
   .biz-rep { text-align: center; font-size: 0.95rem; color: #e8d4b0; margin-bottom: 10px; padding: 6px; border-radius: 10px; }
   .biz-rep.good { background: rgba(60,120,70,0.35); }
@@ -429,27 +442,7 @@
   .biz-hire button:active { background: #c8922a; color: #1a0800; }
 
   /* Town map */
-  #map-btn {
-    position: fixed; top: calc(112px + env(safe-area-inset-top)); left: calc(210px + env(safe-area-inset-left)); z-index: 11;
-    width: 40px; height: 40px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
-  #build-btn {
-    position: fixed; top: calc(160px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); z-index: 11;
-    width: 40px; height: 40px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
-  #dark-toggle {
-    position: fixed; top: calc(208px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); z-index: 11;
-    width: 40px; height: 40px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
   #dark-toggle.on { border-color: #8a9ac8; color: #bcd0f0; background: rgba(10,12,22,0.88); }
-  #inbox-btn {
-    position: fixed; top: calc(256px + env(safe-area-inset-top)); left: calc(18px + env(safe-area-inset-left)); z-index: 11;
-    width: 40px; height: 40px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
-    color: #f0d080; font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
   #inbox-count {
     position: absolute; top: -7px; right: -7px; min-width: 19px; height: 19px; border-radius: 10px;
     background: #c8443a; color: #fff; font-size: 0.66rem; font-weight: bold; font-family: Georgia, serif;
@@ -500,8 +493,7 @@
   body.planning #controls, body.planning #minimap, body.planning #needs,
   body.planning #enter-btn, body.planning #give-btn, body.planning #shelter-btn,
   body.planning #context-btn, body.planning #property-btn, body.planning #decorate-move-btn,
-  body.planning #voice-toggle, body.planning #customise-btn, body.planning #politics-btn,
-  body.planning #business-btn, body.planning #map-btn, body.planning #build-btn { display: none !important; }
+  body.planning #toolbar, body.planning #menu-toggle { display: none !important; }
 
   #plan-top { position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     display: flex; gap: 12px; align-items: center; background: rgba(20,12,5,0.8); border: 1px solid #7a6a5a;
@@ -637,9 +629,9 @@
   #pay-body .pay-note { color: #b8906a; font-size: 0.72rem; font-style: italic; text-align: center; line-height: 1.4; margin-bottom: 14px; }
   #pay-body .pol-primary { margin-bottom: 8px; }
 
-  /* Furniture editor (Sims-style placement) */
+  /* Furniture editor (Sims-style placement) — bottom-right corner, clear of the minimap */
   #decorate-move-btn {
-    position: fixed; top: calc(232px + env(safe-area-inset-top)); right: calc(18px + env(safe-area-inset-right)); z-index: 12;
+    position: fixed; bottom: calc(90px + env(safe-area-inset-bottom)); right: calc(18px + env(safe-area-inset-right)); z-index: 12;
     width: 44px; height: 44px; border-radius: 10px; background: rgba(20,12,5,0.82); border: 2px solid #7a6a5a;
     color: #f0d080; font-size: 1.25rem; cursor: pointer; display: none; align-items: center; justify-content: center;
   }
@@ -758,27 +750,24 @@
   }
   #mg-collect:active { background: #a87020; }
 
-  /* ── Landscape-first for phones: nag portrait users to rotate ── */
-  #rotate-hint {
-    position: fixed; inset: 0; z-index: 500; display: none;
-    flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-    background: linear-gradient(160deg, #0d0d1a 0%, #1a1000 100%); color: #f0d080; text-align: center; padding: 24px;
-  }
-  .rotate-icon { font-size: 3.6rem; animation: rotateSpin 2.6s ease-in-out infinite; }
-  @keyframes rotateSpin { 0%,50% { transform: rotate(0); } 72%,100% { transform: rotate(-90deg); } }
-  .rotate-title { font-size: 1.35rem; letter-spacing: 0.03em; }
-  .rotate-sub { font-size: 0.92rem; color: #c8a878; max-width: 320px; line-height: 1.55; }
-  @media (orientation: portrait) and (max-width: 820px) { #rotate-hint { display: flex; } }
-
-  /* ── Short landscape screens: refit the stacked contextual buttons & modals ── */
-  @media (orientation: landscape) and (max-height: 560px) {
+  /* ── Phone screens: refit the stacked contextual buttons & modals.
+     (Portrait phones run the game rotated 90° — physical WIDTH is the game's height.) ── */
+  @media (orientation: landscape) and (max-height: 560px), (orientation: portrait) and (max-width: 560px) {
     #enter-btn          { bottom: calc(18px  + env(safe-area-inset-bottom)); }
     #context-btn        { bottom: calc(76px  + env(safe-area-inset-bottom)); }
     #stairs-btn         { bottom: calc(134px + env(safe-area-inset-bottom)); }
     #shelter-btn        { bottom: calc(134px + env(safe-area-inset-bottom)); }
     #give-btn           { bottom: calc(192px + env(safe-area-inset-bottom)); }
-    #decorate-move-btn  { bottom: calc(192px + env(safe-area-inset-bottom)); }
+    #buy-btn            { bottom: calc(134px + env(safe-area-inset-bottom)); }
     #property-btn       { bottom: calc(250px + env(safe-area-inset-bottom)); }
+    /* tighter joystick + toolbar so nothing can touch on a phone screen */
+    #joystick { width: 110px; height: 110px; }
+    #joy-knob { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+    #stamina  { width: 90px; }
+    #menu-toggle { width: 36px; height: 36px; font-size: 1.05rem; }
+    #toolbar  { width: 174px; left: calc(60px + env(safe-area-inset-left)); }
+    #toolbar button { width: 36px; height: 36px; font-size: 0.95rem; }
+    #minimap  { width: 100px; height: 100px; }
     .modal-card { max-height: 92vh; overflow-y: auto; }
     #cat-grid, #rescue-grid, #homestore-grid, #customise-rows, #catmaker-rows { max-height: 46vh; overflow-y: auto; }
     #shelter { padding-top: 10px; }

@@ -226,6 +226,7 @@ function buildJail() {
   );
 }
 function enterJail() {
+  if (typeof sfx === 'function') sfx('sad');
   buildJail();
   state.inJail = true; state.uiOpen = false;
   jailScene.add(catGroup); catGroup.scale.setScalar(CAT_SCALE_IN);
@@ -347,6 +348,7 @@ const SCANDAL_HEADLINES = [
   'A whistle-blower just handed the press a file with your name on it.',
 ];
 function openScandal() {
+  if (typeof sfx === 'function') sfx('sad');
   const g = state.gov;
   const bribeOk = g.treasury >= SCANDAL_BRIBE;
   g.scandal = { headline: SCANDAL_HEADLINES[Math.floor(Math.random() * SCANDAL_HEADLINES.length)] };

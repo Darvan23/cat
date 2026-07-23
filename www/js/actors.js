@@ -141,13 +141,33 @@ function idleHuman(o, time) {
 // an unreachable target left folk marching into a wall forever.
 function walkLineClear(x0, z0, x1, z1) {
   const d = Math.hypot(x1 - x0, z1 - z0);
-  const steps = Math.min(120, Math.max(1, Math.ceil(d / 1.5)));
+  // sample FINELY: a 1.5-unit stride stepped clean over lamp posts & tree edges,
+  // approving paths straight through them — then folk shoved the obstacle forever
+  const steps = Math.min(240, Math.max(2, Math.ceil(d / 0.45)));
   for (let i = 1; i <= steps; i++) {
     const x = x0 + (x1 - x0) * i / steps, z = z0 + (z1 - z0) * i / steps;
     const c = collide(x, z, worldColliders, 0.28);
     if (Math.hypot(c.x - x, c.z - z) > 0.03) return false;
   }
   return true;
+}
+
+// Blocked mid-walk? Find a clear SIDESTEP heading and walk around the obstacle —
+// try gentle angles first, then sharper ones, on both sides. Works against every
+// worldCollider, so trees, walls AND structures the mayor/president builds later
+// are all walked around, never shoved. Returns a temporary waypoint or null.
+function findDetour(x, z, tx, tz) {
+  const base = Math.atan2(tx - x, tz - z);
+  const d = Math.hypot(tx - x, tz - z);
+  const far = Math.min(2.6, Math.max(1.3, d * 0.5));     // far enough to clear a tree canopy
+  for (const probe of [far, far * 0.45]) {               // boxed in? a short sidestep may fit where a long one can't
+    for (const off of [0.7, -0.7, 1.2, -1.2, 1.8, -1.8, 2.4, -2.4]) {
+      const a = base + off;
+      const nx = x + Math.sin(a) * probe, nz = z + Math.cos(a) * probe;
+      if (walkLineClear(x, z, nx, nz)) return { x: nx, z: nz };
+    }
+  }
+  return null;
 }
 
 // Gentle wander: stroll to a random spot near home, pause, repeat
@@ -195,17 +215,28 @@ function updateWander(o) {
     }
     return;
   }
-  // walking toward the target
-  const dx = o.target.x - o.wx, dz = o.target.z - o.wz, dist = Math.hypot(dx, dz);
-  if (dist < 0.08 || (o.blockT || 0) > 45) {               // arrived — or stuck on an obstacle, so stop shoving it
-    o.blockT = 0;
+  // walking toward the target — via a detour waypoint when an obstacle is in the way
+  const goal = o.detour || o.target;
+  const dx = goal.x - o.wx, dz = goal.z - o.wz, dist = Math.hypot(dx, dz);
+  if (dist < 0.08) {
+    if (o.detour) { o.detour = null; return; }             // rounded the obstacle — back on course
+  }
+  if (dist < 0.08 || (o.blockT || 0) > 45) {               // arrived — or hopelessly stuck, so stop shoving it
+    o.blockT = 0; o.detour = null; o.detourN = 0;
     if (o.exiting) { o.group.visible = false; o.exiting = false; }   // 🌙 slipped indoors for the night
     o.wstate = 'idle'; o.wtimer = 70 + Math.random() * 160; return;
   }
   const step = Math.min(o.wspeed, dist);
   const px = o.wx + dx / dist * step, pz = o.wz + dz / dist * step;
   const wc = collide(px, pz, worldColliders, 0.28);        // no more phasing through walls & trees
-  o.blockT = (Math.hypot(wc.x - px, wc.z - pz) > 0.02) ? (o.blockT || 0) + 1 : 0;
+  if (Math.hypot(wc.x - px, wc.z - pz) > 0.02) {
+    o.blockT = (o.blockT || 0) + 1;
+    // a few frames of shoving → look for a way AROUND (a handful of tries, then give up)
+    if (o.blockT >= 8 && (o.detourN || 0) < 5) {
+      const dt = findDetour(o.wx, o.wz, o.target.x, o.target.z);
+      if (dt) { o.detour = dt; o.detourN = (o.detourN || 0) + 1; o.blockT = 0; }
+    }
+  } else o.blockT = 0;
   o.wx = wc.x; o.wz = wc.z;
   o.group.position.x = o.wx; o.group.position.z = o.wz;
   o.x = o.wx; o.z = o.wz;                                  // keep proximity/minimap in sync
@@ -364,16 +395,26 @@ function updateCommuter(o) {
     }
     return;
   }
-  const dx = o.target.x - o.x, dz = o.target.z - o.z, dist = Math.hypot(dx, dz);
+  const goal = o.detour || o.target;
+  const dx = goal.x - o.x, dz = goal.z - o.z, dist = Math.hypot(dx, dz);
+  if (dist < 0.1) {
+    if (o.detour) { o.detour = null; return; }             // rounded the obstacle — back on course
+  }
   if (dist < 0.1 || (o.blockT || 0) > 45) {
-    o.blockT = 0;
+    o.blockT = 0; o.detour = null; o.detourN = 0;
     if (o.exiting) { o.group.visible = false; o.exiting = false; }   // 🌙 home for the night
     o.wstate = 'idle'; o.wtimer = 50 + Math.random() * 170; return;
   }
   const step = Math.min(o.wspeed, dist);
   const px = o.x + dx / dist * step, pz = o.z + dz / dist * step;
   const wc = collide(px, pz, worldColliders, 0.28);        // commuters respect walls & trees too
-  o.blockT = (Math.hypot(wc.x - px, wc.z - pz) > 0.02) ? (o.blockT || 0) + 1 : 0;
+  if (Math.hypot(wc.x - px, wc.z - pz) > 0.02) {
+    o.blockT = (o.blockT || 0) + 1;
+    if (o.blockT >= 8 && (o.detourN || 0) < 5) {           // shoving → walk around it instead
+      const dt = findDetour(o.x, o.z, o.target.x, o.target.z);
+      if (dt) { o.detour = dt; o.detourN = (o.detourN || 0) + 1; o.blockT = 0; }
+    }
+  } else o.blockT = 0;
   o.x = wc.x; o.z = wc.z;
   o.group.position.x = o.x; o.group.position.z = o.z;
   const heading = Math.atan2(dx, dz);
@@ -540,7 +581,8 @@ function footballGoal(rightGoal) {
   const yourTeamScored = rightGoal;          // team A (yours) attacks the right goal
   const youHelped = f.catKickT > 0;          // you touched the ball just before it went in
   if (yourTeamScored && youHelped) {
-    state.coins += 3; document.getElementById('coin-count').textContent = state.coins;
+    state.coins += 3; state.earned = (state.earned || 0) + 3;
+    document.getElementById('coin-count').textContent = state.coins;
     if (typeof sfx === 'function') sfx('coin');
     showNotif('⚽ GOAL for your team! +3 🪙  ·  ' + f.score);
     if (typeof saveGame === 'function') saveGame();

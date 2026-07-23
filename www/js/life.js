@@ -24,14 +24,33 @@ function nearestFreePed(p, maxDist) {
 
 // ── Low-level movement / pose helpers (reuse the wander walk cycle) ──
 function walkToward(p, tx, tz, speed) {
-  const dx = tx - p.wx, dz = tz - p.wz, dist = Math.hypot(dx, dz);
-  if (dist < 0.12) return true;
+  // A target INSIDE an obstacle ring (a sit spot by a trunk, a prop the planner moved
+  // against a wall) can never be reached — pull it out to the nearest reachable point
+  // FIRST, so the walker heads somewhere it can actually stand.
+  const safe = collide(tx, tz, worldColliders, 0.3);
+  tx = safe.x; tz = safe.z;
+  // detour waypoint first, if one is planned — walk AROUND the obstacle, then resume
+  let gx = tx, gz = tz;
+  if (p.det) {
+    if (Math.hypot(p.det.x - p.wx, p.det.z - p.wz) < 0.15) p.det = null;
+    else { gx = p.det.x; gz = p.det.z; }
+  }
+  const dx = gx - p.wx, dz = gz - p.wz, dist = Math.hypot(dx, dz);
+  if (dist < 0.12) {
+    if (p.det) { p.det = null; return false; }        // reached the sidestep — keep going
+    p.det = null; p.detN = 0;
+    return true;
+  }
   const step = Math.min(speed, dist);
   const nx = p.wx + dx / dist * step, nz = p.wz + dz / dist * step;
   const wc = collide(nx, nz, worldColliders, 0.28);   // no more walking through walls & trees
-  if (Math.hypot(wc.x - nx, wc.z - nz) > 0.02) {      // blocked — count it, and give up rather than grind forever
+  if (Math.hypot(wc.x - nx, wc.z - nz) > 0.02) {      // blocked — steer around, or give up eventually
     p.blockT = (p.blockT || 0) + 1;
-    if (p.blockT > 90) { p.blockT = 0; return true; } // "arrived" — the activity moves on & they re-plan
+    if (p.blockT >= 8 && (p.detN || 0) < 5 && typeof findDetour === 'function') {
+      const dt = findDetour(p.wx, p.wz, tx, tz);
+      if (dt) { p.det = dt; p.detN = (p.detN || 0) + 1; p.blockT = 0; }
+    }
+    if (p.blockT > 45) { p.blockT = 0; p.det = null; p.detN = 0; return true; } // "arrived" — the activity moves on & they re-plan
   } else p.blockT = 0;
   p.wx = wc.x; p.wz = wc.z;
   p.group.position.x = p.wx; p.group.position.z = p.wz; p.x = p.wx; p.z = p.wz;
@@ -60,7 +79,9 @@ function breatheSeated(p, t) {
 function startSit(p, prop, kind) {
   prop.taken = true;
   let sx = prop.x, sz = prop.z, face = prop.rotY || 0;
-  if (kind === 'tree') { const a = Math.random() * Math.PI * 2; sx = prop.x + Math.sin(a) * 0.95; sz = prop.z + Math.cos(a) * 0.95; face = a; }
+  // 1.18, NOT 0.95: the trunk collider (r 0.8) + walker radius (0.28) = 1.08 — a sit spot
+  // any closer is physically unreachable, and the walker GRINDS at the trunk forever
+  if (kind === 'tree') { const a = Math.random() * Math.PI * 2; sx = prop.x + Math.sin(a) * 1.18; sz = prop.z + Math.cos(a) * 1.18; face = a; }
   else if (kind === 'picnic') { const a = Math.random() * Math.PI * 2; sx = prop.x + Math.sin(a) * 0.95; sz = prop.z + Math.cos(a) * 0.95; face = a + Math.PI; }
   const read = (kind !== 'picnic' && Math.random() < 0.45);   // often, they sit down with a book
   p.act = { use: kind, prop, tx: sx, tz: sz, face, read, phase: 'walk', timer: 0 };

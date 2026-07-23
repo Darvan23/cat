@@ -8,12 +8,6 @@
 </head>
 <body>
 
-<div id="rotate-hint">
-  <div class="rotate-icon">🔄</div>
-  <div class="rotate-title">Please rotate your device</div>
-  <div class="rotate-sub">🐾 Paws &amp; Pennies plays best sideways — turn your phone to landscape.</div>
-</div>
-
 <div id="shelter">
   <h1>🐾 Choose Your Cat</h1>
   <div class="subtitle">The Millers can only take one home. Ten cats are waiting at the shelter — which one will you give a new life?</div>
@@ -53,14 +47,17 @@
 <div id="clock">🌞</div>
 
 <div id="minimap" onclick="openMap()" title="Open the full map"><canvas id="minimap-canvas" width="240" height="240"></canvas><span class="mm-hint">🗺️</span></div>
-<button id="voice-toggle" onclick="toggleVoice()" title="Toggle voice">🔊</button>
-<button id="dark-toggle" onclick="toggleDarkMode()" title="Comfort lighting (easier on the eyes)">🌙</button>
-<button id="inbox-btn" onclick="openInbox()" title="Your mail">📬<span id="inbox-count">0</span></button>
-<button id="customise-btn" onclick="openCustomise()" title="Customise your cat">🎨</button>
-<button id="politics-btn" onclick="openPolitics()" title="Your campaign" style="display:none">🗳️</button>
-<button id="business-btn" onclick="openBusiness()" title="Business & reputation">📊</button>
-<button id="map-btn" onclick="openMap()" title="Town map">🗺️</button>
-<button id="build-btn" onclick="openPlanner()" title="Town planner — build from the map">🏗️</button>
+<button id="menu-toggle" onclick="toggleToolbar()" title="Menu"><span id="menu-icon">☰</span><span id="menu-badge">0</span></button>
+<div id="toolbar">
+  <button id="voice-toggle" onclick="toggleVoice()" title="Toggle voice">🔊</button>
+  <button id="customise-btn" onclick="openCustomise()" title="Customise your cat">🎨</button>
+  <button id="business-btn" onclick="openBusiness()" title="Business & reputation">📊</button>
+  <button id="map-btn" onclick="openMap()" title="Town map">🗺️</button>
+  <button id="build-btn" onclick="openPlanner()" title="Town planner — build from the map">🏗️</button>
+  <button id="dark-toggle" onclick="toggleDarkMode()" title="Comfort lighting (easier on the eyes)">🌙</button>
+  <button id="inbox-btn" onclick="openInbox()" title="Your mail">📬<span id="inbox-count">0</span></button>
+  <button id="politics-btn" onclick="openPolitics()" title="Your campaign" style="display:none">🗳️</button>
+</div>
 
 <div id="map" class="modal">
   <div class="modal-card wide">
@@ -147,6 +144,7 @@
 <button id="give-btn" onclick="openGive()">💝 Give Coins</button>
 <button id="shelter-btn" onclick="openRescue()">🐾 Free a Cat</button>
 <button id="context-btn" onclick="doContextAction()">🍽️ Eat</button>
+<button id="buy-btn" onclick="openShopBuy()">🛍️ Buy something</button>
 <button id="decorate-move-btn" onclick="toggleDecorEdit()" title="Rearrange furniture">🛠️</button>
 <div id="build-tools">
   <span class="hint">🏗️ Tap open ground to build a home</span>
@@ -281,33 +279,13 @@
 </div>
 
 <div id="controls">
-  <div id="dpad">
-    <div></div>
-    <div class="dpad-btn" id="btn-up">▲</div>
-    <div></div>
-    <div class="dpad-btn" id="btn-left">◀</div>
-    <div class="dpad-btn dpad-center">🐾</div>
-    <div class="dpad-btn" id="btn-right">▶</div>
-    <div></div>
-    <div class="dpad-btn" id="btn-down">▼</div>
-    <div></div>
-  </div>
-  <div id="action-area">
+  <div id="move-cluster">
     <div id="stamina"><div id="stamina-fill"></div></div>
-    <button class="action-btn" id="btn-jump"><span class="btn-icon">🦘</span>Jump</button>
-    <button class="action-btn" id="btn-run"><span class="btn-icon">🏃</span>Run</button>
+    <div id="joystick">
+      <div id="joy-knob">🐾</div>
+    </div>
   </div>
-  <div id="lookpad">
-    <div></div>
-    <div class="dpad-btn" id="btn-tiltU">▲</div>
-    <div></div>
-    <div class="dpad-btn" id="btn-rotL">◀</div>
-    <div class="dpad-btn dpad-center">🎥</div>
-    <div class="dpad-btn" id="btn-rotR">▶</div>
-    <div></div>
-    <div class="dpad-btn" id="btn-tiltD">▼</div>
-    <div></div>
-  </div>
+  <button class="action-btn" id="btn-jump"><span class="btn-icon">🦘</span>Jump</button>
 </div>
 
 <div id="minigame">

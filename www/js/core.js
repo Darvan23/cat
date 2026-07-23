@@ -26,6 +26,7 @@ const state = {
   football: null,     // the kids' street football game
   coins3d: [],
   earned: 0,          // cumulative coins earned (drives story beats)
+  goodDeeds: 0,       // kindnesses done for the family & town — builds your reputation, not your wallet
   uiOpen: false,      // a give/rescue overlay is open
   freed: [],          // ids of cats rescued from the shelter
   freedCats: [],      // their little wandering 3D selves
@@ -231,14 +232,49 @@ const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
 camera.position.set(0, 6, 10);
 camera.lookAt(0, 0, 0);
 
+// ─── Force-landscape ────────────────────────────────────────────────────────────
+// On a portrait phone the WHOLE game is rotated 90° with CSS, so it's instantly
+// playable held sideways — no "please rotate your phone" nag screen. All input
+// code converts physical touch points into game space through gamePoint().
+function gameRotated() { return window.innerHeight > window.innerWidth && window.innerWidth <= 820; }
+function viewW() { return gameRotated() ? window.innerHeight : window.innerWidth; }
+function viewH() { return gameRotated() ? window.innerWidth : window.innerHeight; }
+// physical (clientX, clientY) → game-space point (identity when not rotated)
+function gamePoint(cx, cy) {
+  return gameRotated() ? { x: cy, y: window.innerWidth - cx } : { x: cx, y: cy };
+}
+// element-relative point in game space (getBoundingClientRect is physical — remap it)
+function gameRelPoint(el, cx, cy) {
+  const r = el.getBoundingClientRect();
+  const p = gamePoint(cx, cy);
+  const left = gameRotated() ? r.top : r.left;
+  const top  = gameRotated() ? window.innerWidth - r.right : r.top;
+  return { x: p.x - left, y: p.y - top };
+}
+
 function resize() {
-  const w = window.innerWidth, h = window.innerHeight;
+  const rot = gameRotated();
+  const w = viewW(), h = viewH();
+  const b = document.body;
+  if (rot) {
+    b.style.transform = 'rotate(90deg)';
+    b.style.transformOrigin = 'left top';
+    b.style.position = 'fixed';
+    b.style.top = '0';
+    b.style.left = window.innerWidth + 'px';
+  } else {
+    b.style.transform = ''; b.style.position = ''; b.style.top = ''; b.style.left = '';
+  }
+  // body always carries explicit game dims — fixed UI anchors to it in both modes
+  b.style.width = w + 'px';
+  b.style.height = h + 'px';
   renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 resize();
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 60));
 
 // ─── Lighting ─────────────────────────────────────────────────────────────────
 const sun = new THREE.DirectionalLight(0xfff4e0, 2.6);

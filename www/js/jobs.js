@@ -10,12 +10,15 @@ const mg = {
 };
 
 function mgResize() {
-  const c = mg.canvas, r = c.getBoundingClientRect();
+  // clientWidth/Height are LAYOUT dims — correct even when the game runs rotated
+  // (getBoundingClientRect would return the rotated physical box and swap w/h)
+  const c = mg.canvas;
   const dpr = Math.min(window.devicePixelRatio, 2);
-  c.width = Math.max(1, r.width * dpr);
-  c.height = Math.max(1, r.height * dpr);
+  const w = c.clientWidth, h = c.clientHeight;
+  c.width = Math.max(1, w * dpr);
+  c.height = Math.max(1, h * dpr);
   mg.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  mg.w = r.width; mg.h = r.height;
+  mg.w = w; mg.h = h;
 }
 
 // ── Job definitions ──────────────────────────────────────────────────────────
@@ -690,7 +693,7 @@ function startMinigame(npc) {
   if (!mg.bound) {
     mg.canvas = document.getElementById('mg-canvas');
     mg.ctx = mg.canvas.getContext('2d');
-    const rel = (clientX, clientY) => { const r = mg.canvas.getBoundingClientRect(); return { x: clientX - r.left, y: clientY - r.top }; };
+    const rel = (clientX, clientY) => gameRelPoint(mg.canvas, clientX, clientY);   // game-space, rotation-aware
     // Mouse (desktop): press to tap, drag to swipe your paw through targets
     mg.canvas.addEventListener('mousedown', e => { const p = rel(e.clientX, e.clientY); mg.pressing = true; mg.pointer.x = p.x; mg.pointer.y = p.y; mgPoint(p.x, p.y, true); });
     mg.canvas.addEventListener('mousemove', e => { const p = rel(e.clientX, e.clientY); mg.pointer.x = p.x; mg.pointer.y = p.y; if (mg.pressing) mgPoint(p.x, p.y, false); });
