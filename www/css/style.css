@@ -652,11 +652,17 @@
     background: rgba(20,12,5,0.88); border: 2px solid #7a6a5a; border-radius: 14px;
   }
   #decor-tools.show, #build-tools.show { display: flex; }
+  #decor-tools { flex-wrap: wrap; justify-content: center; }
   #decor-tools .hint, #build-tools .hint { color: #e8d4b0; font-size: 0.72rem; white-space: nowrap; }
   #decor-tools button, #build-tools button {
     background: linear-gradient(#e8b84a, #c8922a); color: #1a0800; border: none; border-radius: 10px;
     padding: 9px 11px; font-family: Georgia, serif; font-weight: bold; font-size: 0.78rem; cursor: pointer; white-space: nowrap;
   }
+  /* 🛠️ while decorating: a CLEAR view — only the coins, the tool bar and the exit remain */
+  body.editing #status-stack, body.editing #needs, body.editing #menu-toggle, body.editing #toolbar,
+  body.editing #controls, body.editing #enter-btn, body.editing #stairs-btn, body.editing #context-btn,
+  body.editing #give-btn, body.editing #buy-btn, body.editing #family-panel { display: none !important; }
+  body.editing #decor-tools { top: calc(10px + env(safe-area-inset-top)); }
 
   /* Park catch tally */
   #park-tally {
@@ -776,9 +782,22 @@
     #toolbar  { width: 174px; left: calc(60px + env(safe-area-inset-left)); }
     #toolbar button { width: 36px; height: 36px; font-size: 0.95rem; }
     #minimap  { width: 100px; height: 100px; }
-    .modal-card { max-height: 92vh; overflow-y: auto; }
-    #cat-grid, #rescue-grid, #homestore-grid, #customise-rows, #catmaker-rows { max-height: 46vh; overflow-y: auto; }
+    /* modals sized for a phone: tight frame, small headings, ONE scroll area (the card) */
+    .modal { padding: 8px; }
+    .modal-card { padding: 12px 12px; max-height: calc(100% - 12px); overflow-y: auto; }
+    .modal-title { font-size: 1.05rem; margin-bottom: 5px; }
+    .modal-sub { font-size: 0.74rem; margin-bottom: 10px; }
+    .modal-row button { padding: 9px 13px; font-size: 0.88rem; }
+    .modal-close { padding: 8px 20px; font-size: 0.85rem; }
+    #cat-grid { max-height: 46vh; overflow-y: auto; }
+    #rescue-grid, #homestore-grid, #customise-rows, #catmaker-rows { max-height: none; overflow: visible; }   /* no scroll-inside-scroll */
+    .cat-card svg { width: 58px; height: 58px; }
+    .store-icon, .school-icon { font-size: 1.5rem; }
     #shelter { padding-top: 10px; }
     #shelter h1 { font-size: 1.25rem; }
     #shelter .subtitle { margin: 4px 0 10px; }
+    /* the 🛠️ furniture bar: compact buttons, no hint text stealing width */
+    #decor-tools { max-width: 98vw; gap: 5px; padding: 6px 8px; }
+    #decor-tools button, #build-tools button { padding: 8px 9px; font-size: 0.72rem; }
+    #decor-tools .hint { display: none; }
   }

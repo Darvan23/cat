@@ -950,6 +950,10 @@ function resetDecorLayout() {
 function toggleDecorEdit() {
   if (state.editMode) { exitDecorEdit(); return; }
   state.editMode = true;
+  document.body.classList.add('editing');       // hide the walk-around HUD — a clear view of the room
+  // pull the camera up for a decorator's overview of the whole floor
+  state._preEditCam = { h: state.camHeight, d: state.camDist };
+  state.camHeight = 8.5; state.camDist = 6.2;
   document.getElementById('decor-tools').classList.add('show');
   document.getElementById('decorate-move-btn').classList.add('active');
   selectDecor(null);
@@ -957,6 +961,8 @@ function toggleDecorEdit() {
 }
 function exitDecorEdit() {
   state.editMode = false;
+  document.body.classList.remove('editing');
+  if (state._preEditCam) { state.camHeight = state._preEditCam.h; state.camDist = state._preEditCam.d; state._preEditCam = null; }
   selectDecor(null);
   const t = document.getElementById('decor-tools'); if (t) t.classList.remove('show');
   const b = document.getElementById('decorate-move-btn'); if (b) b.classList.remove('active');
