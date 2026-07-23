@@ -9,7 +9,7 @@ const SCHOOL_SPOT = { x: 25, z: 34.5 };   // a schoolhouse on the North Avenue r
 
 // ── The seven courses: lessons (ev = the game event that advances the task) + exam ──
 const SCHOOL_COURSES = [
-  { id: 'humanity', icon: '❤️', name: 'Humanity & Kindness', cost: 200,
+  { id: 'humanity', icon: '❤️', name: 'Humanity & Kindness', cost: 200, teacher: 'Elena ❤️',
     blurb: 'Kindness, taught by doing. Perk: good deeds count DOUBLE toward your reputation.',
     lessons: [
       { teach: 'Kindness starts small. The shelter keeps a 💝 donation box by the desk — or give straight to the Millers at home.', task: 'Give 5 🪙 (the shelter\'s 💝 donation box, or 💝 Give Coins at home)', ev: 'give', goal: 5 },
@@ -25,7 +25,7 @@ const SCHOOL_COURSES = [
       { q: 'A kid wants the park but it\'s out of your way. You…', a: ['Walk them anyway', 'Point vaguely', 'Charge a fee'], c: 0 },
       { q: 'The kindest cats are remembered because…', a: ['They helped when it cost them', 'They were rich', 'They were loud'], c: 0 },
     ] },
-  { id: 'art', icon: '🎨', name: 'Art & Design', cost: 300,
+  { id: 'art', icon: '🎨', name: 'Art & Design', cost: 300, teacher: 'Willow 🎨',
     blurb: 'Style for you and your home. Perk: Home Store furniture costs 20% less.',
     lessons: [
       { teach: 'An artist\'s first canvas is themselves. Open the 🎨 customiser and make your cat YOURS.', task: 'Change your cat\'s look (any colour, pattern or hat)', ev: 'customise', goal: 1, glow: 'customise-btn' },
@@ -39,7 +39,7 @@ const SCHOOL_COURSES = [
       { q: 'A room feels crowded. You…', a: ['Move & remove pieces', 'Buy more', 'Never enter it again'], c: 0 },
       { q: 'Design is finished when…', a: ['It feels right to live in', 'Money runs out', 'Every corner is full'], c: 0 },
     ] },
-  { id: 'logistics', icon: '💼', name: 'Logistics Diploma', cost: 400,
+  { id: 'logistics', icon: '💼', name: 'Logistics Diploma', cost: 400, teacher: 'Mrs. Chen 🛒',
     blurb: 'The cashier trade, end to end. Perk: cashier jobs pay +25% wages.',
     lessons: [
       { teach: 'Shops with a green "WE\'RE HIRING!" board need a cashier. Walk up to the owner inside and ask.', task: 'Get hired at any shop', ev: 'hired', goal: 1 },
@@ -54,7 +54,7 @@ const SCHOOL_COURSES = [
       { q: 'The day\'s takings belong…', a: ['In the safe', 'In your pocket', 'On the counter'], c: 0 },
       { q: 'Three strikes means…', a: ['You\'re fired', 'A holiday', 'A raise'], c: 0 },
     ] },
-  { id: 'park', icon: '🌳', name: 'Park Ranger Course', cost: 350,
+  { id: 'park', icon: '🌳', name: 'Park Ranger Course', cost: 350, teacher: 'Old Tom 🌳',
     blurb: 'Care for the town\'s wild side. Perk: park jobs (mice & birds) pay +25%.',
     lessons: [
       { teach: 'The park overruns with mice — a ranger keeps the balance. Pounce with the 🦘 Jump button.', task: 'Catch 3 mice in the park', ev: 'mice', goal: 3 },
@@ -70,7 +70,7 @@ const SCHOOL_COURSES = [
       { q: 'Who is the park FOR?', a: ['Everyone in town', 'Only cats', 'Only the mayor'], c: 0 },
       { q: 'A tired ranger should…', a: ['Rest on a bench', 'Keep running forever', 'Go home and quit'], c: 0 },
     ] },
-  { id: 'business', icon: '📊', name: 'Business Degree', cost: 800,
+  { id: 'business', icon: '📊', name: 'Business Degree', cost: 800, teacher: 'Daniel 🔧',
     blurb: 'How to build an empire — REQUIRED to buy businesses; self-run tills fill 25% faster.',
     lessons: [
       { teach: 'Know the market first: the 📊 dashboard lists every business in town and what it earns.', task: 'Open the 📊 Business dashboard', ev: 'openDash', goal: 1, glow: 'business-btn' },
@@ -84,7 +84,7 @@ const SCHOOL_COURSES = [
       { q: 'You can\'t pay wages. The government…', a: ['Seizes a business', 'Sends a card', 'Pays them for you'], c: 0 },
       { q: 'Good reputation comes from…', a: ['Jobs created & good deeds', 'Shouting', 'Hoarding coins'], c: 0 },
     ] },
-  { id: 'planning', icon: '🏗️', name: 'Town Planning', cost: 1000, gate: 'mayor',
+  { id: 'planning', icon: '🏗️', name: 'Town Planning', cost: 1000, gate: 'mayor', teacher: 'Mr. Bloom 🌼',
     blurb: 'For Mayors: build a town people love. Perk: planner pieces cost 10% less.',
     lessons: [
       { teach: 'The 🏗️ planner is your drawing board. Greenery first — a town breathes through its trees.', task: 'Place 2 pieces with the planner (trees, benches…)', ev: 'place', goal: 2 },
@@ -99,7 +99,7 @@ const SCHOOL_COURSES = [
       { q: 'Rubble left on a street…', a: ['Angers the town — clear it', 'Is decoration', 'Attracts birds'], c: 0 },
       { q: 'A Mayor builds with…', a: ['Their own coins', 'Tax money', 'IOUs'], c: 0 },
     ] },
-  { id: 'civics', icon: '🏛️', name: 'Civics & Law', cost: 1500, gate: 'civics',
+  { id: 'civics', icon: '🏛️', name: 'Civics & Law', cost: 1500, gate: 'civics', teacher: 'Mayor Pickle 🏛️',
     blurb: 'Government, law & leadership — REQUIRED to run for President. For proven Mayors only.',
     lessons: [
       { teach: 'A leader knows their duties. Your 🗳️ panel lists the promises you made this town.', task: 'Open your 🗳️ panel and read your duties', ev: 'openPolitics', goal: 1, glow: 'politics-btn' },
@@ -270,6 +270,7 @@ function enrollCourse(id) {
   sc.cur = id; sc.lesson = 0; sc.prog = 0; sc.examLock = 0;
   if (typeof sfx === 'function') sfx('upgrade');
   showNotif('📖 Enrolled: ' + c.name + '! Lesson 1 begins now.');
+  if (c.teacher) showDialogue(c.teacher, 'Welcome to my ' + c.name + ' class, ' + (state.catName || 'little one') + '! Your first task is waiting. 📝', 4600);
   presentLesson(c, 0);
   renderSchool();
   if (typeof saveGame === 'function') saveGame();
@@ -281,7 +282,7 @@ function presentLesson(c, i) {
   if (L.mail && typeof inboxAdd === 'function') L.mail.forEach(m => inboxAdd(m.from, m.subj, m.body));   // case-study letters etc.
   if (typeof showTutorial === 'function') {
     showTutorial('sc_' + c.id + '_' + i, [{
-      text: `🏫 <b>${c.name} — lesson ${i + 1}/${c.lessons.length}:</b> ${L.teach}<br><br>📝 <b>Your task:</b> ${L.task}`,
+      text: `🏫 <b>${c.name} — lesson ${i + 1}/${c.lessons.length}</b>${c.teacher ? ' · ' + c.teacher : ''}<br>${L.teach}<br><br>📝 <b>Your task:</b> ${L.task}`,
       glow: L.glow || null,
     }], true);
   }
