@@ -263,15 +263,20 @@ function registerMayor() {
   state.coins -= MAYOR_FEE;
   document.getElementById('coin-count').textContent = state.coins;
   state.politics.phase = 'mayor';
-  if (typeof sfx === 'function') sfx('upgrade');
-  showNotif('🎩 The town elects you MAYOR! The 🏗️ town planner is now yours to use (own coins only).');
-  setTimeout(() => showDialogue('🎩 The Town', `Mayor ${state.catName}! Bring us jobs, homes and kindness — show us what a cat can do, and maybe one day… the presidency.`, 6200), 600);
-  if (typeof inboxAdd === 'function') inboxAdd('🏛️ Town Council', 'Your duties as Mayor 🎩',
-    `Congratulations, Mayor ${state.catName} Miller!<br><br>Your promises to the town:<br>` +
-    MAYOR_GOALS.map(g => '• ' + g.label).join('<br>') +
-    `<br><br>The 🏗️ <b>town planner</b> is unlocked for you (your own coins — tax money is for Presidents). Deliver on every promise and the 🏫 school will teach you <b>Civics &amp; Law</b> — your ticket to the presidential race.<br><br>Track your progress anytime in the 🗳️ panel.<br>— The Town Council`);
-  if (typeof saveGame === 'function') saveGame();
-  renderPolitics();
+  const celebrate = () => {
+    if (typeof sfx === 'function') sfx('upgrade');
+    showNotif('🎩 The town elects you MAYOR! The 🏗️ town planner is now yours to use (own coins only).');
+    setTimeout(() => showDialogue('🎩 The Town', `Mayor ${state.catName}! Bring us jobs, homes and kindness — show us what a cat can do, and maybe one day… the presidency.`, 6200), 600);
+    if (typeof inboxAdd === 'function') inboxAdd('🏛️ Town Council', 'Your duties as Mayor 🎩',
+      `Congratulations, Mayor ${state.catName} Miller!<br><br>Your promises to the town:<br>` +
+      MAYOR_GOALS.map(g => '• ' + g.label).join('<br>') +
+      `<br><br>The 🏗️ <b>town planner</b> is unlocked for you (your own coins — tax money is for Presidents). Deliver on every promise and the 🏫 school will teach you <b>Civics &amp; Law</b> — your ticket to the presidential race.<br><br>Track your progress anytime in the 🗳️ panel.<br>— The Town Council`);
+    if (typeof saveGame === 'function') saveGame();
+    renderPolitics();
+  };
+  // 🎬 winning your FIRST election deserves a scene — the modal steps aside for the town
+  if (typeof playMayorCutscene === 'function' && state.gameStarted) { closePolitics(); playMayorCutscene(celebrate); }
+  else celebrate();
 }
 // New-day check while Mayor: letters arrive as you tick off each promise (and when all are done)
 function processMayorMail() {

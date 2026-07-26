@@ -665,6 +665,11 @@
   body.editing #controls, body.editing #enter-btn, body.editing #stairs-btn, body.editing #context-btn,
   body.editing #give-btn, body.editing #buy-btn, body.editing #family-panel { display: none !important; }
   body.editing #decor-tools { top: calc(10px + env(safe-area-inset-top)); }
+  /* 🎬 during any cutscene the HUD leaves the frame — just the scene, the caption, and Skip */
+  body.cine #hud, body.cine #needs, body.cine #status-stack, body.cine #menu-toggle, body.cine #toolbar,
+  body.cine #controls, body.cine #minimap, body.cine #enter-btn, body.cine #stairs-btn, body.cine #context-btn,
+  body.cine #give-btn, body.cine #shelter-btn, body.cine #buy-btn, body.cine #property-btn,
+  body.cine #decorate-move-btn, body.cine #tutorial { display: none !important; }
 
   /* Park catch tally */
   #park-tally {

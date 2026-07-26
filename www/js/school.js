@@ -360,6 +360,17 @@ function graduateCourse(c, score) {
   const sc = schoolState();
   (sc.done = sc.done || []).push(c.id);
   sc.cur = null; sc.lesson = 0; sc.prog = 0; sc.examLock = 0;
+  const gotAll = (sc.done || []).length >= SCHOOL_COURSES.length;
+  // 🎬 graduation day plays first; the fanfare below fires as the caps land
+  if (typeof playGradCutscene === 'function' && state.gameStarted) {
+    closeSchool();
+    playGradCutscene(c, gotAll, () => graduationFanfare(c, score));
+    return;
+  }
+  graduationFanfare(c, score);
+}
+function graduationFanfare(c, score) {
+  const sc = schoolState();
   if (typeof sfx === 'function') sfx('upgrade');
   showNotif('🎓 DEGREE EARNED: ' + c.name + '!  (' + score + '/' + c.exam.length + ' on the exam)');
   if (typeof spawnHeart === 'function') { spawnHeart(); setTimeout(spawnHeart, 250); setTimeout(spawnHeart, 500); }

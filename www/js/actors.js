@@ -685,7 +685,8 @@ function updateRentHUD() {
 function triggerDeadline() {
   state.storyAct = 3; state.crickMet = true;
   showNotif('🧾 Mr. Crick is at the door…');
-  crickArrive(() => {
+  // 🎬 the landlord gets a proper entrance before the doorstep talk
+  const doorstep = () => crickArrive(() => {
     playDialogueScene([
       ['Mr. Crick', "I'm not a monster, Mrs. Miller. But business is business. The rent — all of it — by the end of winter. After that… I'm sorry.", 5400],
       ['🏠 The Millers', "We'll find a way, Mr. Crick. We always do.", 3400],
@@ -698,6 +699,7 @@ function triggerDeadline() {
       crickLeave();
     });
   });
+  if (typeof playCrickCutscene === 'function' && state.gameStarted) playCrickCutscene(doorstep); else doorstep();
 }
 
 // The rent is paid in time — Crick softens, the family celebrates
@@ -714,6 +716,7 @@ function winDeadline() {
     ], () => {
       document.getElementById('rent-line').style.display = 'none';
       crickLeave();
+      if (typeof playRentWonCutscene === 'function') playRentWonCutscene();   // 🎬 the house is truly theirs
     });
   });
 }
