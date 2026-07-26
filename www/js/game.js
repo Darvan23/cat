@@ -132,9 +132,12 @@ function toggleFullscreen() {
   else (document.exitFullscreen || document.webkitExitFullscreen || function () {}).call(document);
 }
 (() => {
-  const b = document.getElementById('fullscreen-btn');
+  const b = document.getElementById('fullscreen-btn'); if (!b) return;
   const d = document.documentElement;
-  if (b && !d.requestFullscreen && !d.webkitRequestFullscreen) b.style.display = 'none';   // iOS Safari has no fullscreen API
+  const standalone = navigator.standalone || (typeof matchMedia === 'function' && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches);
+  // hide when the API doesn't exist (iPhone Safari: video-only) or we're ALREADY a
+  // home-screen app with no browser bars — Add to Home Screen is the iPhone fullscreen
+  if (standalone || (!d.requestFullscreen && !d.webkitRequestFullscreen)) b.style.display = 'none';
 })();
 
 // ─── Voice (browser text-to-speech) ─────────────────────────────────────────────
