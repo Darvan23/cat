@@ -735,6 +735,24 @@
   .rescue-tag { font-size: 0.72rem; padding: 6px 0; color: #d4b896; }
   .rescue-tag.freed { color: #7adf8a; font-weight: bold; }
 
+  /* 🏘️ Neighbors & the town postcard */
+  .nb-mycode { background: rgba(200,146,42,0.14); border: 1.5px dashed #c8922a; border-radius: 12px; padding: 9px; color: #d4b896; font-size: 0.74rem; margin-bottom: 10px; }
+  .nb-mycode b { color: #f0d080; font-size: 1.15rem; letter-spacing: 0.08em; }
+  .nb-addrow { display: flex; gap: 7px; margin: 4px 0 12px; }
+  .nb-addrow input { flex: 1; background: rgba(20,12,5,0.85); color: #f0e6c8; border: 2px solid #7a6a4a; border-radius: 10px; padding: 9px 12px; font-family: Georgia, serif; font-size: 0.85rem; min-width: 0; }
+  .nb-addrow input:focus { outline: none; border-color: #f0d080; }
+  .nb-addrow .rescue-buy { width: auto; flex: 0 0 auto; padding: 9px 16px; font-size: 0.8rem; }
+  .nb-row { display: flex; align-items: center; gap: 8px; background: rgba(90,74,58,0.22); border: 1px solid #5a4a3a; border-radius: 10px; padding: 8px 10px; margin-bottom: 7px; }
+  .nb-row .nb-name { flex: 1; color: #f0e6c8; font-size: 0.85rem; text-align: left; }
+  .nb-row .nb-code { color: #b8a078; font-size: 0.68rem; letter-spacing: 0.05em; }
+  .nb-note { color: #b8906a; font-size: 0.74rem; font-style: italic; margin: 6px 0 10px; }
+  .nb-townname { color: #f0d080; font-size: 1.15rem; margin-bottom: 4px; }
+  .nb-stats { color: #d4b896; font-size: 0.78rem; line-height: 1.5; margin-bottom: 10px; }
+  #townview-wrap { width: 100%; display: flex; justify-content: center; margin-bottom: 12px; }
+  /* the postcard fits WHOLE on screen — sized by the smaller of width / viewport height */
+  #townview-canvas { width: min(100%, 560px, 58vh); aspect-ratio: 1 / 1; border-radius: 16px; background: #a9d787; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+  #townview .modal-card { max-width: 620px; }
+
   /* Mouse-catching minigame */
   #minigame {
     position: fixed; inset: 0; z-index: 150;

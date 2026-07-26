@@ -336,6 +336,7 @@ function saveGame() {
       rubble: state.rubble, homelessCount: state.homelessCount,
       bizTill: state.bizTill, bizOpen: state.bizOpen, millerHome: state.millerHome,
       civics: state.civics, townGrowth: state.townGrowth,
+      townCode: state.townCode, neighbors: state.neighbors,
     }));
   } catch (e) {}
 }
@@ -422,6 +423,7 @@ function applySave(s) {
   state.civics = Array.isArray(s.civics) ? s.civics : [];
   if (typeof buildOwnedCivicBuildings === 'function') buildOwnedCivicBuildings();   // re-raise public works
   state.townGrowth = s.townGrowth || { humans: 0, cats: 0 };
+  state.townCode = s.townCode || null; state.neighbors = Array.isArray(s.neighbors) ? s.neighbors : [];
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets

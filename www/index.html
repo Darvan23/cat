@@ -67,6 +67,7 @@
   <button id="dark-toggle" onclick="toggleDarkMode()" title="Comfort lighting (easier on the eyes)">🌙</button>
   <button id="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
   <button id="inbox-btn" onclick="openInbox()" title="Your mail">📬<span id="inbox-count">0</span></button>
+  <button id="neighbors-btn" onclick="openNeighbors()" title="Neighbors — visit friends' towns">🏘️</button>
   <button id="politics-btn" onclick="openPolitics()" title="Your campaign" style="display:none">🗳️</button>
 </div>
 
@@ -221,6 +222,22 @@
   </div>
 </div>
 
+<div id="neighbors" class="modal">
+  <div class="modal-card wide">
+    <div class="modal-title">🏘️ Neighbors</div>
+    <div id="neighbors-body"></div>
+    <button class="modal-close" onclick="closeNeighbors()">Close</button>
+  </div>
+</div>
+
+<div id="townview" class="modal">
+  <div class="modal-card wide">
+    <div id="townview-head"></div>
+    <div id="townview-wrap"><canvas id="townview-canvas"></canvas></div>
+    <button class="modal-close" onclick="closeTownView()">Close</button>
+  </div>
+</div>
+
 <div id="tutorial">
   <div id="tut-text">Welcome!</div>
   <div id="tut-btns">
@@ -331,6 +348,7 @@
 <script src="js/work.js"></script>
 <script src="js/school.js"></script>
 <script src="js/inbox.js"></script>
+<script src="js/neighbors.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

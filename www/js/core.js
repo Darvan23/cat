@@ -27,6 +27,8 @@ const state = {
   coins3d: [],
   earned: 0,          // cumulative coins earned (drives story beats)
   goodDeeds: 0,       // kindnesses done for the family & town — builds your reputation, not your wallet
+  townCode: null,     // your shareable town code (PAWS-XXXXX), minted on first use
+  neighbors: [],      // friends' towns you can visit from above [{code, name}]
   uiOpen: false,      // a give/rescue overlay is open
   freed: [],          // ids of cats rescued from the shelter
   freedCats: [],      // their little wandering 3D selves
