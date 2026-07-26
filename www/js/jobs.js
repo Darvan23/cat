@@ -55,13 +55,15 @@ const jobMice = {
       else if (side === 2) { x = Math.random() * mg.w; y = -20; }
       else                 { x = Math.random() * mg.w; y = mg.h + 20; }
     } else { x = 40 + Math.random() * (mg.w - 80); y = 70 + Math.random() * (mg.h - 130); }
-    mg.entities.push({ x, y, dir: Math.random() * Math.PI * 2, speed: 40 + Math.random() * 32,
-                       turnT: 0, caught: false, caughtT: 0, scale: 0, wob: Math.random() * 6 });
+    const wasp = !!fromEdge && Math.random() < 0.2;                       // 🐝 don't swat the wasp — it stings a heart away
+    const gold = !wasp && Math.random() < 0.07;                           // ✨ the golden mouse — quick, and worth +2
+    mg.entities.push({ x, y, dir: Math.random() * Math.PI * 2, speed: (40 + Math.random() * 32) * (gold ? 1.5 : 1),
+                       turnT: 0, caught: false, caughtT: 0, scale: 0, wob: Math.random() * 6, wasp, gold });
   },
   update(mg, dt) {
     mg.spawnTimer -= dt;
     const live = mg.entities.filter(m => !m.caught).length;
-    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 0.85;   // mice get quicker & bolder as time runs down
+    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 1.05;   // mice get quicker & bolder as time runs down
     if (mg.spawnTimer <= 0 && live < this.target && mg.timeLeft > 1.5) { this.spawn(mg, true); mg.spawnTimer = (0.4 + Math.random() * 0.5) / ramp; }
     const { w, h } = mg;
     mg.entities.forEach(m => {
@@ -86,14 +88,23 @@ const jobMice = {
     const ctx = mg.ctx;
     mg.entities.forEach(m => {
       ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.dir + Math.PI / 2); ctx.scale(m.scale, m.scale);
-      drawMouse(ctx, Math.sin(m.wob)); ctx.restore();
+      if (m.wasp) { ctx.rotate(-m.dir - Math.PI / 2); ctx.font = '34px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('\uD83D\uDC1D', 0, 0); }
+      else {
+        if (m.gold) { ctx.strokeStyle = '#ffe06a'; ctx.lineWidth = 4; ctx.shadowColor = '#ffd24a'; ctx.shadowBlur = 16; ctx.beginPath(); ctx.arc(0, 0, 26, 0, 7); ctx.stroke(); ctx.shadowBlur = 0; }
+        drawMouse(ctx, Math.sin(m.wob));
+      }
+      ctx.restore();
     });
   },
-  tap(mg, cx, cy) {
+  tap(mg, cx, cy, isTap) {
     let best = -1, bestD = 1e9;
     mg.entities.forEach((m, i) => { if (m.caught) return; const d = Math.hypot(m.x - cx, m.y - cy); if (d < bestD) { bestD = d; best = i; } });
-    if (best >= 0 && bestD < 60) { mg.entities[best].caught = true; mg.caught++; mg.spawnTimer = Math.min(mg.spawnTimer, 0.4); return true; }
-    return false;
+    if (best < 0 || bestD >= 60) return false;
+    const m = mg.entities[best];
+    if (m.wasp) { if (isTap) { m.caught = true; mgLoseLife(cx, cy); } return false; }   // stung! (swipes just shoo it)
+    m.caught = true; mg.caught++;
+    if (m.gold) mg.bonus = (mg.bonus || 0) + 2;
+    mg.spawnTimer = Math.min(mg.spawnTimer, 0.4); return true;
   },
 };
 
@@ -158,7 +169,7 @@ const jobGrocery = {
       return true;
     }
     slot.pulse = 1; slot.pulseHit = false;
-    mg.timeLeft = Math.max(0.1, mg.timeLeft - 1.2);      // a wrong pick costs a little time
+    mgLoseLife(cx, cy);                                  // a wrong pick costs a HEART — read the list!
     return false;
   },
 };
@@ -180,9 +191,9 @@ const jobRats = {
     mg.popTimer -= dt;
     if (mg.popTimer <= 0 && mg.timeLeft > 1.2) {
       const down = mg.entities.filter(e => e.state === 'down');
-      if (down.length) { const r = down[Math.floor(Math.random() * down.length)]; r.state = 'up'; r.t = 0; r.up = 0.95 + Math.random() * 0.9; }
+      if (down.length) { const r = down[Math.floor(Math.random() * down.length)]; r.state = 'up'; r.t = 0; r.up = 0.95 + Math.random() * 0.9; r.chick = Math.random() < 0.2; }   // 🐤 sometimes a chick peeks out — DON'T bonk it
       const urgency = mg.timeLeft / mg.duration;        // pops come faster as time runs out
-      mg.popTimer = (0.35 + Math.random() * 0.55) * (0.6 + urgency * 0.8);
+      mg.popTimer = (0.3 + Math.random() * 0.5) * (0.5 + urgency * 0.75);
     }
     mg.entities.forEach(e => {
       if (e.state === 'up') {
@@ -204,14 +215,21 @@ const jobRats = {
       ctx.save();
       ctx.beginPath(); ctx.rect(e.x - 24, 0, 48, e.y - 2); ctx.clip();   // only show above the barrel mouth
       ctx.translate(e.x, ratY); ctx.scale(e.scale, e.scale);
-      drawRat(ctx, Math.sin(e.wob)); ctx.restore();
+      if (e.chick) { ctx.font = '34px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('\uD83D\uDC24', 0, -8); }
+      else drawRat(ctx, Math.sin(e.wob));
+      ctx.restore();
       drawBarrelRim(ctx, e.x, e.y);
     });
   },
   tap(mg, cx, cy) {
     let best = -1, bestD = 1e9;
     mg.entities.forEach((e, i) => { if (e.state !== 'up') return; const d = Math.hypot(e.x - cx, (e.y - 18) - cy); if (d < bestD) { bestD = d; best = i; } });
-    if (best >= 0 && bestD < 58) { mg.entities[best].state = 'caught'; mg.caught++; return true; }
+    if (best >= 0 && bestD < 58) {
+      const e = mg.entities[best];
+      e.state = 'caught';
+      if (e.chick) { mgLoseLife(cx, cy); return false; }   // you bonked a chick!
+      mg.caught++; return true;
+    }
     return false;
   },
 };
@@ -231,11 +249,12 @@ const jobBakery = {
       vy: 32 + Math.random() * 26, vx: (Math.random() - 0.5) * 26,
       type: this.TYPES[Math.floor(Math.random() * this.TYPES.length)],
       rot: Math.random() * 6, rotV: (Math.random() - 0.5) * 3, caught: false, caughtT: 0, scale: 0,
+      fire: Math.random() < 0.15,                        // 🔥 a cinder off the oven — let it fall!
     });
   },
   update(mg, dt) {
     mg.spawnTimer -= dt;
-    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 0.7;   // the rack empties faster near the end
+    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 0.9;   // the rack empties faster near the end
     const live = mg.entities.filter(e => !e.caught).length;
     if (mg.spawnTimer <= 0 && live < this.target + Math.floor((ramp - 1) * 3) && mg.timeLeft > 1.5) { this.spawn(mg, -20); mg.spawnTimer = (0.45 + Math.random() * 0.5) / ramp; }
     mg.entities.forEach(e => {
@@ -250,13 +269,21 @@ const jobBakery = {
   draw(mg) {
     bakeryFloor(mg);
     const ctx = mg.ctx;
-    mg.entities.forEach(e => { ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.rot); ctx.scale(e.scale, e.scale); drawBake(ctx, e.type); ctx.restore(); });
+    mg.entities.forEach(e => {
+      ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.rot); ctx.scale(e.scale, e.scale);
+      if (e.fire) { ctx.rotate(-e.rot); ctx.font = '36px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('\uD83D\uDD25', 0, 0); }
+      else drawBake(ctx, e.type);
+      ctx.restore();
+    });
   },
-  tap(mg, cx, cy) {
+  tap(mg, cx, cy, isTap) {
     let best = -1, bestD = 1e9;
     mg.entities.forEach((e, i) => { if (e.caught) return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bestD) { bestD = d; best = i; } });
-    if (best >= 0 && bestD < 58) { mg.entities[best].caught = true; mg.caught++; return true; }
-    return false;
+    if (best < 0 || bestD >= 58) return false;
+    const e = mg.entities[best];
+    e.caught = true;
+    if (e.fire) { if (isTap !== false) mgLoseLife(cx, cy); return false; }   // burnt paw!
+    mg.caught++; return true;
   },
 };
 
@@ -273,33 +300,40 @@ const jobVet = {
     rows.forEach(ry => cols.forEach(cx => mg.entities.push({
       x: mg.w * cx, y: mg.h * ry, baseY: mg.h * ry, kind: Math.floor(Math.random() * 3),
       distress: Math.random() * 0.3, rate: 0.16 + Math.random() * 0.12, state: 'here', scale: 1, pulse: 0, wob: Math.random() * 6,
+      sleep: Math.random() < 0.15,                       // 💤 NEVER wake a sleeping patient
     })));
   },
   update(mg, dt) {
-    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 0.8;   // gets harder over time
+    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 0.95;   // gets harder over time
     mg.entities.forEach(e => {
       if (e.pulse > 0) e.pulse = Math.max(0, e.pulse - dt * 2);
       e.wob += dt * 4;
       if (e.state === 'here') {
         e.scale = Math.min(1, e.scale + dt * 4);
-        e.distress += dt * e.rate * ramp;
+        if (!e.sleep) e.distress += dt * e.rate * ramp;   // sleepers rest easy
         if (e.distress >= 1) e.state = 'bolting';
       } else {                                                 // bolting → leaves, then a fresh patient arrives
         e.scale = Math.max(0, e.scale - dt * 4); e.y -= dt * 45;
-        if (e.scale <= 0) { e.state = 'here'; e.distress = 0; e.scale = 0; e.y = e.baseY; e.kind = Math.floor(Math.random() * 3); e.rate = 0.16 + Math.random() * 0.14; }
+        if (e.scale <= 0) { e.state = 'here'; e.distress = 0; e.scale = 0; e.y = e.baseY; e.kind = Math.floor(Math.random() * 3); e.rate = 0.16 + Math.random() * 0.14; e.sleep = Math.random() < 0.18; }
       }
     });
   },
   draw(mg) {
     vetFloor(mg);
     const ctx = mg.ctx;
-    mg.entities.forEach(e => { if (e.scale > 0.01) drawPatient(ctx, e); });
+    mg.entities.forEach(e => {
+      if (e.scale <= 0.01) return;
+      drawPatient(ctx, e);
+      if (e.sleep && e.state === 'here') { ctx.font = '22px Georgia'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(200,215,240,0.95)'; ctx.fillText('\uD83D\uDCA4', e.x + 22, e.y - 36); }
+    });
   },
   tap(mg, cx, cy) {
     let best = -1, bestD = 1e9;
     mg.entities.forEach((e, i) => { if (e.state !== 'here' || e.scale < 0.3) return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bestD) { bestD = d; best = i; } });
-    if (best >= 0 && bestD < 56) { const e = mg.entities[best]; e.distress = 0; e.pulse = 1; mg.caught++; return true; }
-    return false;
+    if (best < 0 || bestD >= 56) return false;
+    const e = mg.entities[best];
+    if (e.sleep) { e.sleep = false; e.distress = 0.6; mgLoseLife(cx, cy); return false; }   // you woke it! now it's cranky AND you're hurt
+    e.distress = 0; e.pulse = 1; mg.caught++; return true;
   },
 };
 
@@ -317,20 +351,28 @@ const jobGarden = {
     else if (side === 1) { x = mg.w + 16; y = 30 + Math.random() * (mg.h - 30); }
     else if (side === 2) { x = Math.random() * mg.w; y = 24; }
     else { x = Math.random() * mg.w; y = mg.h + 16; }
-    mg.entities.push({ x, y, speed: 13 + Math.random() * 9, dir: 0, caught: false, caughtT: 0, scale: 0, wob: Math.random() * 6 });
+    mg.entities.push({ x, y, speed: 13 + Math.random() * 9, dir: 0, caught: false, caughtT: 0, scale: 0, wob: Math.random() * 6,
+                       bug: Math.random() < 0.16 });      // 🐞 ladybugs EAT the pests — leave them be
   },
   update(mg, dt) {
     mg.spawnTimer -= dt;
-    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 0.8;   // more snails, crawling faster, near the end
+    const ramp = 1 + (1 - mg.timeLeft / mg.duration) * 0.95;   // more snails, crawling faster, near the end
     const live = mg.entities.filter(e => !e.caught).length;
     if (mg.spawnTimer <= 0 && live < this.target + Math.floor((ramp - 1) * 2) && mg.timeLeft > 1.5) { this.spawn(mg); mg.spawnTimer = (0.6 + Math.random() * 0.6) / ramp; }
     mg.entities.forEach(e => {
       if (e.caught) { e.caughtT += dt; e.scale = Math.max(0, 1 - e.caughtT * 4); return; }
       e.scale = Math.min(1, e.scale + dt * 3); e.wob += dt * 6;
-      const dx = mg.vegX - e.x, dy = mg.vegY - e.y, d = Math.hypot(dx, dy) || 1;
-      e.dir = Math.atan2(dy, dx);
-      if (d < 26) { e.reached = true; }              // nibbled the veg — slinks off, no coin
-      else { e.x += dx / d * e.speed * ramp * dt; e.y += dy / d * e.speed * ramp * dt; }
+      if (e.bug) {                                     // ladybugs just potter about the beds
+        e.dir += (Math.random() - 0.5) * 0.3;
+        e.x += Math.cos(e.dir) * 18 * dt; e.y += Math.sin(e.dir) * 18 * dt;
+        if (e.x < 20 || e.x > mg.w - 20) e.dir = Math.PI - e.dir;
+        if (e.y < 40 || e.y > mg.h - 20) e.dir = -e.dir;
+      } else {
+        const dx = mg.vegX - e.x, dy = mg.vegY - e.y, d = Math.hypot(dx, dy) || 1;
+        e.dir = Math.atan2(dy, dx);
+        if (d < 26) { e.reached = true; }              // nibbled the veg — slinks off, no coin
+        else { e.x += dx / d * e.speed * ramp * dt; e.y += dy / d * e.speed * ramp * dt; }
+      }
     });
     mg.entities = mg.entities.filter(e => !(e.caught && e.scale <= 0) && !e.reached);
   },
@@ -338,13 +380,20 @@ const jobGarden = {
     gardenFloor(mg);
     const ctx = mg.ctx;
     drawVeg(ctx, mg.vegX, mg.vegY);
-    mg.entities.forEach(e => { ctx.save(); ctx.translate(e.x, e.y); ctx.scale(e.scale, e.scale); drawSnail(ctx, e.dir, Math.sin(e.wob)); ctx.restore(); });
+    mg.entities.forEach(e => {
+      ctx.save(); ctx.translate(e.x, e.y); ctx.scale(e.scale, e.scale);
+      if (e.bug) { ctx.font = '30px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('\uD83D\uDC1E', 0, 0); }
+      else drawSnail(ctx, e.dir, Math.sin(e.wob));
+      ctx.restore();
+    });
   },
-  tap(mg, cx, cy) {
+  tap(mg, cx, cy, isTap) {
     let best = -1, bestD = 1e9;
     mg.entities.forEach((e, i) => { if (e.caught) return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bestD) { bestD = d; best = i; } });
-    if (best >= 0 && bestD < 54) { mg.entities[best].caught = true; mg.caught++; return true; }
-    return false;
+    if (best < 0 || bestD >= 54) return false;
+    const e = mg.entities[best];
+    if (e.bug) { if (isTap !== false) { e.caught = true; mgLoseLife(cx, cy); } return false; }   // that one was HELPING
+    e.caught = true; mg.caught++; return true;
   },
 };
 
@@ -383,7 +432,7 @@ function makeCatchJob(cfg) {
     },
     update(mg, dt) {
       mg.spawnTimer -= dt;
-      const ramp = 1 + (1 - mg.timeLeft / this.duration) * 0.9;                       // faster & busier as the clock runs down
+      const ramp = 1 + (1 - mg.timeLeft / this.duration) * 1.05;                      // faster & busier as the clock runs down
       const maxLive = (this.mode === 'chase' ? this.target : 5) + Math.floor((ramp - 1) * 3);
       const live = mg.entities.filter(e => !e.caught).length;
       if (mg.spawnTimer <= 0 && live < maxLive && mg.timeLeft > 1.5) { this.spawn(mg, false); mg.spawnTimer = (0.4 + Math.random() * 0.45) / ramp; }
@@ -419,12 +468,12 @@ function makeCatchJob(cfg) {
         ctx.font = '42px Georgia'; ctx.fillText(e.bad ? this.badEmoji : this.emoji, 0, 0); ctx.restore();   // big finger targets
       });
     },
-    tap(mg, cx, cy) {
+    tap(mg, cx, cy, isTap) {
       let best = -1, bestD = 1e9;
       mg.entities.forEach((e, i) => { if (e.caught) return; const d = Math.hypot(e.x - cx, e.y - cy); if (d < bestD) { bestD = d; best = i; } });
       if (best < 0 || bestD >= 58) return false;   // slightly tighter aim than before
       const e = mg.entities[best];
-      if (e.bad) { e.caught = true; e.caughtT = 0; mg.caught = Math.max(0, mg.caught - 1); mg.timeLeft = Math.max(0.1, mg.timeLeft - 1.5); return false; }   // oops, a bomb
+      if (e.bad) { if (isTap === false) return false; e.caught = true; e.caughtT = 0; mgLoseLife(cx, cy); return false; }   // a hazard — that's a HEART
       e.caught = true; e.caughtT = 0; mg.caught++;
       if (e.gold) mg.bonus = (mg.bonus || 0) + 2;   // golden target → +2 bonus coins
       return true;
@@ -432,12 +481,12 @@ function makeCatchJob(cfg) {
   };
 }
 // Each map game plays DIFFERENTLY now:
-const jobButterfly = makeCatchJob({ id: 'butterfly', title: '🦋 Butterfly Meadow', hint: 'Chase & catch the fluttering butterflies!', icon: '🦋', emoji: '🦋', noun: ['butterfly', 'butterflies'], target: 8, mode: 'chase', speed: 44, speedVar: 30, playLabel: '🦋 Chase butterflies', bg: ['#3a6a4a', '#1a3a24'], failText: 'The butterflies all drifted away…' });
-const jobBubbles = makeCatchJob({ id: 'bubbles', title: '🫧 Bubble Pop', hint: 'Pop the bubbles before they float off the top!', icon: '🫧', emoji: '🫧', verb: 'popped', noun: ['bubble', 'bubbles'], target: 11, mode: 'rise', rise: 46, playLabel: '🫧 Pop bubbles', bg: ['#3a5a7a', '#16303f'], failText: 'They all floated away…' });
+const jobButterfly = makeCatchJob({ id: 'butterfly', title: '🦋 Butterfly Meadow', hint: 'Catch butterflies — never tap the 🐝!', icon: '🦋', emoji: '🦋', badEmoji: '🐝', badChance: 0.15, noun: ['butterfly', 'butterflies'], target: 8, mode: 'chase', speed: 44, speedVar: 30, playLabel: '🦋 Chase butterflies', bg: ['#3a6a4a', '#1a3a24'], failText: 'The butterflies all drifted away…' });
+const jobBubbles = makeCatchJob({ id: 'bubbles', title: '🫧 Bubble Pop', hint: 'Pop bubbles — mind the drifting 🐝!', icon: '🫧', emoji: '🫧', badEmoji: '🐝', badChance: 0.12, verb: 'popped', noun: ['bubble', 'bubbles'], target: 11, mode: 'rise', rise: 46, playLabel: '🫧 Pop bubbles', bg: ['#3a5a7a', '#16303f'], failText: 'They all floated away…' });
 const jobBalloons = makeCatchJob({ id: 'balloons', title: '🎈 Balloon Pop', hint: 'Pop the balloons — but DON’T tap the bombs! 💣', icon: '🎈', emoji: '🎈', badEmoji: '💣', verb: 'popped', noun: ['balloon', 'balloons'], target: 10, mode: 'rise', rise: 40, badChance: 0.22, swipe: false, playLabel: '🎈 Pop balloons (mind the bombs!)', bg: ['#4a3a6a', '#221a3a'], failText: 'They floated too high to reach…' });
-const jobLeaves = makeCatchJob({ id: 'leaves', title: '🍂 Falling Leaves', hint: 'Catch the leaves before they hit the ground!', icon: '🍂', emoji: '🍂', noun: ['leaf', 'leaves'], target: 10, mode: 'fall', fall: 32, playLabel: '🍂 Catch the leaves', bg: ['#6a5a3a', '#2a2214'], failText: 'The leaves all settled on the ground…' });
-const jobYarn = makeCatchJob({ id: 'yarn', title: '🧶 Yarn Tangle', hint: 'Chase the fast rolling yarn balls!', icon: '🧶', emoji: '🧶', noun: ['yarn ball', 'yarn balls'], target: 8, mode: 'chase', speed: 52, speedVar: 34, playLabel: '🧶 Chase the yarn', bg: ['#7a4a5a', '#331a24'], failText: 'The yarn all rolled under the beds…' });
-const jobPlanes = makeCatchJob({ id: 'planes', title: '✈️ Paper Planes', hint: 'Snatch the paper planes as they glide down!', icon: '✈️', emoji: '✈️', verb: 'snatched', noun: ['paper plane', 'paper planes'], target: 10, mode: 'fall', fall: 40, playLabel: '✈️ Catch paper planes', bg: ['#5a6a7a', '#242c34'], failText: 'They all glided out of reach…' });
+const jobLeaves = makeCatchJob({ id: 'leaves', title: '🍂 Falling Leaves', hint: 'Catch leaves — the 🐛 bites, let it fall!', icon: '🍂', emoji: '🍂', badEmoji: '🐛', badChance: 0.14, noun: ['leaf', 'leaves'], target: 10, mode: 'fall', fall: 32, playLabel: '🍂 Catch the leaves', bg: ['#6a5a3a', '#2a2214'], failText: 'The leaves all settled on the ground…' });
+const jobYarn = makeCatchJob({ id: 'yarn', title: '🧶 Yarn Tangle', hint: 'Chase the yarn — dodge the 🪡 needles!', icon: '🧶', emoji: '🧶', badEmoji: '🪡', badChance: 0.12, noun: ['yarn ball', 'yarn balls'], target: 8, mode: 'chase', speed: 52, speedVar: 34, playLabel: '🧶 Chase the yarn', bg: ['#7a4a5a', '#331a24'], failText: 'The yarn all rolled under the beds…' });
+const jobPlanes = makeCatchJob({ id: 'planes', title: '✈️ Paper Planes', hint: 'Snatch the planes — never grab a 🐦!', icon: '✈️', emoji: '✈️', badEmoji: '🐦', badChance: 0.14, verb: 'snatched', noun: ['paper plane', 'paper planes'], target: 10, mode: 'fall', fall: 40, playLabel: '✈️ Catch paper planes', bg: ['#5a6a7a', '#242c34'], failText: 'They all glided out of reach…' });
 const jobGerms = makeCatchJob({ id: 'germs', title: '🦠 Germ Patrol', hint: 'Zap the germs — but leave the 💊 medicine alone!', icon: '🦠', emoji: '🦠', badEmoji: '💊', verb: 'zapped', noun: ['germ', 'germs'], target: 12, mode: 'chase', speed: 56, speedVar: 40, badChance: 0.16, swipe: false, playLabel: '🦠 Zap the germs', bg: ['#3a6a6a', '#153030'], failText: 'The germs scattered away…' });
 
 const JOBS = { mice: jobMice, grocery: jobGrocery, rats: jobRats, bakery: jobBakery, vet: jobVet, garden: jobGarden,
@@ -680,6 +729,7 @@ function startMinigame(npc) {
 
   mg.active = true; mg.caught = 0; mg.earned = 0; mg.pressing = false;
   mg.combo = 0; mg.bonus = 0; mg.lastCatch = 0;   // streak scoring
+  mg.lives = 3; mg.hurtT = 0; mgHearts();          // ❤️❤️❤️ — hazards cost a heart; none left = job FAILED
   mg.duration = mg.job.duration || 22;
   mg.timeLeft = mg.duration; mg.entities = []; mg.pops = []; mg.spawnTimer = 0;
   document.getElementById('mg-title').textContent = mg.job.title;
@@ -720,11 +770,26 @@ function startMinigame(npc) {
   mg.raf = requestAnimationFrame(mgLoop);
 }
 
+// ── 3 hearts: hazards cost a life; lose them all and the job FAILS (no pay) ──
+function mgHearts() {
+  const el = document.getElementById('mg-lives');
+  if (el) el.textContent = '\u2764\uFE0F'.repeat(Math.max(0, mg.lives)) + '\uD83D\uDDA4'.repeat(Math.max(0, 3 - mg.lives));
+}
+function mgLoseLife(cx, cy) {
+  if (!mg.active) return;
+  mg.lives--; mg.hurtT = 0.55; mg.combo = 0;
+  mgHearts();
+  if (typeof sfx === 'function') sfx('sad');
+  if (cx != null) mg.pops.push({ x: cx, y: cy, t: 0, hit: false, ouch: true });
+  if (mg.lives <= 0) endMinigame(true);
+}
+
 // A tap OR a swipe point. isTap = a fresh press (shows a miss ring); swipe moves only catch.
 function mgPoint(cx, cy, isTap) {
   if (!mg.active) return;
   if (!isTap && mg.job.swipe === false) return;   // tap-only games (e.g. the grocery grid) ignore swipes
   const hit = mg.job.tap(mg, cx, cy, isTap);
+  if (!mg.active) return;                          // a hazard may have ended the game mid-tap
   if (hit) {
     const now = performance.now();
     mg.combo = (now - (mg.lastCatch || 0) < 1200) ? (mg.combo || 0) + 1 : 1;   // quick catches build a streak (tighter window)
@@ -748,7 +813,9 @@ function mgLoop(now) {
   mg.timeLeft -= dt;
   if (mg.timeLeft <= 0) { mg.timeLeft = 0; endMinigame(); }
   document.getElementById('mg-time').textContent = Math.ceil(mg.timeLeft);
-  document.getElementById('mg-bar').style.width = (mg.timeLeft / mg.duration * 100) + '%';
+  const frac = mg.timeLeft / mg.duration, bar = document.getElementById('mg-bar');
+  bar.style.width = (frac * 100) + '%';
+  bar.style.background = frac > 0.5 ? '' : frac > 0.25 ? 'linear-gradient(90deg,#d8a12a,#f0d080)' : '#d0564a';   // the clock turns amber, then red
 
   mg.job.update(mg, dt);
 
@@ -756,6 +823,7 @@ function mgLoop(now) {
   mg.pops = mg.pops.filter(p => p.t < 0.4);
 
   mg.job.draw(mg);
+  if (mg.hurtT > 0) { mg.hurtT -= dt; mg.ctx.fillStyle = 'rgba(200,40,40,' + (mg.hurtT * 0.5).toFixed(3) + ')'; mg.ctx.fillRect(0, 0, mg.w, mg.h); }   // a red sting when a heart goes
   mgDrawPops();
   // live combo streak counter (top-centre) — grows & reddens as the streak climbs
   if (mg.combo >= 2 && performance.now() - (mg.lastCatch || 0) < 1200) {
@@ -772,8 +840,9 @@ function mgDrawPops() {
   const { ctx } = mg;
   mg.pops.forEach(p => {
     const r = 10 + p.t * 70, a = 1 - p.t / 0.4;
-    ctx.strokeStyle = p.hit ? `rgba(240,208,128,${a})` : `rgba(255,255,255,${a * 0.6})`;
+    ctx.strokeStyle = p.hit ? `rgba(240,208,128,${a})` : p.ouch ? `rgba(230,70,70,${a})` : `rgba(255,255,255,${a * 0.6})`;
     ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke();
+    if (p.ouch) { ctx.textAlign = 'center'; ctx.font = '26px Georgia'; ctx.fillStyle = `rgba(240,90,90,${a})`; ctx.fillText('\uD83D\uDC94', p.x, p.y - r - 6); }
     if (p.hit) {
       ctx.textAlign = 'center';
       ctx.font = '20px Georgia'; ctx.fillStyle = `rgba(240,208,128,${a})`; ctx.fillText('🪙', p.x, p.y - r - 4);
@@ -782,12 +851,21 @@ function mgDrawPops() {
   });
 }
 
-function endMinigame() {
+function endMinigame(failed) {
   if (!mg.active) return;
   mg.active = false;
   if (mg.raf) cancelAnimationFrame(mg.raf);
-  mg.earned = mg.caught + (mg.bonus || 0); // 1 coin per catch + streak & golden bonuses
+  mg.earned = failed ? 0 : mg.caught + (mg.bonus || 0); // 1 coin per catch + bonuses — NOTHING if you ran out of hearts
   const j = mg.job, c = mg.caught, score = mg.earned;
+  if (failed) {
+    document.getElementById('mg-res-emoji').textContent = '💔';
+    document.getElementById('mg-res-title').textContent = 'Out of hearts!';
+    document.getElementById('mg-res-text').textContent = 'Three slip-ups and the job went wrong — no pay this time. Watch what you tap!';
+    document.getElementById('mg-res-coins').textContent = '+0 🪙';
+    document.getElementById('mg-result').classList.add('show');
+    if (typeof sfx === 'function') sfx('sad');
+    return;
+  }
   document.getElementById('mg-res-emoji').textContent = score >= 15 ? '🏆' : c > 0 ? j.icon : '😿';
   document.getElementById('mg-res-title').textContent = score >= 15 ? 'Purrfect!' : score >= 9 ? 'Great job!' : c > 0 ? 'Job done!' : 'So close…';
   let txt = c === 0 ? j.failText : `You ${j.verb} ${c} ${c === 1 ? j.noun[0] : j.noun[1]}!`;

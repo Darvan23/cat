@@ -760,15 +760,24 @@
     background: #2a1d12; touch-action: none;
   }
   #minigame.show { display: flex; }
+  /* the HUD clears the phone notch (safe-area) — the title, hearts & CLOCK BAR always visible */
   #mg-top {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 14px 18px 6px; color: #f0d080;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: calc(10px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 6px calc(18px + env(safe-area-inset-left));
+    color: #f0d080;
   }
-  #mg-title { font-size: 1.1rem; font-weight: bold; letter-spacing: 0.03em; }
-  #mg-stats { color: #f0e8d0; font-size: 0.95rem; }
-  #mg-barwrap { height: 10px; margin: 0 18px 6px; background: rgba(0,0,0,0.4); border-radius: 6px; overflow: hidden; }
-  #mg-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #c8922a, #f0d080); }
-  #mg-canvas { flex: 1; width: 100%; display: block; touch-action: none; cursor: pointer; }
+  #mg-title { font-size: 1.05rem; font-weight: bold; letter-spacing: 0.03em; }
+  #mg-stats { color: #f0e8d0; font-size: 0.95rem; white-space: nowrap; }
+  #mg-barwrap {
+    /* flex: none is THE fix — the canvas's intrinsic size was squeezing this bar to ~2px
+       (worst on short phone screens: "the timer doesn't show") */
+    flex: 0 0 auto;
+    height: 14px; margin: 0 calc(18px + env(safe-area-inset-right)) 6px calc(18px + env(safe-area-inset-left));
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(240,208,128,0.35); border-radius: 8px; overflow: hidden;
+  }
+  #mg-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #c8922a, #f0d080); transition: background 0.3s; }
+  #mg-canvas { flex: 1; min-height: 0; width: 100%; display: block; touch-action: none; cursor: pointer; }
+  #mg-top { flex: 0 0 auto; }
   #mg-hint { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; color: #d4b896; font-size: 0.8rem; pointer-events: none; }
   #mg-result {
     position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
