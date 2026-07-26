@@ -1594,6 +1594,14 @@ function playWithCat(fc) {
 // A rescued cat strolling its patch of town — proper legs, tail and idle life
 function updateFreedCat(c) {
   const dt = 0.016;
+  // the jointed tail is never still — a lazy wave rides whatever the root pose is doing
+  if (c.tail && c.tail.userData && c.tail.userData.segs) {
+    const ph = c.phase || 0;
+    c.tail.userData.segs.forEach((s, i) => {
+      s.rotation.x = s.userData.rx + Math.sin(t * 2.3 + i * 0.7 + ph) * 0.09;
+      s.rotation.z = Math.sin(t * 1.7 + i * 0.9 + ph) * 0.1;
+    });
+  }
   if (c.playT > 0) {                                          // play time! a cute little routine, phase by phase
     c.playT -= dt;
     const P = c.playT, cp2 = catGroup.position;
@@ -2246,6 +2254,28 @@ function drawMinimap() {
   g.fillStyle = '#f0b828'; g.strokeStyle = '#fff'; g.lineWidth = 2.5; g.beginPath(); g.arc(cx, cz, 6.5, 0, 7); g.fill(); g.stroke();
 }
 
+// ── The hero cat is ALIVE: blinking, one-ear twitches, a never-still tail ──
+let _earTwitchUntil = 0, _twitchEar = 0;
+function updateCatLife() {
+  const now = Date.now();
+  const bl = (now % 3600) < 130;                             // a blink every ~3.6s
+  if (typeof catEyeMeshes !== 'undefined') catEyeMeshes.forEach(e => { if (e._by == null) e._by = e.scale.y; e.scale.y = bl ? e._by * 0.1 : e._by; });
+  if (typeof catEars !== 'undefined' && catEars.length) {
+    if (now > _earTwitchUntil && Math.random() < 0.005) { _earTwitchUntil = now + 170; _twitchEar = Math.random() < 0.5 ? 0 : 1; }   // a quick flick, one ear at a time
+    catEars.forEach((ear, i) => {
+      const tw = (now < _earTwitchUntil && i === _twitchEar) ? 0.3 : 0;
+      ear.outer.rotation.x = ear.bx + tw; ear.inner.rotation.x = ear.bx + tw;
+    });
+  }
+  if (tail.userData.segs) {                                  // the tail wave rides on top of the root pose
+    const excited = state.isJumping || _catHappyT > 0 ? 1.8 : 1;
+    tail.userData.segs.forEach((s, i) => {
+      s.rotation.x = s.userData.rx + Math.sin(t * 2.2 * excited + i * 0.7) * 0.08 * excited;
+      s.rotation.z = Math.sin(t * 1.6 * excited + i * 0.9) * 0.1 * excited;
+    });
+  }
+}
+
 // ─── Game Loop ────────────────────────────────────────────────────────────────
 let t = 0, _lastFrame = 0;
 function animate(now) {
@@ -2263,6 +2293,7 @@ function animate(now) {
   if (t - (state._lastSave || 0) > 6) { state._lastSave = t; saveGame(); }   // autosave every ~6s
   updateDayNight(0.016);
   updateNeeds(0.016);
+  updateCatLife();                                      // blink, ear flicks, tail wave
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it

@@ -143,6 +143,18 @@ const state = {
   crick: null,
 };
 
+// ─── Shared geometry cache ────────────────────────────────────────────────────
+// Characters used to allocate their OWN geometry per mesh — ~60 townsfolk × ~25
+// meshes = piles of duplicate buffers. The cache hands out one smooth, high-segment
+// geometry per shape, so everyone shares: characters get ~2× the polish for LESS
+// memory than before.
+const _GEO = {};
+const G = {
+  sph(r, w = 28, h = 20) { const k = 's' + r + '_' + w + '_' + h; return _GEO[k] || (_GEO[k] = new THREE.SphereGeometry(r, w, h)); },
+  cyl(rt, rb, h, s = 22) { const k = 'c' + rt + '_' + rb + '_' + h + '_' + s; return _GEO[k] || (_GEO[k] = new THREE.CylinderGeometry(rt, rb, h, s)); },
+  cone(r, h, s = 20) { const k = 'k' + r + '_' + h + '_' + s; return _GEO[k] || (_GEO[k] = new THREE.ConeGeometry(r, h, s)); },
+};
+
 // ─── Three.js Setup ───────────────────────────────────────────────────────────
 // Phones get a lighter renderer: lower pixel ratio, cheaper shadows — a steady
 // frame rate feels far better in the paw than extra resolution ever looks.

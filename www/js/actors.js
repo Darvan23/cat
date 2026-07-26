@@ -7,7 +7,7 @@ function pbr(color, rough = 0.85, metal = 0) {
 }
 
 function addHair(head, cfg, hairMat) {
-  const sph = r => new THREE.SphereGeometry(r, 16, 12);
+  const sph = r => G.sph(r);
   const style = cfg.hairStyle || 'short';
   if (style === 'bald') {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 8, 20), hairMat);
@@ -31,17 +31,19 @@ function addHair(head, cfg, hairMat) {
   }
 }
 
+const _blushMat = new THREE.MeshStandardMaterial({ color: 0xe08a7a, roughness: 0.9, transparent: true, opacity: 0.34 });
+const _glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 function buildHuman(cfg) {
   const g = new THREE.Group();
-  const parts = { arms: [] };
-  const skin  = pbr(cfg.skin, 0.7);
+  const parts = { arms: [], eyes: [] };
+  const skin  = pbr(cfg.skin, 0.62);
   const shirt = pbr(cfg.shirt, 0.82);
   const pants = pbr(cfg.pants, 0.85);
-  const shoeMat = pbr(cfg.shoe || 0x2a2018, 0.6);
+  const shoeMat = pbr(cfg.shoe || 0x2a2018, 0.55);
   const hairMat = pbr(cfg.hair, 0.92);
-  const dark = pbr(0x141414, 0.5);
-  const sph = r => new THREE.SphereGeometry(r, 16, 12);
-  const cyl = (rt, rb, h, s = 14) => new THREE.CylinderGeometry(rt, rb, h, s);
+  const dark = pbr(0x141414, 0.4);
+  const sph = r => G.sph(r);                             // smooth shared geometry (see core.js)
+  const cyl = (rt, rb, h) => G.cyl(rt, rb, h);
   const add = m => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
   const S = (geo, m, x, y, z, sx = 1, sy = 1, sz = 1) => {
     const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); return add(mesh);
@@ -50,11 +52,13 @@ function buildHuman(cfg) {
   const waistR = round ? 0.25 : 0.18;
   const bellyZ = round ? 0.06 : 0;
 
-  // legs (jointed at the hip, so they can walk)
+  // legs (jointed at the hip, with knee balls so a bent leg stays CONNECTED)
   parts.legs = [];
   [-0.11, 0.11].forEach(lx => {
     const leg = new THREE.Group(); leg.position.set(lx, 0.84, 0);
+    const hip = new THREE.Mesh(sph(0.1), pants); hip.castShadow = true; leg.add(hip);
     const thigh = new THREE.Mesh(cyl(0.1, 0.085, 0.44), pants); thigh.position.y = -0.22; thigh.castShadow = true; leg.add(thigh);
+    const knee = new THREE.Mesh(sph(0.085), pants); knee.position.y = -0.43; knee.castShadow = true; leg.add(knee);
     const shin = new THREE.Mesh(cyl(0.085, 0.07, 0.4), pants); shin.position.y = -0.62; shin.castShadow = true; leg.add(shin);
     const shoe = new THREE.Mesh(sph(0.11), shoeMat); shoe.scale.set(1, 0.6, 1.6); shoe.position.set(0, -0.82, 0.06); shoe.castShadow = true; leg.add(shoe);
     g.add(leg); parts.legs.push(leg);
@@ -67,12 +71,14 @@ function buildHuman(cfg) {
   S(sph(0.25), shirt, 0, 1.46, 0, 1.06, 0.6, 0.85);   // shoulders
   S(cyl(0.1, 0.12, 0.08), shirt, 0, 1.52, 0.02);       // collar
 
-  // arms (groups, for idle sway)
+  // arms (groups, for idle sway — shoulder & elbow balls keep them seamless mid-swing)
   [-1, 1].forEach(s => {
     const arm = new THREE.Group(); arm.position.set(s * 0.28, 1.46, 0); arm.rotation.z = s * 0.07;
+    const shoulder = new THREE.Mesh(sph(0.08), shirt); shoulder.castShadow = true; arm.add(shoulder);
     const upper = new THREE.Mesh(cyl(0.075, 0.065, 0.34), shirt); upper.position.y = -0.17; upper.castShadow = true; arm.add(upper);
+    const elbow = new THREE.Mesh(sph(0.062), skin); elbow.position.y = -0.34; elbow.castShadow = true; arm.add(elbow);
     const fore = new THREE.Mesh(cyl(0.06, 0.052, 0.32), skin); fore.position.y = -0.5; fore.castShadow = true; arm.add(fore);
-    const hand = new THREE.Mesh(sph(0.07), skin); hand.position.set(0, -0.68, 0.02); hand.scale.set(1, 0.85, 0.6); hand.castShadow = true; arm.add(hand);
+    const hand = new THREE.Mesh(sph(0.07), skin); hand.position.set(0, -0.68, 0.02); hand.scale.set(1, 0.9, 0.72); hand.castShadow = true; arm.add(hand);
     g.add(arm); parts.arms.push(arm);
   });
 
@@ -84,12 +90,17 @@ function buildHuman(cfg) {
   [-1, 1].forEach(s => { const ear = new THREE.Mesh(sph(0.045), skin); ear.position.set(s * 0.19, 0, 0); ear.scale.set(0.6, 1, 0.7); head.add(ear); });
   const nose = new THREE.Mesh(sph(0.035), skin); nose.position.set(0, -0.02, 0.205); nose.scale.set(0.9, 1.2, 1.3); head.add(nose);
   [-0.075, 0.075].forEach(ex => {
-    const w = new THREE.Mesh(sph(0.038), pbr(0xf6f4ee, 0.4)); w.position.set(ex, 0.04, 0.175); w.scale.set(1, 0.7, 0.6); head.add(w);
-    const iris = new THREE.Mesh(sph(0.018), pbr(cfg.eye || 0x5a3a22, 0.3)); iris.position.set(ex, 0.04, 0.2); head.add(iris);
+    const w = new THREE.Mesh(sph(0.038), pbr(0xf6f4ee, 0.35)); w.position.set(ex, 0.04, 0.175); w.scale.set(1, 0.7, 0.6); head.add(w);
+    const iris = new THREE.Mesh(sph(0.018), pbr(cfg.eye || 0x5a3a22, 0.25)); iris.position.set(ex, 0.04, 0.2); head.add(iris);
     const pup = new THREE.Mesh(sph(0.009), dark); pup.position.set(ex, 0.04, 0.213); head.add(pup);
+    const glint = new THREE.Mesh(sph(0.005), _glintMat); glint.position.set(ex + 0.008, 0.052, 0.219); head.add(glint);   // the spark of life
     const brow = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.03), hairMat); brow.position.set(ex, 0.105, 0.19); head.add(brow);
+    parts.eyes.push(w, iris, pup, glint);                // blinkable as one set
+    const blush = new THREE.Mesh(sph(0.035), _blushMat); blush.position.set(ex * 1.75, -0.045, 0.16); blush.scale.set(1.2, 0.7, 0.5); head.add(blush);
   });
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.02, 0.02), pbr(0x9a4a44, 0.6)); mouth.position.set(0, -0.1, 0.2); head.add(mouth);
+  // a gentle smile (a thin curved arc, not a letterbox slot)
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.009, 8, 14, Math.PI * 0.8), pbr(0x9a4a44, 0.6));
+  mouth.position.set(0, -0.082, 0.195); mouth.rotation.z = Math.PI + Math.PI * 0.1; head.add(mouth);
   addHair(head, cfg, hairMat);
 
   if (cfg.beard) {
@@ -120,8 +131,18 @@ function buildHuman(cfg) {
   return { group: g, parts };
 }
 
+// Everyone blinks — each on their own rhythm (phase-offset), idle or mid-stride
+function blinkHuman(o) {
+  const eyes = o.parts && o.parts.eyes;
+  if (!eyes || !eyes.length) return;
+  const bl = ((Date.now() + (((o.phase || 0) * 977) | 0)) % 4100) < 140;
+  if (o._blinking === bl) return;
+  o._blinking = bl;
+  eyes.forEach(e => { if (e._by == null) e._by = e.scale.y; e.scale.y = bl ? e._by * 0.08 : e._by; });
+}
 function idleHuman(o, time) {
   if (!o.parts) return;
+  blinkHuman(o);
   // o.phase can be a STRING for some actors (the Millers' routine phase) — a string here made
   // sin() return NaN, which wiped their head/arm rotations (the "lost head & arms" glitch).
   let ph = o.phase;
@@ -246,6 +267,8 @@ function updateWander(o) {
   const sw = Math.sin(o.walkT);
   if (o.parts.legs) { o.parts.legs[0].rotation.x = sw * 0.5; o.parts.legs[1].rotation.x = -sw * 0.5; }
   if (o.parts.arms) { o.parts.arms[0].rotation.x = -sw * 0.4; o.parts.arms[1].rotation.x = sw * 0.4; }
+  if (o.parts.head) o.parts.head.rotation.z = sw * 0.02;     // head keeps a natural counter-sway
+  blinkHuman(o);
   o.group.position.y = Math.abs(Math.sin(o.walkT)) * 0.02;
   o.group.rotation.z = sw * 0.03;                            // subtle hip sway while walking
 }
@@ -423,6 +446,8 @@ function updateCommuter(o) {
   const sw = Math.sin(o.walkT);
   if (o.parts.legs) { o.parts.legs[0].rotation.x = sw * 0.5; o.parts.legs[1].rotation.x = -sw * 0.5; }
   if (o.parts.arms) { o.parts.arms[0].rotation.x = -sw * 0.4; o.parts.arms[1].rotation.x = sw * 0.4; }
+  if (o.parts.head) o.parts.head.rotation.z = sw * 0.02;
+  blinkHuman(o);
   o.group.position.y = Math.abs(Math.sin(o.walkT)) * 0.02;
   o.group.rotation.z = sw * 0.03;                            // subtle hip sway while walking
 }

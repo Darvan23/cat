@@ -7,12 +7,34 @@ scene.add(catGroup);
 
 // Helper: a smooth ellipsoid (scaled sphere) added to the cat
 function ellip(r, sx, sy, sz, material, x, y, z) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), material);
+  const m = new THREE.Mesh(G.sph(r), material);   // shared high-segment geometry
   m.scale.set(sx, sy, sz);
   m.position.set(x, y, z);
   m.castShadow = true; m.receiveShadow = true;
   catGroup.add(m);
   return m;
+}
+
+// A REAL cat tail: five overlapping joints in a chain, arcing up and curling at the
+// tip. The root group keeps the old `tail.rotation` animation contract; the segments
+// carry their resting bend in userData.rx and WAVE on top of it (see updateCatLife).
+function makeTailChain(material) {
+  const root = new THREE.Group();
+  const segs = [];
+  const R = [0.078, 0.07, 0.062, 0.054, 0.046];
+  const BEND = [0.5, -0.26, -0.3, -0.3, -0.26];
+  let parent = root;
+  for (let i = 0; i < 5; i++) {
+    const seg = new THREE.Group();
+    seg.position.y = i === 0 ? 0 : 0.15;
+    seg.rotation.x = BEND[i]; seg.userData.rx = BEND[i];
+    const ball = new THREE.Mesh(G.sph(R[i], 18, 14), material);
+    ball.position.y = 0.085; ball.scale.y = 1.55; ball.castShadow = true;
+    seg.add(ball);
+    parent.add(seg); segs.push(seg); parent = seg;
+  }
+  root.userData.segs = segs;
+  return root;
 }
 
 // Body — blended torso, chest, rump and neck
@@ -27,32 +49,44 @@ const muzzle = ellip(0.15, 1.1, 0.85, 0.9, mat.catBody, 0, 0.57, 0.8); // muzzle
 ellip(0.1, 1.0, 0.9, 0.8, mat.catBody, -0.12, 0.6, 0.72);   // cheek L
 ellip(0.1, 1.0, 0.9, 0.8, mat.catBody,  0.12, 0.6, 0.72);   // cheek R
 
-// Ears — outer shell + pink inner
+// Haunches — the strong back legs a sitting-cat silhouette is made of
+ellip(0.17, 1.0, 1.15, 1.2, mat.catBody, -0.17, 0.42, -0.38);
+ellip(0.17, 1.0, 1.15, 1.2, mat.catBody,  0.17, 0.42, -0.38);
+
+// Ears — outer shell + pink inner (stored for twitches)
+const catEars = [];
 [-0.14, 0.14].forEach(ex => {
-  const ear = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.26, 12), mat.catDark);
+  const ear = new THREE.Mesh(G.cone(0.13, 0.26), mat.catDark);
   ear.position.set(ex, 0.9, 0.52);
   ear.rotation.z = -ex * 1.2; ear.rotation.x = -0.25;
   ear.castShadow = true;
   catGroup.add(ear);
-  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 10), mat.catInner);
+  const inner = new THREE.Mesh(G.cone(0.07, 0.18), mat.catInner);
   inner.position.set(ex, 0.88, 0.55);
   inner.rotation.copy(ear.rotation);
   catGroup.add(inner);
+  catEars.push({ outer: ear, inner, bx: -0.25 });
 });
 
-// Eyes — coloured iris + pupil
+// Eyes — coloured iris + slit pupil + a glint of life (stored for blinking)
+const catEyeMeshes = [];
+const _catGlintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 function eye(x) {
-  const e = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), mat.catEye);
+  const e = new THREE.Mesh(G.sph(0.06, 18, 14), mat.catEye);
   e.position.set(x, 0.69, 0.78);
   catGroup.add(e);
-  const p = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), mat.catPupil);
-  p.position.set(x, 0.69, 0.83); p.scale.set(0.6, 1.1, 1);
+  const p = new THREE.Mesh(G.sph(0.03, 14, 10), mat.catPupil);
+  p.position.set(x, 0.69, 0.83); p.scale.set(0.55, 1.2, 1);
   catGroup.add(p);
+  const gl = new THREE.Mesh(G.sph(0.011, 10, 8), _catGlintMat);
+  gl.position.set(x + 0.014, 0.71, 0.845);
+  catGroup.add(gl);
+  catEyeMeshes.push(e, p, gl);
 }
 eye(-0.11); eye(0.11);
 
 // Nose
-const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), mat.catNose);
+const nose = new THREE.Mesh(G.sph(0.045, 14, 10), mat.catNose);
 nose.position.set(0, 0.6, 0.95); nose.scale.set(1.2, 0.8, 0.8);
 catGroup.add(nose);
 
@@ -66,24 +100,12 @@ const whiskerMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: t
   catGroup.add(new THREE.Line(g, whiskerMat));
 });
 
-// Tail — curved tube on a pivot so it can sway
-const tail = new THREE.Group();
+// Tail — the jointed chain (root keeps the old sway contract; segments wave)
+const tail = makeTailChain(mat.catDark);
 tail.position.set(0, 0.5, -0.62);
 catGroup.add(tail);
-const tailCurve = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(0, 0, 0),
-  new THREE.Vector3(0, 0.18, -0.18),
-  new THREE.Vector3(0, 0.42, -0.28),
-  new THREE.Vector3(0, 0.62, -0.16),
-]);
-const tailMesh = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 20, 0.06, 8, false), mat.catDark);
-tailMesh.castShadow = true;
-tail.add(tailMesh);
-const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), mat.catDark);
-tailTip.position.set(0, 0.62, -0.16);
-tail.add(tailTip);
 
-// Legs — 4 groups pivoting at the hip for a walk cycle
+// Legs — 4 groups pivoting at the hip for a walk cycle (knee balls keep them seamless)
 const legHips = [
   [-0.17, 0.42, 0.30], [0.17, 0.42, 0.30],    // front
   [-0.19, 0.43, -0.34], [0.19, 0.43, -0.34],  // back
@@ -92,14 +114,16 @@ const legSocks = [];
 const legs = legHips.map(([lx, ly, lz]) => {
   const leg = new THREE.Group();
   leg.position.set(lx, ly, lz);
-  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.26, 10), mat.catBody);
+  const hip = new THREE.Mesh(G.sph(0.072, 14, 10), mat.catBody); hip.castShadow = true; leg.add(hip);
+  const upper = new THREE.Mesh(G.cyl(0.07, 0.06, 0.26), mat.catBody);
   upper.position.y = -0.13; upper.castShadow = true; leg.add(upper);
-  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.22, 10), mat.catBody);
+  const knee = new THREE.Mesh(G.sph(0.06, 14, 10), mat.catBody); knee.position.y = -0.25; knee.castShadow = true; leg.add(knee);
+  const lower = new THREE.Mesh(G.cyl(0.06, 0.05, 0.22), mat.catBody);
   lower.position.y = -0.34; lower.castShadow = true; leg.add(lower);
-  const paw = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), mat.catBody);
+  const paw = new THREE.Mesh(G.sph(0.075, 14, 10), mat.catBody);
   paw.position.set(0, -0.44, 0.03); paw.scale.set(1, 0.7, 1.3); paw.castShadow = true; leg.add(paw);
   // a tuxedo "sock" that lives ON the leg (so it swings with it, not a stationary white blob)
-  const sock = new THREE.Mesh(new THREE.SphereGeometry(0.088, 12, 10), mat.catWhite);
+  const sock = new THREE.Mesh(G.sph(0.088, 16, 12), mat.catWhite);
   sock.scale.set(1, 1.25, 1.45); sock.position.set(0, -0.36, 0.03); sock.visible = false; sock.castShadow = true; leg.add(sock);
   legSocks.push(sock);
   catGroup.add(leg);
@@ -221,42 +245,43 @@ function buildCatModel(cat) {
   const whiteM = M(cat.accent);                                          // tuxedo white = accent
   const markAM = M(cat.markings === 'calico' ? (cat.patch1 || cat.accent) : cat.accent);
   const markBM = M(cat.patch2 || 0x3a3530);
-  const el = (r, sx, sy, sz, m, x, y, z) => { const me = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), m); me.scale.set(sx, sy, sz); me.position.set(x, y, z); me.castShadow = true; g.add(me); return me; };
+  const el = (r, sx, sy, sz, m, x, y, z) => { const me = new THREE.Mesh(G.sph(r), m); me.scale.set(sx, sy, sz); me.position.set(x, y, z); me.castShadow = true; g.add(me); return me; };
   // body
   const body = el(0.3, 1.08, 0.96, 1.7, bodyM, 0, 0.44, -0.05);
   el(0.3, 1.0, 1.0, 0.95, bodyM, 0, 0.42, 0.34); el(0.3, 1.12, 1.08, 1.05, bodyM, 0, 0.45, -0.42); el(0.12, 1.0, 1.2, 1.0, bodyM, 0, 0.55, 0.45);
+  el(0.17, 1.0, 1.15, 1.2, bodyM, -0.17, 0.42, -0.38); el(0.17, 1.0, 1.15, 1.2, bodyM, 0.17, 0.42, -0.38);   // haunches
   // head
   el(0.26, 1.0, 0.95, 0.92, bodyM, 0, 0.66, 0.6); el(0.15, 1.1, 0.85, 0.9, bodyM, 0, 0.57, 0.8);
   el(0.1, 1.0, 0.9, 0.8, bodyM, -0.12, 0.6, 0.72); el(0.1, 1.0, 0.9, 0.8, bodyM, 0.12, 0.6, 0.72);
   // ears
   [-0.14, 0.14].forEach(ex => {
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.26, 12), darkM); ear.position.set(ex, 0.9, 0.52); ear.rotation.z = -ex * 1.2; ear.rotation.x = -0.25; ear.castShadow = true; g.add(ear);
-    const inn = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 10), innerM); inn.position.set(ex, 0.88, 0.55); inn.rotation.copy(ear.rotation); g.add(inn);
+    const ear = new THREE.Mesh(G.cone(0.13, 0.26), darkM); ear.position.set(ex, 0.9, 0.52); ear.rotation.z = -ex * 1.2; ear.rotation.x = -0.25; ear.castShadow = true; g.add(ear);
+    const inn = new THREE.Mesh(G.cone(0.07, 0.18), innerM); inn.position.set(ex, 0.88, 0.55); inn.rotation.copy(ear.rotation); g.add(inn);
   });
-  // eyes + nose
+  // eyes (slit pupils + a glint of life) + nose
   [-0.11, 0.11].forEach(ex => {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), eyeM); e.position.set(ex, 0.69, 0.78); g.add(e);
-    const p = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), pupM); p.position.set(ex, 0.69, 0.83); p.scale.set(0.6, 1.1, 1); g.add(p);
+    const e = new THREE.Mesh(G.sph(0.06, 18, 14), eyeM); e.position.set(ex, 0.69, 0.78); g.add(e);
+    const p = new THREE.Mesh(G.sph(0.03, 14, 10), pupM); p.position.set(ex, 0.69, 0.83); p.scale.set(0.55, 1.2, 1); g.add(p);
+    const gl = new THREE.Mesh(G.sph(0.011, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })); gl.position.set(ex + 0.014, 0.71, 0.845); g.add(gl);
   });
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), noseM); nose.position.set(0, 0.6, 0.95); nose.scale.set(1.2, 0.8, 0.8); g.add(nose);
-  // tail
-  const tail = new THREE.Group(); tail.position.set(0, 0.5, -0.62); g.add(tail);
-  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.18, -0.18), new THREE.Vector3(0, 0.42, -0.28), new THREE.Vector3(0, 0.62, -0.16)]);
-  const tm = new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.06, 8, false), darkM); tm.castShadow = true; tail.add(tm);
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), darkM); tip.position.set(0, 0.62, -0.16); tail.add(tip);
+  const nose = new THREE.Mesh(G.sph(0.045, 14, 10), noseM); nose.position.set(0, 0.6, 0.95); nose.scale.set(1.2, 0.8, 0.8); g.add(nose);
+  // tail — the same jointed chain as the hero cat (segments wave in updateFreedCat)
+  const tail = makeTailChain(darkM); tail.position.set(0, 0.5, -0.62); g.add(tail);
   // legs
   const hips = [[-0.17, 0.42, 0.30], [0.17, 0.42, 0.30], [-0.19, 0.43, -0.34], [0.19, 0.43, -0.34]];
   const tux = cat.markings === 'tuxedo';
   const legs = hips.map(([lx, ly, lz]) => {
     const leg = new THREE.Group(); leg.position.set(lx, ly, lz);
-    const up = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.26, 10), bodyM); up.position.y = -0.13; up.castShadow = true; leg.add(up);
-    const lo = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.22, 10), bodyM); lo.position.y = -0.34; lo.castShadow = true; leg.add(lo);
-    const paw = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), bodyM); paw.position.set(0, -0.44, 0.03); paw.scale.set(1, 0.7, 1.3); leg.add(paw);
-    if (tux) { const sock = new THREE.Mesh(new THREE.SphereGeometry(0.088, 12, 10), whiteM); sock.scale.set(1, 1.25, 1.45); sock.position.set(0, -0.36, 0.03); sock.castShadow = true; leg.add(sock); }   // sock rides the leg
+    const hip = new THREE.Mesh(G.sph(0.072, 14, 10), bodyM); hip.castShadow = true; leg.add(hip);
+    const up = new THREE.Mesh(G.cyl(0.07, 0.06, 0.26), bodyM); up.position.y = -0.13; up.castShadow = true; leg.add(up);
+    const knee = new THREE.Mesh(G.sph(0.06, 14, 10), bodyM); knee.position.y = -0.25; knee.castShadow = true; leg.add(knee);
+    const lo = new THREE.Mesh(G.cyl(0.06, 0.05, 0.22), bodyM); lo.position.y = -0.34; lo.castShadow = true; leg.add(lo);
+    const paw = new THREE.Mesh(G.sph(0.075, 14, 10), bodyM); paw.position.set(0, -0.44, 0.03); paw.scale.set(1, 0.7, 1.3); leg.add(paw);
+    if (tux) { const sock = new THREE.Mesh(G.sph(0.088, 16, 12), whiteM); sock.scale.set(1, 1.25, 1.45); sock.position.set(0, -0.36, 0.03); sock.castShadow = true; leg.add(sock); }   // sock rides the leg
     g.add(leg); return leg;
   });
   // coat markings
-  const mm = (r, sx, sy, sz, m, x, y, z) => { const me = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), m); me.scale.set(sx, sy, sz); me.position.set(x, y, z); me.castShadow = true; g.add(me); };
+  const mm = (r, sx, sy, sz, m, x, y, z) => { const me = new THREE.Mesh(G.sph(r), m); me.scale.set(sx, sy, sz); me.position.set(x, y, z); me.castShadow = true; g.add(me); };
   if (cat.markings === 'tabby') { mm(0.30, 1.12, 0.62, 1.55, markAM, 0, 0.55, -0.10); mm(0.26, 1.00, 0.50, 0.70, markAM, 0, 0.78, 0.55); }
   else if (tux) { mm(0.30, 0.85, 0.95, 0.80, whiteM, 0, 0.34, 0.42); mm(0.15, 1.05, 0.80, 0.90, whiteM, 0, 0.52, 0.86); }
   else if (cat.markings === 'calico') { mm(0.30, 0.95, 0.80, 1.15, markAM, 0.14, 0.50, -0.20); mm(0.26, 0.95, 0.95, 0.85, markBM, -0.12, 0.66, 0.52); }
