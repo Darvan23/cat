@@ -3,7 +3,10 @@
 // around and tap Place to drop it. Rotate, undo, zoom, and rename the streets too.
 
 const PLANNER_ITEMS = [
+  { type: 'cottage', icon: '🛖', name: 'Cottage', cost: 45000 },
   { type: 'house',   icon: '🏠', name: 'House',   cost: 80000 },
+  { type: 'villa',   icon: '🏡', name: 'Villa',   cost: 130000 },
+  { type: 'flats',   icon: '🏢', name: 'Flats',   cost: 220000 },
   { type: 'shelter', icon: '🐾', name: 'Shelter', cost: 60000 },
   { type: 'tree',    icon: '🌳', name: 'Tree',    cost: 600 },
   { type: 'pine',    icon: '🌲', name: 'Pine',    cost: 550 },
@@ -34,6 +37,32 @@ function placedVisual(type) {
     B(1.4, 2.4, 0.2, mat.door, 0, 1.2, 3.02);
     B(1.3, 1.3, 0.2, mat.window, -1.8, 2.4, 3.02); B(1.3, 1.3, 0.2, mat.window, 1.8, 2.4, 3.02);
     coll = { hw: 3.2, hd: 3.2 };
+  } else if (type === 'cottage') {   // a snug thatched cottage — home for ONE
+    B(4.4, 3, 4.4, new THREE.MeshStandardMaterial({ color: 0xd8c8a8, roughness: 0.95 }), 0, 1.5, 0);
+    const th = new THREE.Mesh(new THREE.ConeGeometry(3.7, 2.5, 4), new THREE.MeshStandardMaterial({ color: 0xa08a58, roughness: 1 })); th.position.set(0, 4.15, 0); th.rotation.y = Math.PI / 4; th.castShadow = true; g.add(th);
+    B(1.2, 2.1, 0.2, mat.door, 0, 1.05, 2.22);
+    B(1.1, 1.1, 0.2, mat.window, -1.3, 1.9, 2.22);
+    B(0.5, 1.6, 0.5, matStone, 1.5, 3.9, -1.0);   // chimney
+    coll = { hw: 2.4, hd: 2.4 };
+  } else if (type === 'villa') {   // a wide porched villa — home for THREE
+    const cream = new THREE.MeshStandardMaterial({ color: 0xf0e6d8, roughness: 0.9 });
+    B(8, 4.4, 5, cream, 0, 2.2, 0);
+    B(8.6, 0.35, 5.6, mat.roofRed, 0, 4.6, 0);
+    B(2.8, 0.25, 1.5, mat.roofRed, 0, 2.5, 2.9);                                   // porch roof
+    [-1.15, 1.15].forEach(px => CY(0.13, 0.15, 2.3, 8, cream, px, 1.15, 3.35));    // porch columns
+    B(1.4, 2.4, 0.2, mat.door, 0, 1.2, 2.52);
+    [-3, -1.8, 1.8, 3].forEach(px => B(1.0, 1.2, 0.2, mat.window, px, 2.7, 2.52));
+    coll = { hw: 4.4, hd: 2.9 };
+  } else if (type === 'flats') {   // a three-storey block of flats — homes for SIX
+    const blockM = new THREE.MeshStandardMaterial({ color: 0xc0ccd4, roughness: 0.9 });
+    B(6.4, 9, 5.2, blockM, 0, 4.5, 0);
+    B(6.9, 0.35, 5.7, matStone, 0, 9.15, 0);
+    B(1.6, 2.4, 0.2, mat.door, 0, 1.2, 2.62);
+    for (let fl = 0; fl < 3; fl++) for (let cx = -1; cx <= 1; cx++) {
+      if (fl === 0 && cx === 0) continue;   // the door lives there
+      B(1.2, 1.3, 0.2, mat.window, cx * 2.0, 1.9 + fl * 2.6, 2.62);
+    }
+    coll = { hw: 3.4, hd: 2.8 };
   } else if (type === 'shelter') {
     B(9, 5, 6.5, new THREE.MeshStandardMaterial({ color: 0xc8d0d4, roughness: 0.9 }), 0, 2.5, 0);
     const roof = new THREE.Mesh(new THREE.ConeGeometry(6.6, 2.6, 4), new THREE.MeshStandardMaterial({ color: 0x6a8a9a, roughness: 0.8 })); roof.position.set(0, 6.3, 0); roof.rotation.y = Math.PI / 4; roof.castShadow = true; g.add(roof);
@@ -126,7 +155,7 @@ function buildPlacedMesh(type, x, z, rot, rec) {
     entry.prop = addProp({
       kind: type, group, x, z, rotY: rot || 0, coll: collRef, movable: type !== 'road',   // EVERYTHING you place can be re-moved (roads stay snapped)
       hw: coll && !coll.circle ? coll.hw : undefined, hd: coll && !coll.circle ? coll.hd : undefined,
-      use: useAs, destroyable: type === 'house', placed: true, rec, meshEntry: entry,
+      use: useAs, destroyable: !!HOME_CAPACITY[type], placed: true, rec, meshEntry: entry,
       onMove: (nx, nz) => {
         if (entry.water) { entry.water.x = nx; entry.water.z = nz; }   // drinkable water follows the basin
         if (binRec) { binRec.x = nx; binRec.z = nz; }                   // the bin stays searchable where you drop it
@@ -338,10 +367,10 @@ function doPlace(type, x, z, rot) {
   (state.placed = state.placed || []).push(rec);
   plannerMeshes.push(buildPlacedMesh(rec.type, rec.x, rec.z, rec.rot, rec));
   if (type === 'road') _lastRoad = { x: rec.x, z: rec.z, rot: rec.rot };   // remember it, to extend from
-  if (type === 'house') addPlacedResidents();                              // a new home brings newcomers to town
+  if (HOME_CAPACITY[type]) addPlacedResidents(HOME_CAPACITY[type]);        // a new home brings newcomers — bigger homes bring MORE
   if (typeof schoolEvent === 'function') {                                 // 🏫 planning-course tasks watch the planner
     schoolEvent(type === 'road' ? 'road' : 'place');
-    if (type === 'house') schoolEvent('placeHouse');
+    if (HOME_CAPACITY[type]) schoolEvent('placeHouse');
   }
   if (typeof sfx === 'function') sfx('coin');
   showNotif(item.icon + ' ' + item.name + ' placed');
@@ -349,10 +378,12 @@ function doPlace(type, x, z, rot) {
   if (typeof saveGame === 'function') saveGame();
   return true;
 }
+// How many townsfolk each home type houses (🛖 snug → 🏢 a whole block)
+const HOME_CAPACITY = { cottage: 1, house: 2, villa: 3, flats: 6 };
 // A house you build first takes in the homeless; only once nobody's homeless does it
 // bring brand-new residents (and the population actually grows).
-function addPlacedResidents() {
-  const r = (typeof rehouseOrGrow === 'function') ? rehouseOrGrow() : { rehoused: 0, grow: 2 };
+function addPlacedResidents(cap) {
+  const r = (typeof rehouseOrGrow === 'function') ? rehouseOrGrow(cap || 2) : { rehoused: 0, grow: cap || 2 };
   if (r.grow > 0) {
     if (typeof addCommuter === 'function') { for (let i = 0; i < r.grow; i++) addCommuter(); }
     if (typeof addStreetCat === 'function') addStreetCat();

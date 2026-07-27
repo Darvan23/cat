@@ -114,7 +114,7 @@ function processBusinessDay() {
 }
 
 // ── Reputation, from your good deeds ──
-function housesBuiltCount() { return ((state.politics && state.politics.homes) ? state.politics.homes.length : 0) + ((state.owned.homes || []).length) + ((state.placed || []).filter(p => p.type === 'house').length); }
+function housesBuiltCount() { return ((state.politics && state.politics.homes) ? state.politics.homes.length : 0) + ((state.owned.homes || []).length) + ((state.placed || []).filter(p => ['house', 'cottage', 'villa', 'flats'].includes(p.type)).length); }
 function catsFreedCount() { return (state.freed || []).length; }
 function reputation() {
   if (state.disgraced) return { label: 'Disgraced 😾 (jailed for corruption)', cls: 'bad' };

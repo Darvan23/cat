@@ -222,6 +222,9 @@ function drawTownPostcard(cv, snap) {
   (snap.placed || []).forEach(r => {
     const px = WX(r.x), py = WZ(r.z);
     if (r.type === 'house') bldg(r.x, r.z, 5, 4, '#eccaa0', '#cba46e');
+    else if (r.type === 'cottage') bldg(r.x, r.z, 4, 4, '#e0d0b0', '#b09a6e');
+    else if (r.type === 'villa') bldg(r.x, r.z, 7, 4.5, '#f4e8d4', '#c8a878');
+    else if (r.type === 'flats') bldg(r.x, r.z, 5.5, 4.5, '#c6d2da', '#94a6b2');
     else if (r.type === 'shelter') bldg(r.x, r.z, 6, 5, '#d4e6dd', '#8fbfae');
     else if (r.type === 'tree' || r.type === 'pine' || r.type === 'blossom') { g.fillStyle = r.type === 'blossom' ? '#e8a8c8' : r.type === 'pine' ? '#2e7a3e' : '#4f9d38'; g.beginPath(); g.arc(px, py, 4.5, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.2)'; g.lineWidth = 1; g.stroke(); }
     else if (r.type === 'flowers') { g.fillStyle = '#f0d060'; g.beginPath(); g.arc(px, py, 2.6, 0, 7); g.fill(); }

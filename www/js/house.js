@@ -268,12 +268,15 @@ function applyHouseLevel(level) {
 
 function updateEnterPrompt() {
   const btn = document.getElementById('enter-btn');
-  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
+  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
   const cp = catGroup.position;
   let target = null, label = '';
   if (Math.hypot(cp.x - (-3), cp.z - (-7.7)) < 2.6) { target = 'house'; label = '🚪 Enter Home'; }
   else if (state.owned.shop && shopIsOpen() && Math.hypot(cp.x - (-18), cp.z - (-6.3)) < 3.2) { target = 'shop'; label = '🚪 Enter Shop'; }
   else if (Math.hypot(cp.x - SHELTER.x, cp.z - (SHELTER.z - 5)) < 4.2) { target = 'shelter'; label = '🚪 Enter Shelter'; }
+  else if (typeof GRAY_SPOT !== 'undefined' && Math.hypot(cp.x - GRAY_SPOT.x, cp.z - (GRAY_SPOT.z - 7)) < 4.4) {
+    target = 'gray'; label = (state.politics && state.politics.phase === 'president') ? '🏛️ Enter the Gray House' : '🛑 Gray House · Security';
+  }
   else {
     for (const p of PROPERTIES) {
       if (p.type === 'home' && state.owned.homes.includes(p.id) && Math.hypot(cp.x - p.x, cp.z - (p.z + 2.6)) < 3.2) {
@@ -368,6 +371,7 @@ function toggleHouse() {
   else if (state.inBoughtHome) exitBoughtHome();
   else if (state.inBiz) exitBusiness();
   else if (state.inWork && typeof exitWorkplace === 'function') exitWorkplace();
+  else if (state.inGray && typeof exitGrayHouse === 'function') exitGrayHouse();
   else if (state.nearBuilding === 'house') { if (state.disowned) millerRejection(); else enterHouse(); }
   else if (state.nearBuilding === 'shop') enterShop();
   else if (state.nearBuilding === 'shelter') enterShelter();
@@ -375,6 +379,7 @@ function toggleHouse() {
   else if (state.nearBuilding === 'biz') enterBusiness(state.nearBizId);
   else if (state.nearBuilding === 'civic') enterCivic(state.nearCivicId);
   else if (state.nearBuilding === 'workplace' && typeof enterWorkplace === 'function') enterWorkplace(state.nearWorkId);
+  else if (state.nearBuilding === 'gray' && typeof tryEnterGrayHouse === 'function') tryEnterGrayHouse();
 }
 
 // ── Enter / leave the shop and the cat shelter ──
@@ -608,16 +613,31 @@ function houseStairY(x, z) {
   const p = (1.72 - lz) / 3.3;                              // 0 at the bottom step → 1 at the top
   return Math.max(0, Math.min(10, Math.ceil(p * 10))) * 0.24;
 }
+// A quick soft fade over the floor swap — the old instant teleport read as a glitch
+function stairFade(swap) {
+  const fade = document.getElementById('fade');
+  if (!fade) { swap(); return; }
+  fade.style.transition = 'opacity 0.2s';
+  fade.classList.add('show');
+  if (typeof sfx === 'function') sfx('door');
+  setTimeout(() => {
+    swap();
+    setTimeout(() => { fade.classList.remove('show'); setTimeout(() => { fade.style.transition = ''; }, 250); }, 80);
+  }, 210);
+}
 // Walking transitions between the floors (the ⬆️/⬇️ button still works as a shortcut)
 function walkUpstairs() {
   if (state.houseLevel < 3) return;
+  stairFade(() => {
   setFloor('upper');
   catGroup.position.set(-2.4, 0, 1.6); catGroup.rotation.y = Math.PI;   // arrive at the fixed upstairs landing
   state.catBaseY = 0; catGroup.position.y = 0;
   state._stairCd = 55; state._stairArm = false;                          // step off the landing before it can take you down
   if (!state._seenUpWalk) { state._seenUpWalk = true; showDialogue(state.catName + ' 🐱', 'Up the stairs, paw by paw… their own little rooms. We built this. 😊', 4200); }
+  });
 }
 function walkDownstairs() {
+  stairFade(() => {
   setFloor('ground');
   const f = fixtureReg.stairs, ry = (f && f.group.rotation.y) || 0;
   const sp = stairsSpot();
@@ -625,6 +645,7 @@ function walkDownstairs() {
   catGroup.position.set(sp.x + Math.sin(ry) * -1.4, 0, sp.z + Math.cos(ry) * -1.4);
   state.catBaseY = 2.4; catGroup.position.y = 2.4;
   state._stairCd = 55;
+  });
 }
 // Where a freshly-bought item first appears. Home keeps its cosy hand-placed spots;
 // bigger rooms scatter items across the floor so they don't stack.

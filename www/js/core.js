@@ -28,6 +28,8 @@ const state = {
   earned: 0,          // cumulative coins earned (drives story beats)
   goodDeeds: 0,       // kindnesses done for the family & town — builds your reputation, not your wallet
   townCode: null,     // your shareable town code (PAWS-XXXXX), minted on first use
+  countryFlag: 0,     // the national flag the President chose for the Gray House
+  inGray: false,      // inside the presidential mansion
   neighbors: [],      // friends' towns you can visit from above [{code, name}]
   uiOpen: false,      // a give/rescue overlay is open
   freed: [],          // ids of cats rescued from the shelter
@@ -215,6 +217,7 @@ let groundGroup = null, upstairsGroup = null, upstairs = null, poorHouse = null;
 // {type:'box',x0,x1,z0,z1}; an optional `min` gates it to a house level.
 const worldColliders = [], groundColliders = [], upstairsColliders = [], shopColliders = [], shelterColliders = [], boughtHomeColliders = [], bizColliders = [], jailColliders = [];
 function activeColliders() {
+  if (state.inGray) return grayColliders;   // the Gray House interior (grayhouse.js)
   if (state.inHouse) return state.floor === 'upper' ? upstairsColliders : groundColliders;
   if (state.inShop) return shopColliders;
   if (state.inShelter) return shelterColliders;
