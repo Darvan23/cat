@@ -26,7 +26,9 @@ const ZOO_PENS = [
   { x: 128, z: -16, w: 14, d: 12, label: '🦛 HIPPO POOL', kinds: ['hippo', 'hippo'], floor: 0x6fb6d8 },
   { x: 148, z: -16, w: 14, d: 12, label: '🐧 PENGUINS', kinds: ['penguin', 'penguin', 'penguin'], floor: 0xcfe4ec },
   { x: 166, z: -16, w: 12, d: 12, label: '🦩 FLAMINGOS', kinds: ['flamingo', 'flamingo', 'flamingo'], floor: 0x9ec8d8 },
+  { x: 112, z: 8, w: 8, d: 7, label: '🦔 HEDGEHOGS', kinds: ['hedgehog', 'hedgehog', 'hedgehog'], floor: 0xb0a878 },
 ];
+const ZOO_BENCHES = [[124, 8.6, Math.PI], [142, -8.6, 0], [158, 8.6, Math.PI], [176, -10.6, 0]];   // [x, z, faceRy] along the paths
 // the hedge maze: alternating walls turn the central spine into a serpentine puzzle
 const ZOO_HEDGES = [
   // the serpentine spine — TALL hedges you cannot see over
@@ -37,8 +39,8 @@ const ZOO_HEDGES = [
   // entrance plaza baffles
   [118, 10, 118, 31], [118, -31, 118, -10],
 ];
-const ZOO_CAFE = { x: 181, z: 5 };      // 🍔 The Hungry Lion, on the east plaza
-const ZOO_GIFT = { x: 113, z: -6.5 };   // 🎁 the gift shop, by the entrance plaza
+const ZOO_CAFE = { x: 181, z: 8 };      // 🍔 The Hungry Lion — the counter INSIDE the pavilion
+const ZOO_GIFT = { x: 113, z: -8.5 };   // 🎁 the gift shop — the counter INSIDE
 
 // Plant a permanent wild tree of any planner kind (not a player piece — just scenery)
 function plantWildTree(kind, x, z) {
@@ -258,6 +260,20 @@ function zooAnimal(type) {
     g.add(fan);
     [[-0.09, 0], [0.09, 0]].forEach(([lx]) => { const leg = new THREE.Mesh(G.cyl(0.022, 0.022, 0.5), M(0x8a7a4a)); leg.position.set(lx, 0.25, 0.05); g.add(leg); });
     g.userData.head = head; g.userData.fan = fan;
+  } else if (type === 'hedgehog') {
+    const br = M(0x8a6a4a), spikeM = M(0x5a4630);
+    E(0.16, 1.2, 0.85, 1.35, br, 0, 0.16, 0);                                       // little body
+    const head = E(0.09, 1, 0.85, 1.3, M(0xc8a888), 0, 0.14, 0.24);                 // pale snoot
+    E(0.02, 1, 1, 1, M(0x2a2c30, 0.4), 0, 0.15, 0.36);                              // nose
+    g.userData.spikes = [];
+    for (let i = 0; i < 9; i++) {                                                   // the spikes
+      const sp = new THREE.Mesh(G.cone(0.045, 0.16, 6), spikeM);
+      const a = (i / 9) * Math.PI * 2;
+      sp.position.set(Math.cos(a) * 0.1, 0.26 + (i % 3) * 0.02, -0.02 + Math.sin(a) * 0.12);
+      sp.rotation.x = -0.4 + Math.sin(a) * 0.4; sp.rotation.z = Math.cos(a) * 0.5;
+      sp.castShadow = true; g.add(sp); g.userData.spikes.push(sp);
+    }
+    g.userData.head = head;
   } else {   // tortoise — Sheldon, who owns the path
     const sh = M(0x5a7a4a), sk = M(0xa8b078);
     E(0.34, 1.2, 0.75, 1.4, sh, 0, 0.34, 0);
@@ -356,52 +372,177 @@ function buildZoo() {
     state.zooAnimals.push({ group: a, type: k, phase: Math.random() * 6, roam: true, dir: Math.random() * 6, home: { x, z } });
   });
 
-  // ── 🍔 The Hungry Lion (restaurant, east plaza) ──
-  const cafe = new THREE.Group();
-  const cbody = new THREE.Mesh(new THREE.BoxGeometry(7, 3.2, 5), pbr(0xe8d8b8, 0.9)); cbody.position.y = 1.6; cafe.add(cbody);
-  const croof = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.4, 5.6), pbr(0xc0563a, 0.8)); croof.position.y = 3.4; cafe.add(croof);
-  const cwin = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.1, 0.2), pbr(0x2a1c12, 0.4)); cwin.position.set(0, 1.5, -2.55); cafe.add(cwin);   // serving window faces the plaza (south side)
+  // ── 🍔 THE HUNGRY LION — an open-air pavilion you WALK INTO ──
+  const cafeWall = pbr(0xe8d8b8, 0.9);
+  const wallSeg = (x0, z0, x1, z1, m, hgt) => {
+    const w = Math.max(Math.abs(x1 - x0), 0.3), d = Math.max(Math.abs(z1 - z0), 0.3);
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(w, hgt || 2.4, d), m);
+    seg.position.set((x0 + x1) / 2, (hgt || 2.4) / 2, (z0 + z1) / 2); seg.castShadow = true; seg.receiveShadow = true; scene.add(seg);
+    worldColliders.push({ type: 'box', x0: Math.min(x0, x1) - 0.15, x1: Math.max(x0, x1) + 0.15, z0: Math.min(z0, z1) - 0.15, z1: Math.max(z0, z1) + 0.15 });
+    return seg;
+  };
+  // pavilion shell x175..187, z3..11 — door gap on the south wall
+  wallSeg(175, 3, 179, 3, cafeWall); wallSeg(183, 3, 187, 3, cafeWall);
+  wallSeg(175, 11, 187, 11, cafeWall);
+  wallSeg(175, 3, 175, 11, cafeWall); wallSeg(187, 3, 187, 11, cafeWall);
+  // awning ring (open centre — the sky is the ceiling, and the camera sees in)
+  [[181, 3, 12.6], [181, 11, 12.6]].forEach(([ax, az, aw]) => { const aw2 = new THREE.Mesh(new THREE.BoxGeometry(aw, 0.18, 1.6), pbr(0xc0563a, 0.8)); aw2.position.set(ax, 2.6, az); aw2.rotation.x = az > 7 ? -0.3 : 0.3; aw2.castShadow = true; scene.add(aw2); });
+  [[175, 7], [187, 7]].forEach(([ax, az]) => { const aw2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.18, 8.6), pbr(0xc0563a, 0.8)); aw2.position.set(ax, 2.6, az); aw2.rotation.z = ax > 181 ? 0.3 : -0.3; aw2.castShadow = true; scene.add(aw2); });
   if (typeof makeTextSign === 'function') {
     const cs = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.9, 0.14), new THREE.MeshStandardMaterial({ map: makeTextSign('🍔 THE HUNGRY LION', '#7a3a1a', '#ffe9c0', 400, 66), roughness: 0.6 }));
-    cs.position.set(0, 2.75, -2.62); cafe.add(cs);
+    cs.position.set(181, 2.9, 2.94); cs.castShadow = true; scene.add(cs);
   }
-  cafe.position.set(ZOO_CAFE.x, 0, ZOO_CAFE.z + 2.5);
-  cafe.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-  scene.add(cafe);
-  worldColliders.push({ type: 'box', x0: ZOO_CAFE.x - 3.6, x1: ZOO_CAFE.x + 3.6, z0: ZOO_CAFE.z + 0.2, z1: ZOO_CAFE.z + 5.2 });
-  // parasol tables out front
-  [[-3.4, -2.2], [0.4, -3.4], [3.4, -2.0]].forEach(([dx, dz]) => {
-    const tx = ZOO_CAFE.x + dx, tz = ZOO_CAFE.z + dz;
+  // inside: the serving counter (north wall), the kitchen line behind it
+  wallSeg(177.5, 8.6, 184.5, 8.6, pbr(0xb8bcc2, 0.5, 0.2), 1.0);
+  const stove2 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 1.0), pbr(0x8a8f98, 0.5, 0.3)); stove2.position.set(177.2, 0.6, 10.2); stove2.castShadow = true; scene.add(stove2);
+  const fridge2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 1.0), pbr(0xdfe0e4, 0.55)); fridge2.position.set(185.2, 1.0, 10.2); fridge2.castShadow = true; scene.add(fridge2);
+  // indoor tables + stools
+  const ZOO_TABLES = [];
+  [[178, 5.4], [184, 5.4]].forEach(([tx, tz]) => {
+    const tab = new THREE.Mesh(G.cyl(0.7, 0.7, 0.08, 14), pbr(0xd8c8a8, 0.8)); tab.position.set(tx, 0.72, tz); tab.castShadow = true; scene.add(tab);
+    const tleg = new THREE.Mesh(G.cyl(0.06, 0.08, 0.72), pbr(0x8a6a4a, 0.8)); tleg.position.set(tx, 0.36, tz); scene.add(tleg);
+    worldColliders.push({ type: 'circle', x: tx, z: tz, r: 0.75 });
+    ZOO_TABLES.push([tx + 1.1, tz]);
+  });
+  // parasol tables out front (south of the door)
+  [[177.5, 0.8], [181, -0.4], [184.5, 1.0]].forEach(([tx, tz]) => {
     const tab = new THREE.Mesh(G.cyl(0.7, 0.7, 0.08, 14), pbr(0xd8c8a8, 0.8)); tab.position.set(tx, 0.72, tz); tab.castShadow = true; scene.add(tab);
     const tleg = new THREE.Mesh(G.cyl(0.06, 0.08, 0.72), pbr(0x8a6a4a, 0.8)); tleg.position.set(tx, 0.36, tz); scene.add(tleg);
     const pole = new THREE.Mesh(G.cyl(0.03, 0.03, 1.6), pbr(0x8a6a4a, 0.8)); pole.position.set(tx, 1.6, tz); scene.add(pole);
     const um = new THREE.Mesh(G.cone(1.0, 0.5, 8), pbr([0xd0563a, 0xe8c060, 0x5a9ad0][Math.floor(Math.random() * 3)], 0.8)); um.position.set(tx, 2.5, tz); um.castShadow = true; scene.add(um);
     worldColliders.push({ type: 'circle', x: tx, z: tz, r: 0.75 });
+    ZOO_TABLES.push([tx + 1.1, tz]);
   });
+  state.zooTables = ZOO_TABLES;
   const cook = buildHuman({ skin: 0xe0a878, hair: 0x3a2a1a, hairStyle: 'short', apron: true, apronColor: 0xf2f2f2, shirt: 0xc0563a, pants: 0x4a4030, height: 1.04, build: 'round', eye: 0x3a2a1a });
-  cook.group.position.set(ZOO_CAFE.x, 0, ZOO_CAFE.z + 1.2); cook.group.rotation.y = Math.PI;
+  cook.group.position.set(181, 0, 9.6); cook.group.rotation.y = Math.PI;
   scene.add(cook.group);
   state.zooCook = { group: cook.group, parts: cook.parts, phase: Math.random() * 6 };
 
-  // ── 🎁 The gift shop (entrance plaza) ──
-  const gift = new THREE.Group();
-  const gbody = new THREE.Mesh(new THREE.BoxGeometry(5, 2.9, 4), pbr(0xc8a0c8, 0.9)); gbody.position.y = 1.45; gift.add(gbody);
-  const groof = new THREE.Mesh(new THREE.ConeGeometry(3.6, 1.6, 4), pbr(0x8a5a9a, 0.85)); groof.position.y = 3.6; groof.rotation.y = Math.PI / 4; groof.castShadow = true; gift.add(groof);
-  const gwin = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.0, 0.2), pbr(0x2a1c12, 0.4)); gwin.position.set(0, 1.4, 2.05); gift.add(gwin);   // window faces the plaza (north side)
+  // ── 🎁 THE GIFT SHOP — a little pavilion you WALK INTO ──
+  const giftWall = pbr(0xc8a0c8, 0.9);
+  // shell x109..117, z -11.5..-4.5 — door gap on the north wall
+  wallSeg(109, -4.5, 111.5, -4.5, giftWall); wallSeg(114.5, -4.5, 117, -4.5, giftWall);
+  wallSeg(109, -11.5, 117, -11.5, giftWall);
+  wallSeg(109, -11.5, 109, -4.5, giftWall); wallSeg(117, -11.5, 117, -4.5, giftWall);
+  [[113, -4.5], [113, -11.5]].forEach(([ax, az]) => { const aw2 = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.18, 1.4), pbr(0x8a5a9a, 0.85)); aw2.position.set(ax, 2.55, az); aw2.rotation.x = az < -8 ? -0.3 : 0.3; aw2.castShadow = true; scene.add(aw2); });
   if (typeof makeTextSign === 'function') {
     const gs = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.7, 0.14), new THREE.MeshStandardMaterial({ map: makeTextSign('🎁 GIFT SHOP', '#5a2a6a', '#ffe9f0', 300, 56), roughness: 0.6 }));
-    gs.position.set(0, 2.5, 2.12); gift.add(gs);
+    gs.position.set(113, 2.85, -4.44); gs.castShadow = true; scene.add(gs);
   }
-  gift.position.set(ZOO_GIFT.x, 0, ZOO_GIFT.z - 2.2);
-  gift.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-  scene.add(gift);
-  worldColliders.push({ type: 'box', x0: ZOO_GIFT.x - 2.6, x1: ZOO_GIFT.x + 2.6, z0: ZOO_GIFT.z - 4.4, z1: ZOO_GIFT.z - 0.4 });
+  // inside: counter + plush-lined shelves
+  wallSeg(111, -9.6, 115, -9.6, pbr(0xd8c0d8, 0.7), 1.0);
+  [[109.8, -6.2], [116.2, -6.2], [109.8, -8.2], [116.2, -8.2]].forEach(([sx, sz], i) => {
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 1.6), pbr(0x8a6a4a, 0.85)); shelf.position.set(sx, 0.6, sz); shelf.castShadow = true; scene.add(shelf);
+    for (let k = 0; k < 3; k++) {
+      const plush = new THREE.Mesh(G.sph(0.14, 12, 10), pbr([0xd8a860, 0xf090a8, 0x9aa0ac, 0x6a4a30][((i + k) % 4)], 0.9));
+      plush.position.set(sx, 1.35 + 0.0, sz - 0.5 + k * 0.5); plush.castShadow = true; scene.add(plush);
+    }
+    worldColliders.push({ type: 'box', x0: sx - 0.5, x1: sx + 0.5, z0: sz - 0.85, z1: sz + 0.85 });
+  });
   const clerk = buildHuman({ skin: 0xf0c8a0, hair: 0xd06a8a, hairStyle: 'long', shirt: 0x9a5aa8, pants: 0x4a3a52, height: 0.96, build: 'slim', eye: 0x3a5a3a });
-  clerk.group.position.set(ZOO_GIFT.x, 0, ZOO_GIFT.z - 1.0);
+  clerk.group.position.set(113, 0, -10.4);
   scene.add(clerk.group);
   state.zooClerk = { group: clerk.group, parts: clerk.parts, phase: Math.random() * 6 };
 
+  // ── benches along the paths (the cat can rest; so do the visitors) ──
+  ZOO_BENCHES.forEach(([bx, bz, ry]) => {
+    const bench = new THREE.Group();
+    const bm = pbr(0x9a7248, 0.85);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.12, 0.6), bm); seat.position.y = 0.5; bench.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.5, 0.12), bm); back.position.set(0, 0.78, -0.24); bench.add(back);
+    [-0.85, 0.85].forEach(lx => { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.5, 0.5), bm); leg.position.set(lx, 0.25, 0); bench.add(leg); });
+    bench.position.set(bx, 0, bz); bench.rotation.y = ry; bench.traverse(m => { if (m.isMesh) m.castShadow = true; }); scene.add(bench);
+    if (typeof addProp === 'function') addProp({ kind: 'bench', group: bench, x: bx, z: bz, rotY: ry, movable: false, use: 'bench' });
+  });
+
+  // ── the visiting public: they wander, watch, photograph, snack and rest ──
+  spawnZooCrowd();
+
   state.zooVisitors = [];
+
+}
+
+// ── The visiting public — 8 guests who live a little zoo day on loop ──
+function spawnZooCrowd() {
+  state.zooCrowd = [];
+  for (let i = 0; i < 8; i++) {
+    const cfg = (typeof randomPersonCfg === 'function') ? randomPersonCfg() : { skin: 0xe2b48c, hair: 0x3a2a1c, shirt: 0x6a8ac0, pants: 0x3a3a4a };
+    const { group, parts } = buildHuman(cfg);
+    group.position.set(112 + Math.random() * 8, 0, -2 + Math.random() * 4);   // scattered on the entrance plaza
+    scene.add(group);
+    const cam = (typeof makeCamera === 'function') ? makeCamera() : null;
+    if (cam) { cam.visible = false; group.add(cam); }
+    const burger = new THREE.Mesh(G.sph(0.09, 10, 8), pbr(0xc08a4a, 0.8));
+    burger.position.set(0.32, 1.05, 0.3); burger.visible = false; group.add(burger);
+    const v = { group, parts, cam, burger, wx: group.position.x, wz: group.position.z, phase: Math.random() * 6, mode: 'idle', timer: 2 + i * 1.5, photographer: Math.random() < 0.45 };
+    state.zooCrowd.push(v);
+  }
+}
+function zooPickOuting(v) {
+  const r = Math.random();
+  if (r < 0.55) {                                       // go watch a pen (prefer a nearby one)
+    const near = ZOO_PENS.filter(P => Math.hypot(P.x - v.wx, P.z - v.wz) < 34);
+    const P = (near.length ? near : ZOO_PENS)[Math.floor(Math.random() * (near.length ? near.length : ZOO_PENS.length))];
+    v.pen = P;
+    v.tx = P.x - P.w / 2 + 2 + Math.random() * (P.w - 4);
+    v.tz = P.z > 0 ? P.z - P.d / 2 - 1.1 : P.z + P.d / 2 + 1.1;    // the path side of the fence
+    v.faceRy = Math.atan2(P.x - v.tx, P.z - v.tz);
+    v.next = 'watch';
+  } else if (r < 0.75) {                                // rest on a bench
+    const b = ZOO_BENCHES[Math.floor(Math.random() * ZOO_BENCHES.length)];
+    v.bench = b;
+    v.tx = b[0] + (Math.random() - 0.5); v.tz = b[1] + (b[2] === 0 ? 0.9 : -0.9);
+    v.next = 'sit';
+  } else {                                              // grab a bite at the Hungry Lion
+    const tb = (state.zooTables && state.zooTables.length) ? state.zooTables[Math.floor(Math.random() * state.zooTables.length)] : [181, 5];
+    v.tx = tb[0]; v.tz = tb[1];
+    v.faceRy = Math.atan2((tb[0] - 1.1) - tb[0], 0) || -Math.PI / 2;
+    v.next = 'eat';
+  }
+  v.mode = 'walk';
+}
+function updateZooCrowd(t) {
+  (state.zooCrowd || []).forEach(v => {
+    v.timer -= 0.016;
+    if (v.mode === 'walk') {
+      if (walkToward(v, v.tx, v.tz, 0.032)) {
+        v.mode = v.next; v.timer = 7 + Math.random() * 9;
+        if (v.mode === 'sit' && v.bench) {
+          const h = v.group.scale.y || 1;
+          v.group.position.set(v.bench[0] + (Math.random() - 0.5) * 0.7, 0.5 - 0.84 * h, v.bench[1]);
+          v.wx = v.group.position.x; v.wz = v.group.position.z;
+          v.group.rotation.y = v.bench[2];
+          if (v.parts.legs) v.parts.legs.forEach(l => l.rotation.x = -1.5);
+        } else if (v.faceRy != null) v.group.rotation.y = v.faceRy;
+      }
+      return;
+    }
+    if (v.mode === 'idle') { if (v.timer <= 0) zooPickOuting(v); idleHuman(v, t); return; }
+    // in an activity
+    if (v.mode !== 'sit') idleHuman(v, t);
+    else if (v.parts.torso) v.parts.torso.scale.y = 1 + Math.sin(t * 1.8 + v.phase) * 0.02;   // seated breathing
+    if (v.mode === 'watch') {
+      v.group.rotation.y = v.faceRy;                                       // eyes on the animals
+      if (v.photographer && v.cam) {
+        v.cam.visible = true;
+        if (!v._flashT || t > v._flashT) {                                  // 📸 a flash every few seconds
+          v._flashT = t + 3 + Math.random() * 4;
+          if (typeof doFlash === 'function') doFlash({ x: v.wx + Math.sin(v.faceRy) * 1.4, z: v.wz + Math.cos(v.faceRy) * 1.4 });
+        }
+      }
+    } else if (v.mode === 'eat' && v.burger) {
+      v.burger.visible = true;
+      if (v.parts.arms && v.parts.arms[1]) v.parts.arms[1].rotation.x = -1.1 + Math.sin(t * 2.4 + v.phase) * 0.25;   // munch munch
+    }
+    if (v.timer <= 0) {                                                     // outing over — stand up, pack up, move on
+      if (v.cam) v.cam.visible = false;
+      if (v.burger) v.burger.visible = false;
+      if (v.mode === 'sit') { v.group.position.y = 0; if (v.parts.legs) v.parts.legs.forEach(l => l.rotation.x = 0); }
+      if (v.parts.arms) v.parts.arms.forEach(a => a.rotation.x = 0);
+      v.mode = 'idle'; v.timer = 1 + Math.random() * 3;
+    }
+  });
 }
 
 // ── The gate: tickets open it; it closes behind you ──
@@ -603,6 +744,7 @@ function updateZooLife(t) {
   if (state.zooCook) idleHuman(state.zooCook, t);
   if (state.zooClerk) idleHuman(state.zooClerk, t);
   updateZooBooth(t);
+  updateZooCrowd(t);
   if (_zooGateOpen && Math.abs(catGroup.position.x - ZOO.gateX) > 10 && catGroup.position.x < ZOO.x0 - 6) setZooGate(false);
   (state.zooAnimals || []).forEach(a => {
     const g = a.group, ph = a.phase, ud = g.userData;
@@ -627,6 +769,7 @@ function updateZooLife(t) {
       case 'parrot': g.position.y = Math.abs(Math.sin(t * (inMoment ? 8 : 2) + ph)) * (inMoment ? 0.16 : 0.04) + 0.0; break;   // flutters on the perch
       case 'peacock': if (ud.fan) { const s = 0.25 + q * 0.85; ud.fan.scale.set(s, s, s); } break;                    // THE fan display
       case 'flamingo': if (ud.neck) ud.neck.rotation.x = -0.35 + Math.sin(t * 0.6 + ph) * 0.08 + q * 0.7; break;      // dabbles in the water
+      case 'hedgehog': if (ud.head) ud.head.scale.setScalar(Math.max(0.05, 1 - q)); g.scale.y = 1 - q * 0.25; g.rotation.z = Math.sin(t * 10) * q * 0.06; break;   // curls into a wobbling ball
     }
     if (a.roam) {                                                    // Sheldon & Percy patrol the paths
       const sp = a.type === 'peacock' ? 0.014 : 0.008;
