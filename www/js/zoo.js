@@ -6,33 +6,38 @@
 // the ZOO's own map. Gate: closed doors, 10🪙 day pass — or work the ticket booth.
 
 const GRAND_PARK = { x0: -45, x1: 45, z0: -130, z1: -72 };
-const ZOO = { x0: 106, x1: 170, z0: -40, z1: 40, gateX: 106, gateZ: 0 };   // east of town, gate faces west
+const ZOO = { x0: 106, x1: 190, z0: -48, z1: 48, gateX: 106, gateZ: 0 };   // east of town, gate faces west — a real ESTATE now
 const ZOO_TICKET = 10, ZOO_SALE_PAY = 2, ZOO_MEAL = 8, ZOO_PLUSH = 15;
 const WILD_KINDS = ['tree', 'tree', 'pine', 'blossom', 'oak', 'willow', 'autumn'];   // plain trees stay common
 
 // ── The zoo layout as DATA — the world build and the zoo map both read it ──
 const ZOO_PENS = [
-  { x: 116, z: 32, w: 16, d: 12, label: '🐘 ELEPHANTS', kinds: ['elephant', 'elephant'] },
-  { x: 133, z: 32, w: 14, d: 12, label: '🦒 GIRAFFES', kinds: ['giraffe', 'giraffe'] },
-  { x: 150, z: 32, w: 14, d: 12, label: '🦘 KANGAROOS', kinds: ['kangaroo', 'kangaroo'] },
-  { x: 164, z: 32, w: 11, d: 12, label: '🦓 ZEBRAS', kinds: ['zebra', 'zebra'] },
-  { x: 124, z: 14, w: 12, d: 10, label: '🐼 PANDAS', kinds: ['panda', 'panda'], floor: 0x9ec87c },
-  { x: 138, z: 14, w: 12, d: 10, label: '🐒 MONKEYS', kinds: ['monkey', 'monkey', 'monkey'] },
-  { x: 151, z: 14, w: 10, d: 10, label: '🦜 AVIARY', kinds: ['parrot', 'parrot', 'parrot'], floor: 0xb8d49a },
-  { x: 116, z: -32, w: 16, d: 12, label: '🦁 LIONS', kinds: ['lion', 'lion'], floor: 0xc8b070 },
-  { x: 133, z: -32, w: 14, d: 12, label: '🐻 BEARS', kinds: ['bear', 'bear'] },
-  { x: 150, z: -32, w: 14, d: 12, label: '🐺 WOLVES', kinds: ['wolf', 'wolf'], floor: 0x8aa06a },
-  { x: 164, z: -32, w: 11, d: 12, label: '🐊 CROCS', kinds: ['croc', 'croc'], floor: 0x7ab8a0 },
-  { x: 124, z: -14, w: 12, d: 10, label: '🦛 HIPPO POOL', kinds: ['hippo', 'hippo'], floor: 0x6fb6d8 },
-  { x: 138, z: -14, w: 12, d: 10, label: '🐧 PENGUINS', kinds: ['penguin', 'penguin', 'penguin'], floor: 0xcfe4ec },
-  { x: 151, z: -14, w: 10, d: 10, label: '🦩 FLAMINGOS', kinds: ['flamingo', 'flamingo', 'flamingo'], floor: 0x9ec8d8 },
+  { x: 118, z: 38, w: 18, d: 14, label: '🐘 ELEPHANTS', kinds: ['elephant', 'elephant'] },
+  { x: 140, z: 38, w: 16, d: 14, label: '🦒 GIRAFFES', kinds: ['giraffe', 'giraffe'] },
+  { x: 160, z: 38, w: 16, d: 14, label: '🦘 KANGAROOS', kinds: ['kangaroo', 'kangaroo'] },
+  { x: 178, z: 38, w: 14, d: 14, label: '🦓 ZEBRAS', kinds: ['zebra', 'zebra'] },
+  { x: 128, z: 16, w: 14, d: 12, label: '🐼 PANDAS', kinds: ['panda', 'panda'], floor: 0x9ec87c },
+  { x: 148, z: 16, w: 14, d: 12, label: '🐒 MONKEYS', kinds: ['monkey', 'monkey', 'monkey'] },
+  { x: 166, z: 16, w: 12, d: 12, label: '🦜 AVIARY', kinds: ['parrot', 'parrot', 'parrot'], floor: 0xb8d49a },
+  { x: 118, z: -38, w: 18, d: 14, label: '🦁 LIONS', kinds: ['lion', 'lion'], floor: 0xc8b070 },
+  { x: 140, z: -38, w: 16, d: 14, label: '🐻 BEARS', kinds: ['bear', 'bear'] },
+  { x: 160, z: -38, w: 16, d: 14, label: '🐺 WOLVES', kinds: ['wolf', 'wolf'], floor: 0x8aa06a },
+  { x: 178, z: -38, w: 14, d: 14, label: '🐊 CROCS', kinds: ['croc', 'croc'], floor: 0x7ab8a0 },
+  { x: 128, z: -16, w: 14, d: 12, label: '🦛 HIPPO POOL', kinds: ['hippo', 'hippo'], floor: 0x6fb6d8 },
+  { x: 148, z: -16, w: 14, d: 12, label: '🐧 PENGUINS', kinds: ['penguin', 'penguin', 'penguin'], floor: 0xcfe4ec },
+  { x: 166, z: -16, w: 12, d: 12, label: '🦩 FLAMINGOS', kinds: ['flamingo', 'flamingo', 'flamingo'], floor: 0x9ec8d8 },
 ];
 // the hedge maze: alternating walls turn the central spine into a serpentine puzzle
 const ZOO_HEDGES = [
-  [120, -9, 120, 6], [128, -6, 128, 9], [136, -9, 136, 6], [144, -6, 144, 9], [152, -9, 152, 6],
-  [122, 20, 122, 26], [146, 19, 146, 26], [122, -26, 122, -20], [146, -26, 146, -19],
+  // the serpentine spine — TALL hedges you cannot see over
+  [122, -10, 122, 7], [130, -7, 130, 10], [138, -10, 138, 7], [146, -7, 146, 10], [154, -10, 154, 7], [162, -7, 162, 10],
+  // corridor blockers between the rows — detours to earn each wing
+  [126, 22, 126, 31], [152, 22, 152, 31], [172, 22, 172, 31],
+  [126, -31, 126, -22], [152, -31, 152, -22], [172, -31, 172, -22],
+  // entrance plaza baffles
+  [118, 10, 118, 31], [118, -31, 118, -10],
 ];
-const ZOO_CAFE = { x: 163, z: 5 };      // 🍔 The Hungry Lion, on the east plaza
+const ZOO_CAFE = { x: 181, z: 5 };      // 🍔 The Hungry Lion, on the east plaza
 const ZOO_GIFT = { x: 113, z: -6.5 };   // 🎁 the gift shop, by the entrance plaza
 
 // Plant a permanent wild tree of any planner kind (not a player piece — just scenery)
@@ -53,8 +58,8 @@ function buildFrontier() {
   const IN = (x, z, r) => x > r.x0 - 6 && x < r.x1 + 6 && z > r.z0 - 6 && z < r.z1 + 6;
   const zones = [
     { x0: -155, x1: -100, z0: -135, z1: 50, n: 26 },
-    { x0: 100, x1: 168, z0: -135, z1: -48, n: 16 },
-    { x0: 100, x1: 168, z0: 46, z1: 56, n: 8 },
+    { x0: 100, x1: 190, z0: -135, z1: -56, n: 16 },
+    { x0: 100, x1: 190, z0: 54, z1: 58, n: 6 },
     { x0: -95, x1: 95, z0: -135, z1: -58, n: 26 },
   ];
   zones.forEach(zn => {
@@ -270,8 +275,8 @@ function buildZoo() {
   const wallM = pbr(0x8a6a4a, 0.9), postM = pbr(0x6a4a30, 0.9), hedgeM = pbr(0x4a7a3c, 0.95);
   const wall = (x0, z0, x1, z1) => {
     const w = Math.max(Math.abs(x1 - x0), 0.4), d = Math.max(Math.abs(z1 - z0), 0.4);
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1.8, d), wallM);
-    m.position.set((x0 + x1) / 2, 0.9, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 3.0, d), wallM);
+    m.position.set((x0 + x1) / 2, 1.5, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m);
     worldColliders.push({ type: 'box', x0: Math.min(x0, x1) - 0.2, x1: Math.max(x0, x1) + 0.2, z0: Math.min(z0, z1) - 0.2, z1: Math.max(z0, z1) + 0.2 });
   };
   wall(ZOO.x0, ZOO.z0, ZOO.x1, ZOO.z0);
@@ -282,8 +287,8 @@ function buildZoo() {
   // the maze hedges
   ZOO_HEDGES.forEach(([x0, z0, x1, z1]) => {
     const w = Math.max(Math.abs(x1 - x0), 0.8), d = Math.max(Math.abs(z1 - z0), 0.8);
-    const h = new THREE.Mesh(new THREE.BoxGeometry(w, 1.4, d), hedgeM);
-    h.position.set((x0 + x1) / 2, 0.7, (z0 + z1) / 2); h.castShadow = true; h.receiveShadow = true; scene.add(h);
+    const h = new THREE.Mesh(new THREE.BoxGeometry(w, 3.4, d), hedgeM);   // taller than any camera angle
+    h.position.set((x0 + x1) / 2, 1.7, (z0 + z1) / 2); h.castShadow = true; h.receiveShadow = true; scene.add(h);
     worldColliders.push({ type: 'box', x0: Math.min(x0, x1) - 0.3, x1: Math.max(x0, x1) + 0.3, z0: Math.min(z0, z1) - 0.3, z1: Math.max(z0, z1) + 0.3 });
   });
   // the gate: real double doors, CLOSED until a ticket opens them
@@ -584,7 +589,16 @@ function drawZooMinimap(ctx, cv) {
 }
 
 // ── per-frame zoo life — every animal has its own MOMENTS ──
+let _zooFog = false;
 function updateZooLife(t) {
+  // inside the compound: the camera comes DOWN among the hedges and a soft haze
+  // closes in — you discover the zoo one pen at a time, map in paw
+  const inside = (typeof catInZoo === 'function') && catInZoo();
+  if (inside) {
+    if (state.camHeight > 3.6) state.camHeight = Math.max(3.6, state.camHeight - 0.25);
+    if (!_zooFog) { _zooFog = true; scene.fog = new THREE.Fog(0xcfd8c8, 8, 24); }
+    if (scene.fog && scene.background && scene.background.isColor) scene.fog.color.copy(scene.background);
+  } else if (_zooFog) { _zooFog = false; scene.fog = null; }
   if (state.zooKeeper) idleHuman(state.zooKeeper, t);
   if (state.zooCook) idleHuman(state.zooCook, t);
   if (state.zooClerk) idleHuman(state.zooClerk, t);
@@ -618,7 +632,7 @@ function updateZooLife(t) {
       const sp = a.type === 'peacock' ? 0.014 : 0.008;
       a.dir += (Math.random() - 0.5) * 0.02;
       const nx = g.position.x + Math.cos(a.dir) * sp, nz = g.position.z + Math.sin(a.dir) * sp;
-      const onPath = nx > ZOO.x0 + 3 && nx < ZOO.x1 - 3 && ((nz > -8 && nz < 8) || (nx > 154 && nz > -18 && nz < 18));
+      const onPath = nx > ZOO.x0 + 3 && nx < ZOO.x1 - 3 && ((nz > -9 && nz < 9) || (nx > 172 && nz > -20 && nz < 20));
       if (onPath) { g.position.x = nx; g.position.z = nz; g.rotation.y = -a.dir + Math.PI / 2; }
       else a.dir += Math.PI / 2;
     } else if (!a._wanderT || t > a._wanderT) {
