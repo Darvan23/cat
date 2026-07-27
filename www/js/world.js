@@ -114,7 +114,7 @@ const HOUSES = [
 
 function buildWorld() {
   // Ground
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(320, 320), mat.ground);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(520, 520), mat.ground);   // the frontier tripled the map
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);

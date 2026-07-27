@@ -176,7 +176,7 @@ function drawTownPostcard(cv, snap) {
   if (!cv) return;
   const D = 1040; cv.width = D; cv.height = D;
   const g = cv.getContext('2d');
-  const SPAN = 224, S = D / SPAN, C = D / 2;
+  const SPAN = 340, S = D / SPAN, C = D / 2;
   const WX = x => C + x * S, WZ = z => C + z * S;
   const rr = (x, y, w, h, r) => { r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 
@@ -197,8 +197,10 @@ function drawTownPostcard(cv, snap) {
   [[-26, sn('south', 'SOUTH LANE')], [0, sn('main', 'MAIN STREET')], [38, sn('north', 'NORTH AVENUE')]].forEach(([z, name]) => [-160, 200].forEach(dx => g.fillText(name, C + dx, WZ(z))));
   g.restore();
 
-  // square + park
+  // square + park + the frontier landmarks
   g.fillStyle = '#eae1cd'; rr(WX(-33), WZ(12), 66 * S, 16 * S, 12); g.fill(); g.strokeStyle = '#d3c6ac'; g.lineWidth = 2; g.stroke();
+  if (typeof GRAND_PARK !== 'undefined') { g.fillStyle = '#8ccc68'; rr(WX(GRAND_PARK.x0), WZ(GRAND_PARK.z0), (GRAND_PARK.x1 - GRAND_PARK.x0) * S, (GRAND_PARK.z1 - GRAND_PARK.z0) * S, 18); g.fill(); }
+  if (typeof ZOO !== 'undefined') { g.fillStyle = '#d8c9a0'; rr(WX(ZOO.x0), WZ(ZOO.z0), (ZOO.x1 - ZOO.x0) * S, (ZOO.z1 - ZOO.z0) * S, 10); g.fill(); g.strokeStyle = '#8a6a4a'; g.lineWidth = 2; g.stroke(); }
   if (typeof PARK !== 'undefined') {
     g.fillStyle = '#93d16f'; rr(WX(PARK.x0), WZ(PARK.z0), (PARK.x1 - PARK.x0) * S, (PARK.z1 - PARK.z0) * S, 20); g.fill();
     g.save(); g.setLineDash([5, 5]); g.strokeStyle = '#6cab4b'; g.lineWidth = 2.5; g.stroke(); g.restore();

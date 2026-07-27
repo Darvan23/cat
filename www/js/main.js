@@ -12,6 +12,7 @@ buildExteriorUpgrades();
 if (typeof spawnEmployers === 'function') spawnEmployers();   // shop owners hiring a cashier
 if (typeof buildSchoolhouse === 'function') buildSchoolhouse();   // 🏫 the Town School (study skills)
 if (typeof buildGrayHouse === 'function') buildGrayHouse();       // 🏛️ the presidential mansion (security outside!)
+if (typeof buildFrontier === 'function') buildFrontier();         // 🦁 the tripled map: wild woods, Grand Park, the Town Zoo
 applyHouseLevel(0);
 bootGame();      // resume a saved game, or show the shelter to start fresh
 animate();

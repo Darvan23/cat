@@ -489,7 +489,80 @@ const jobYarn = makeCatchJob({ id: 'yarn', title: '🧶 Yarn Tangle', hint: 'Cha
 const jobPlanes = makeCatchJob({ id: 'planes', title: '✈️ Paper Planes', hint: 'Snatch the planes — never grab a 🐦!', icon: '✈️', emoji: '✈️', badEmoji: '🐦', badChance: 0.14, verb: 'snatched', noun: ['paper plane', 'paper planes'], target: 10, mode: 'fall', fall: 40, playLabel: '✈️ Catch paper planes', bg: ['#5a6a7a', '#242c34'], failText: 'They all glided out of reach…' });
 const jobGerms = makeCatchJob({ id: 'germs', title: '🦠 Germ Patrol', hint: 'Zap the germs — but leave the 💊 medicine alone!', icon: '🦠', emoji: '🦠', badEmoji: '💊', verb: 'zapped', noun: ['germ', 'germs'], target: 12, mode: 'chase', speed: 56, speedVar: 40, badChance: 0.16, swipe: false, playLabel: '🦠 Zap the germs', bg: ['#3a6a6a', '#153030'], failText: 'The germs scattered away…' });
 
-const JOBS = { mice: jobMice, grocery: jobGrocery, rats: jobRats, bakery: jobBakery, vet: jobVet, garden: jobGarden,
+// 🎫 The zoo ticket booth — visitors queue at the window; sell each one the ticket
+// they ask for. Wrong ticket = a heart. Keep them waiting too long = a heart.
+const jobTickets = {
+  id: 'tickets', title: '🎫 Zoo Ticket Booth', hint: 'Sell each visitor the ticket they ask for!',
+  icon: '🎫', verb: 'sold', noun: ['ticket', 'tickets'], duration: 26, swipe: false,
+  playLabel: '🎫 Sell zoo tickets',
+  failText: 'The queue wandered off…',
+  doneLine: c => `Wonderful work at the booth! ${c} ${c === 1 ? 'ticket' : 'tickets'} sold — here's your cut. 🦁`,
+  failLine: 'The queue got away from us. Another shift soon?',
+  TYPES: [{ id: 'adult', e: '🧑', name: 'ADULT' }, { id: 'child', e: '🧒', name: 'CHILD' }, { id: 'family', e: '👨‍👩‍👧', name: 'FAMILY' }],
+  FACES: ['🧑', '🧔', '👩', '👴', '👧', '👦', '👩‍🦱', '🧑‍🦰'],
+  start(mg) { mg.queue = []; mg.spawnT = 0; this.join(mg); this.join(mg); },
+  join(mg) {
+    const want = this.TYPES[Math.floor(Math.random() * this.TYPES.length)];
+    mg.queue.push({ want, face: this.FACES[Math.floor(Math.random() * this.FACES.length)], patience: 7.5, served: 0, slide: 1 });
+  },
+  update(mg, dt) {
+    const ramp = 1 + (1 - mg.timeLeft / this.duration) * 1.1;
+    mg.spawnT -= dt;
+    if (mg.spawnT <= 0 && mg.queue.length < 5 && mg.timeLeft > 1.5) { this.join(mg); mg.spawnT = (1.6 + Math.random() * 0.8) / ramp; }
+    mg.queue.forEach((c, i) => {
+      if (c.served > 0) { c.served += dt; return; }
+      c.slide = Math.max(0, c.slide - dt * 2.2);
+      if (i === 0 && c.slide <= 0) {                            // only the FRONT visitor loses patience
+        c.patience -= dt * ramp * 0.55;
+        if (c.patience <= 0) { c.gone = true; mgLoseLife(mg.w / 2, mg.h * 0.3); }
+      }
+    });
+    mg.queue = mg.queue.filter(c => !c.gone && c.served < 0.45);
+  },
+  draw(mg) {
+    const ctx = mg.ctx, W = mg.w, H = mg.h;
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#8ab4d8'); g.addColorStop(1, '#5a8a5a'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#a85a3a'; ctx.fillRect(0, H * 0.52, W, H * 0.48);                       // the booth counter
+    ctx.fillStyle = '#7a3a22'; ctx.fillRect(0, H * 0.52, W, 8);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // the queue: front visitor big at the window, the rest snaking behind
+    mg.queue.forEach((c, i) => {
+      const scale = i === 0 ? 1 : Math.max(0.45, 0.8 - i * 0.12);
+      const x = W / 2 + (i === 0 ? 0 : i * 74 + c.slide * 60), y = H * 0.34 - (i === 0 ? 0 : i * 8);
+      ctx.font = (58 * scale) + 'px Georgia';
+      ctx.globalAlpha = c.served > 0 ? Math.max(0, 1 - c.served * 2.5) : 1;
+      ctx.fillText(c.face, x, y);
+      if (i === 0 && c.slide <= 0 && !c.served) {
+        ctx.font = '30px Georgia';                                                            // the want-bubble
+        ctx.fillStyle = 'rgba(255,253,245,0.95)'; ctx.beginPath(); ctx.arc(x + 56, y - 40, 30, 0, 7); ctx.fill();
+        ctx.fillText(c.want.e, x + 56, y - 38);
+        const pFrac = Math.max(0, c.patience / 7.5);                                          // patience ring
+        ctx.strokeStyle = pFrac > 0.5 ? '#6ad08a' : pFrac > 0.25 ? '#e8b84a' : '#e05a4a'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(x, y, 44, -Math.PI / 2, -Math.PI / 2 + pFrac * Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    });
+    // the three ticket stacks — tap the one they asked for
+    this.TYPES.forEach((tk, i) => {
+      const bx = W * ((i + 0.5) / 3), by = H * 0.76;
+      ctx.fillStyle = '#f6eeda'; ctx.strokeStyle = '#b09a6e'; ctx.lineWidth = 3;
+      ctx.fillRect(bx - 62, by - 40, 124, 80); ctx.strokeRect(bx - 62, by - 40, 124, 80);
+      ctx.font = '34px Georgia'; ctx.fillText(tk.e, bx, by - 10);
+      ctx.font = 'bold 16px Georgia'; ctx.fillStyle = '#5a4a30'; ctx.fillText(tk.name + ' 🎫', bx, by + 24);
+    });
+  },
+  tap(mg, cx, cy) {
+    if (cy < mg.h * 0.55) return false;                        // only the ticket stacks are tappable
+    const i = Math.min(2, Math.floor(cx / (mg.w / 3)));
+    const front = mg.queue[0];
+    if (!front || front.slide > 0 || front.served) return false;
+    if (this.TYPES[i].id === front.want.id) { front.served = 0.01; mg.caught++; return true; }
+    mgLoseLife(cx, cy);                                        // wrong ticket — an unhappy visitor
+    return false;
+  },
+};
+
+const JOBS = { mice: jobMice, grocery: jobGrocery, rats: jobRats, bakery: jobBakery, vet: jobVet, garden: jobGarden, tickets: jobTickets,
   butterfly: jobButterfly, bubbles: jobBubbles, balloons: jobBalloons, leaves: jobLeaves, yarn: jobYarn, planes: jobPlanes, germs: jobGerms };
 
 // ── Shared canvas art ────────────────────────────────────────────────────────

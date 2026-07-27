@@ -288,6 +288,7 @@ const NEIGHBOURS = {
   'Sunny':      { skin: 0x8a5a3a, hair: 0x201810, hairStyle: 'short', hat: 'cap', hatColor: 0xe0a030, shirt: 0xe0a030, pants: 0x3a3a44, height: 1.02, build: 'avg', eye: 0x2a1a12 },
   'Pip':        { skin: 0xe2b48c, hair: 0x5a3a1c, hairStyle: 'short', shirt: 0xc85a6a, pants: 0x3a3a52, height: 0.9, build: 'slim', eye: 0x3a2a1a },
   'Willow':     { skin: 0xd8a878, hair: 0x8a6a3a, hairStyle: 'long', shirt: 0x8a7ac0, pants: 0x5a4a2e, height: 1.0, build: 'avg', eye: 0x3a3a22 },
+  'Zita':       { skin: 0xc89468, hair: 0x241a10, hairStyle: 'bun', hat: 'straw', shirt: 0x8a7a4a, pants: 0x5a5236, height: 1.0, build: 'avg', eye: 0x3a2a1a },   // the zoo keeper
 };
 const DEFAULT_PERSON = { skin: 0xe2b48c, hair: 0x3a2a1c, hairStyle: 'short', shirt: 0x5878c8, pants: 0x3a3a52, height: 1.0, build: 'avg' };
 // Each neighbour hires the cat for a different kind of job

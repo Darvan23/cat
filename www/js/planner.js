@@ -360,7 +360,7 @@ function plannerPlace(x, z) { doPlace(state.plannerSel, x, z, state.plannerRot |
 let _lastRoad = null;
 function doPlace(type, x, z, rot) {
   const item = PLANNER_ITEMS.find(i => i.type === type); if (!item) return false;
-  if (Math.abs(x) > 110 || Math.abs(z) > 80) { showNotif('That\'s outside the town'); return false; }
+  if (Math.abs(x) > 152 || z > 62 || z < -134) { showNotif('That\'s outside the town'); return false; }
   const cost = Math.round(item.cost * ((typeof schoolHas === 'function' && schoolHas('planning')) ? 0.9 : 1));   // 🏗️ Town Planning degree: 10% off
   if (!plannerPay(cost)) { showNotif('Not enough ' + (planPaySrc() === 'tax' ? 'tax money' : 'coins') + ' for a ' + item.name + (planPaySrc() === 'tax' ? ' — switch to 🪙 Coins?' : '')); return false; }
   const rec = { type, x: +x.toFixed(1), z: +z.toFixed(1), rot: rot || 0 };

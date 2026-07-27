@@ -756,7 +756,7 @@ function millerTalk(f) {
 }
 
 // ── Kids' escort quest: a kid asks you to walk them to the park & back — a kindness that builds your reputation ──
-function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray); }
+function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray || state.inZoo); }
 function anyKidWantsPark() { return state.family.some(f => f.wantsPark); }
 function startEscort(kid) {
   kid.wantsPark = false;
@@ -2129,6 +2129,8 @@ function mapMarks() {
   });
   if (typeof SCHOOL_SPOT !== 'undefined') marks.push({ x: SCHOOL_SPOT.x, z: SCHOOL_SPOT.z - 3, e: '🏫', label: 'Town School', c: '#e0b0a0' });
   if (typeof GRAY_SPOT !== 'undefined') marks.push({ x: GRAY_SPOT.x, z: GRAY_SPOT.z - 3, e: '🏛️', label: 'Gray House', c: '#c8ccd4' });
+  if (typeof ZOO !== 'undefined') marks.push({ x: ZOO.gateX, z: ZOO.gateZ, e: '🦁', label: 'Town Zoo', c: '#e0c088' });
+  if (typeof GRAND_PARK !== 'undefined') marks.push({ x: 0, z: GRAND_PARK.z1 + 3, e: '🌳', label: 'Grand Park', c: '#a0d888' });
   state.family.forEach(f => {   // a kid who wants the park shows up on the big map too
     if (f.wantsPark && f.group && f.group.visible) marks.push({ x: f.group.position.x, z: f.group.position.z, e: '🧒', label: f.name + ' → park 🌳', c: '#a0e0a0' });
   });
@@ -2138,7 +2140,7 @@ function drawFullMap() {
   const cv = document.getElementById('map-canvas'); if (!cv) return;
   const D = 1040; cv.width = D; cv.height = D;
   const g = cv.getContext('2d');
-  const SPAN = 224, S = D / SPAN, C = D / 2;
+  const SPAN = 340, S = D / SPAN, C = D / 2;   // the frontier tripled the map
   const WX = x => C + x * S, WZ = z => C + z * S;
   const rr = (x, y, w, h, r) => { r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 
@@ -2165,6 +2167,14 @@ function drawFullMap() {
   // ── the park (rounded lawn with a dashed fence) ──
   g.fillStyle = '#93d16f'; rr(WX(PARK.x0), WZ(PARK.z0), (PARK.x1 - PARK.x0) * S, (PARK.z1 - PARK.z0) * S, 20); g.fill();
   g.save(); g.setLineDash([5, 5]); g.strokeStyle = '#6cab4b'; g.lineWidth = 2.5; g.stroke(); g.restore();
+  if (typeof GRAND_PARK !== 'undefined') {   // the GRAND park, twice the size
+    g.fillStyle = '#8ccc68'; rr(WX(GRAND_PARK.x0), WZ(GRAND_PARK.z0), (GRAND_PARK.x1 - GRAND_PARK.x0) * S, (GRAND_PARK.z1 - GRAND_PARK.z0) * S, 24); g.fill();
+    g.save(); g.setLineDash([5, 5]); g.strokeStyle = '#6cab4b'; g.lineWidth = 2.5; g.stroke(); g.restore();
+  }
+  if (typeof ZOO !== 'undefined') {   // the zoo compound
+    g.fillStyle = '#d8c9a0'; rr(WX(ZOO.x0), WZ(ZOO.z0), (ZOO.x1 - ZOO.x0) * S, (ZOO.z1 - ZOO.z0) * S, 12); g.fill();
+    g.strokeStyle = '#8a6a4a'; g.lineWidth = 3; g.stroke();
+  }
 
   // ── water (fountains, pond, lakes — all drinkable water) ──
   const water = (x, z, r) => { const px = WX(x), py = WZ(z), pr = Math.max(4, r * S); g.fillStyle = '#6fc6e2'; g.beginPath(); g.arc(px, py, pr, 0, 7); g.fill(); g.strokeStyle = '#49a8d2'; g.lineWidth = 2; g.stroke(); g.fillStyle = 'rgba(255,255,255,0.4)'; g.beginPath(); g.arc(px - pr * 0.3, py - pr * 0.3, pr * 0.32, 0, 7); g.fill(); };
@@ -2241,12 +2251,14 @@ const mmCanvas = document.getElementById('minimap-canvas');
 const mmCtx = mmCanvas.getContext('2d');
 function drawMinimap() {
   if (state.inGray && typeof drawGrayMinimap === 'function') { drawGrayMinimap(mmCtx, mmCanvas); return; }   // inside, the map IS the mansion
-  const g = mmCtx, D = 240, S = D / 236, C = D / 2, X = x => C + x * S, Z = z => C + z * S;
+  const g = mmCtx, D = 240, S = D / 340, C = D / 2, X = x => C + x * S, Z = z => C + z * S;
   g.fillStyle = '#b3dc93'; g.fillRect(0, 0, D, D);                                    // grass
   const road = (z, hw) => { const y = Z(z), h = hw * 2 * S; g.fillStyle = '#d9ccb4'; g.fillRect(0, y - h / 2 - 2, D, h + 4); g.fillStyle = '#f5f0e6'; g.fillRect(0, y - h / 2, D, h); };
   road(-26, 3); road(0, 3.5); road(38, 3.5);
   g.fillStyle = '#9aa0aa'; g.fillRect(0, Z(66) - 5, D, 10);                           // highway
   g.fillStyle = '#93d16f'; g.fillRect(X(PARK.x0), Z(PARK.z0), (PARK.x1 - PARK.x0) * S, (PARK.z1 - PARK.z0) * S);   // park
+  if (typeof GRAND_PARK !== 'undefined') { g.fillStyle = '#8ccc68'; g.fillRect(X(GRAND_PARK.x0), Z(GRAND_PARK.z0), (GRAND_PARK.x1 - GRAND_PARK.x0) * S, (GRAND_PARK.z1 - GRAND_PARK.z0) * S); }
+  if (typeof ZOO !== 'undefined') { g.fillStyle = '#d8c9a0'; g.fillRect(X(ZOO.x0), Z(ZOO.z0), (ZOO.x1 - ZOO.x0) * S, (ZOO.z1 - ZOO.z0) * S); }
   g.fillStyle = '#eae1cd'; g.fillRect(X(-33), Z(12), 66 * S, 16 * S);                // square
   (typeof waterSpots !== 'undefined' ? waterSpots : []).forEach(w => { g.fillStyle = '#6fc6e2'; g.beginPath(); g.arc(X(w.x), Z(w.z), Math.max(2.5, w.r * S), 0, 7); g.fill(); });
   const blk = (x, z, w, d, col) => { g.fillStyle = col; g.fillRect(X(x) - w * S / 2, Z(z) - d * S / 2, w * S, d * S); };
@@ -2383,7 +2395,7 @@ function animate(now) {
     // Resolve collisions (walls / furniture / trees), then clamp to the area
     const hit = collide(catGroup.position.x, catGroup.position.z, activeColliders(), state.inHouse ? 0.16 : 0.24);
     catGroup.position.x = hit.x; catGroup.position.z = hit.z;
-    let bx = 94, bzMin = -50, bzMax = 56;   // reach south to the business row (z -46)
+    let bx = 158, bzMin = -138, bzMax = 56;   // the frontier: 3× the roaming room (west wilds, Grand Park, the zoo)
     if (state.inHouse) { bx = 3.2; bzMin = -2.6; bzMax = 2.6; }
     else if (state.inShop) { bx = 6.4; bzMin = -4.6; bzMax = 4.4; }   // incl. behind Dad's counter
     else if (state.inShelter) { bx = 11.4; bzMin = -7.4; bzMax = 7.4; }
@@ -2391,6 +2403,7 @@ function animate(now) {
     else if (state.inBiz) { if (state.inCivic) { bx = 11.2; bzMin = -8.2; bzMax = 8.2; } else { bx = 6.4; bzMin = -4.6; bzMax = 4.4; } }   // reach behind the counter
     else if (state.inWork) { bx = 6.6; bzMin = -4.6; bzMax = 4.4; }   // your workplace shop floor (incl. behind the counter)
     else if (state.inGray) { bx = 16.4; bzMin = -11.4; bzMax = 11.4; }   // the Gray House is HUGE
+    else if (state.inZoo) { bx = 19.4; bzMin = -12.9; bzMax = 12.9; }    // the zoo grounds
     else if (state.inJail) { bx = 3.1; bzMin = -2.5; bzMax = 2.6; }   // locked in the cell
     catGroup.position.x = Math.max(-bx, Math.min(bx, catGroup.position.x));
     catGroup.position.z = Math.max(bzMin, Math.min(bzMax, catGroup.position.z));
@@ -2552,6 +2565,19 @@ function animate(now) {
     return;
   }
 
+  if (state.inZoo) {    // 🦁 wandering the Town Zoo
+    if (typeof updateZooFrame === 'function') updateZooFrame(t);
+    updateEnterPrompt();
+    updateContextButton();
+    const zX = catGroup.position.x + Math.sin(state.camYaw) * state.camDist;
+    const zZ = catGroup.position.z + Math.cos(state.camYaw) * state.camDist;
+    camera.position.x += (zX - camera.position.x) * 0.1;
+    camera.position.z += (zZ - camera.position.z) * 0.1;
+    camera.position.y += (state.camHeight - camera.position.y) * 0.1;
+    camera.lookAt(catGroup.position.x, 0.6, catGroup.position.z);
+    renderer.render(zooScene, camera);
+    return;
+  }
   if (state.inGray) {   // 🏛️ inside the Gray House — its own scene, its own minimap
     if (typeof updateGrayFrame === 'function') updateGrayFrame(t);
     updateEnterPrompt();
