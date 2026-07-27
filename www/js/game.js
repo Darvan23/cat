@@ -339,7 +339,7 @@ function saveGame() {
       rubble: state.rubble, homelessCount: state.homelessCount,
       bizTill: state.bizTill, bizOpen: state.bizOpen, millerHome: state.millerHome,
       civics: state.civics, townGrowth: state.townGrowth,
-      townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag,
+      townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay,
     }));
   } catch (e) {}
 }
@@ -428,6 +428,7 @@ function applySave(s) {
   state.townGrowth = s.townGrowth || { humans: 0, cats: 0 };
   state.townCode = s.townCode || null; state.neighbors = Array.isArray(s.neighbors) ? s.neighbors : [];
   state.countryFlag = s.countryFlag || 0; if (typeof applyCountryFlag === 'function') applyCountryFlag();
+  state.zooPassDay = (s.zooPassDay != null) ? s.zooPassDay : -1;
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets
@@ -756,7 +757,7 @@ function millerTalk(f) {
 }
 
 // ── Kids' escort quest: a kid asks you to walk them to the park & back — a kindness that builds your reputation ──
-function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray || state.inZoo); }
+function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray); }
 function anyKidWantsPark() { return state.family.some(f => f.wantsPark); }
 function startEscort(kid) {
   kid.wantsPark = false;
@@ -904,6 +905,16 @@ function updateContextButton() {
   } else if (typeof nearWater === 'function' && nearWater(cp.x, cp.z)) {
     action = 'drink'; label = '💧 Drink';
   } else {
+    // 🎫 the zoo booth: serve the front visitor, or start/stop a booth shift
+    if (typeof ZOO !== 'undefined' && Math.hypot(cp.x - (ZOO.gateX + 1.6), cp.z - (-6.4)) < 3.4) {
+      const front = (typeof zooFrontVisitor === 'function') ? zooFrontVisitor() : null;
+      if (front) { action = 'zooserve'; label = '🎫 Serve: ' + front.want.e + ' ' + front.want.name; }
+      else if (!state.zooShift) { action = 'zooshift'; label = '🎫 Work the ticket booth'; }
+      else { action = 'zooshift'; label = '🛑 Stop working the booth'; }
+      state.context = action;
+      btn.textContent = label; btn.classList.add('show');
+      return;
+    }
     const rub = (typeof nearestRubble === 'function') ? nearestRubble(cp, 3.2) : null;
     const giver = (!isNight() && state.nearNPC && state.nearNPC.hasJob) ? state.nearNPC : null;
     const miller = nearestMiller(cp, 2.2);
@@ -950,6 +961,8 @@ function doContextAction() {
   else if (state.context === 'sleepshelter') sleepAtHome();
   else if (state.context === 'donate') donateAtShelter();
   else if (state.context === 'chooseflag') { if (typeof openFlagPicker === 'function') openFlagPicker(); }
+  else if (state.context === 'zooserve') { if (typeof openZooServe === 'function') openZooServe(); }
+  else if (state.context === 'zooshift') { if (typeof toggleZooShift === 'function') toggleZooShift(); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
@@ -2196,8 +2209,9 @@ function drawFullMap() {
   if (typeof CIVIC_LOTS !== 'undefined') for (const id in CIVIC_LOTS) if (typeof ownsCivic === 'function' && ownsCivic(id)) bldg(CIVIC_LOTS[id].x, CIVIC_LOTS[id].z, 9, 7, '#a9e0d0', '#6ec2ac');
 
   // ── trees & benches ──
+  const TREE_COLS = { tree: '#4f9d38', pine: '#2e7a3e', blossom: '#e8a8c8', oak: '#3f7d2e', willow: '#7fb069', autumn: '#d88a3a', palm: '#58a05a' };
   (typeof townProps !== 'undefined' ? townProps : []).forEach(p => {
-    if (p.kind === 'tree') { g.fillStyle = '#4f9d38'; g.beginPath(); g.arc(WX(p.x), WZ(p.z), 4, 0, 7); g.fill(); g.strokeStyle = '#3c7e2a'; g.lineWidth = 1; g.stroke(); }
+    if (TREE_COLS[p.kind]) { g.fillStyle = TREE_COLS[p.kind]; g.beginPath(); g.arc(WX(p.x), WZ(p.z), 4, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 1; g.stroke(); }
     else if (p.kind === 'bench') { g.fillStyle = '#9a7248'; g.fillRect(WX(p.x) - 3, WZ(p.z) - 2, 6, 4); }
   });
 
@@ -2324,6 +2338,7 @@ function animate(now) {
   updateNeeds(0.016);
   updateCatLife();                                      // blink, ear flicks, tail wave
   if (typeof updateGrayGuards === 'function') updateGrayGuards(t);   // the mansion's security detail
+  if (typeof updateZooLife === 'function' && state.zooAnimals) updateZooLife(t);   // 🦁 the zoo lives in the world now
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it
@@ -2403,7 +2418,6 @@ function animate(now) {
     else if (state.inBiz) { if (state.inCivic) { bx = 11.2; bzMin = -8.2; bzMax = 8.2; } else { bx = 6.4; bzMin = -4.6; bzMax = 4.4; } }   // reach behind the counter
     else if (state.inWork) { bx = 6.6; bzMin = -4.6; bzMax = 4.4; }   // your workplace shop floor (incl. behind the counter)
     else if (state.inGray) { bx = 16.4; bzMin = -11.4; bzMax = 11.4; }   // the Gray House is HUGE
-    else if (state.inZoo) { bx = 19.4; bzMin = -12.9; bzMax = 12.9; }    // the zoo grounds
     else if (state.inJail) { bx = 3.1; bzMin = -2.5; bzMax = 2.6; }   // locked in the cell
     catGroup.position.x = Math.max(-bx, Math.min(bx, catGroup.position.x));
     catGroup.position.z = Math.max(bzMin, Math.min(bzMax, catGroup.position.z));
@@ -2565,19 +2579,6 @@ function animate(now) {
     return;
   }
 
-  if (state.inZoo) {    // 🦁 wandering the Town Zoo
-    if (typeof updateZooFrame === 'function') updateZooFrame(t);
-    updateEnterPrompt();
-    updateContextButton();
-    const zX = catGroup.position.x + Math.sin(state.camYaw) * state.camDist;
-    const zZ = catGroup.position.z + Math.cos(state.camYaw) * state.camDist;
-    camera.position.x += (zX - camera.position.x) * 0.1;
-    camera.position.z += (zZ - camera.position.z) * 0.1;
-    camera.position.y += (state.camHeight - camera.position.y) * 0.1;
-    camera.lookAt(catGroup.position.x, 0.6, catGroup.position.z);
-    renderer.render(zooScene, camera);
-    return;
-  }
   if (state.inGray) {   // 🏛️ inside the Gray House — its own scene, its own minimap
     if (typeof updateGrayFrame === 'function') updateGrayFrame(t);
     updateEnterPrompt();

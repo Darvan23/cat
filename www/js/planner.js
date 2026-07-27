@@ -11,6 +11,10 @@ const PLANNER_ITEMS = [
   { type: 'tree',    icon: '🌳', name: 'Tree',    cost: 600 },
   { type: 'pine',    icon: '🌲', name: 'Pine',    cost: 550 },
   { type: 'blossom', icon: '🌸', name: 'Blossom', cost: 800 },
+  { type: 'oak',     icon: '🌳', name: 'Old Oak', cost: 950 },
+  { type: 'willow',  icon: '🌿', name: 'Willow',  cost: 1000 },
+  { type: 'autumn',  icon: '🍁', name: 'Autumn',  cost: 750 },
+  { type: 'palm',    icon: '🌴', name: 'Palm',    cost: 900 },
   { type: 'flowers', icon: '🌼', name: 'Flowers', cost: 250 },
   { type: 'bin',     icon: '🗑️', name: 'Bin',     cost: 400 },
   { type: 'bench',   icon: '🪑', name: 'Bench',   cost: 1200 },
@@ -86,6 +90,38 @@ function placedVisual(type) {
     [[0, 2.3, 0, 1.15, 0], [0.8, 2.1, 0.2, 0.85, 1], [-0.75, 2.15, -0.2, 0.8, 1], [0.1, 2.85, -0.1, 0.75, 0]]
       .forEach(([px, py, pz, r, d]) => SP(r, d ? blossomD : blossomM, px, py, pz));
     coll = { circle: true, r: 0.8 };
+  } else if (type === 'oak') {   // a broad old oak — twice the canopy
+    CY(0.24, 0.4, 2.1, 8, mat.treeTrunk, 0, 1.05, 0);
+    const oakM = new THREE.MeshStandardMaterial({ color: 0x3f7d2e, roughness: 0.9 });
+    const oakD = new THREE.MeshStandardMaterial({ color: 0x33691f, roughness: 0.9 });
+    [[0, 2.7, 0, 1.5, 0], [1.15, 2.35, 0.3, 1.05, 1], [-1.1, 2.45, -0.3, 1.0, 1], [0.2, 3.4, -0.1, 1.0, 0], [-0.4, 2.75, 0.95, 0.95, 0], [0.8, 2.9, -0.8, 0.9, 1]]
+      .forEach(([px, py, pz, r, d]) => SP(r, d ? oakD : oakM, px, py, pz));
+    coll = { circle: true, r: 1.0 };
+  } else if (type === 'willow') {   // a weeping willow — soft strands drooping to the grass
+    CY(0.17, 0.3, 2.0, 8, mat.treeTrunk, 0, 1.0, 0);
+    const wilM = new THREE.MeshStandardMaterial({ color: 0x7fb069, roughness: 0.9 });
+    const wilD = new THREE.MeshStandardMaterial({ color: 0x6a9a54, roughness: 0.9 });
+    SP(1.2, wilM, 0, 2.7, 0);
+    for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; const s = SP(0.28, i % 2 ? wilD : wilM, Math.cos(a) * 1.05, 1.75, Math.sin(a) * 1.05); s.scale.set(0.8, 2.4, 0.8); }
+    coll = { circle: true, r: 0.9 };
+  } else if (type === 'autumn') {   // a fall-flame tree in orange & red
+    CY(0.16, 0.3, 1.9, 8, mat.treeTrunk, 0, 0.95, 0);
+    const autM = new THREE.MeshStandardMaterial({ color: 0xd88a3a, roughness: 0.85 });
+    const autD = new THREE.MeshStandardMaterial({ color: 0xc06a2a, roughness: 0.85 });
+    [[0, 2.4, 0, 1.25, 0], [0.85, 2.1, 0.2, 0.95, 1], [-0.8, 2.2, -0.25, 0.9, 1], [0.1, 3.0, -0.1, 0.85, 0]]
+      .forEach(([px, py, pz, r, d]) => SP(r, d ? autD : autM, px, py, pz));
+    coll = { circle: true, r: 0.8 };
+  } else if (type === 'palm') {   // a leaning palm with radiating fronds
+    const trunkM = new THREE.MeshStandardMaterial({ color: 0x9a7a4a, roughness: 0.95 });
+    for (let i = 0; i < 4; i++) CY(0.14 - i * 0.012, 0.16 - i * 0.012, 0.85, 8, trunkM, i * 0.14, 0.42 + i * 0.8, 0);
+    const frondM = new THREE.MeshStandardMaterial({ color: 0x58a05a, roughness: 0.85 });
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const f = SP(0.5, frondM, 0.56 + Math.cos(a) * 0.9, 3.6, Math.sin(a) * 0.9);
+      f.scale.set(1.6, 0.16, 0.5); f.rotation.y = -a; f.rotation.z = -0.3;
+    }
+    SP(0.22, new THREE.MeshStandardMaterial({ color: 0x6a4a2a, roughness: 0.8 }), 0.56, 3.5, 0);
+    coll = { circle: true, r: 0.5 };
   } else if (type === 'flowers') {   // a little flower bed (no collider — walk through it)
     CY(0.85, 0.95, 0.12, 12, new THREE.MeshStandardMaterial({ color: 0x4a6b34, roughness: 0.95 }), 0, 0.06, 0);
     const cols = [0xe8c840, 0xd86a8a, 0xf0f0e0, 0xb06ad0, 0xe07a3a];

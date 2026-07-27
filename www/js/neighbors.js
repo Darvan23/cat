@@ -228,7 +228,7 @@ function drawTownPostcard(cv, snap) {
     else if (r.type === 'villa') bldg(r.x, r.z, 7, 4.5, '#f4e8d4', '#c8a878');
     else if (r.type === 'flats') bldg(r.x, r.z, 5.5, 4.5, '#c6d2da', '#94a6b2');
     else if (r.type === 'shelter') bldg(r.x, r.z, 6, 5, '#d4e6dd', '#8fbfae');
-    else if (r.type === 'tree' || r.type === 'pine' || r.type === 'blossom') { g.fillStyle = r.type === 'blossom' ? '#e8a8c8' : r.type === 'pine' ? '#2e7a3e' : '#4f9d38'; g.beginPath(); g.arc(px, py, 4.5, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.2)'; g.lineWidth = 1; g.stroke(); }
+    else if (['tree', 'pine', 'blossom', 'oak', 'willow', 'autumn', 'palm'].includes(r.type)) { const tc = { tree: '#4f9d38', pine: '#2e7a3e', blossom: '#e8a8c8', oak: '#3f7d2e', willow: '#7fb069', autumn: '#d88a3a', palm: '#58a05a' }; g.fillStyle = tc[r.type]; g.beginPath(); g.arc(px, py, 4.5, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.2)'; g.lineWidth = 1; g.stroke(); }
     else if (r.type === 'flowers') { g.fillStyle = '#f0d060'; g.beginPath(); g.arc(px, py, 2.6, 0, 7); g.fill(); }
     else if (r.type === 'bench') { g.fillStyle = '#9a7248'; g.fillRect(px - 3, py - 2, 6, 4); }
     else if (r.type === 'lamp') { g.fillStyle = '#f0d060'; g.beginPath(); g.arc(px, py, 2.4, 0, 7); g.fill(); g.strokeStyle = '#b09030'; g.lineWidth = 1; g.stroke(); }

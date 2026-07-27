@@ -30,7 +30,8 @@ const state = {
   townCode: null,     // your shareable town code (PAWS-XXXXX), minted on first use
   countryFlag: 0,     // the national flag the President chose for the Gray House
   inGray: false,      // inside the presidential mansion
-  inZoo: false,       // inside the Town Zoo grounds
+  zooPassDay: -1,     // the day your zoo ticket is valid for (a day pass)
+  zooShift: false,    // working the zoo ticket booth right now
   neighbors: [],      // friends' towns you can visit from above [{code, name}]
   uiOpen: false,      // a give/rescue overlay is open
   freed: [],          // ids of cats rescued from the shelter
@@ -218,7 +219,6 @@ let groundGroup = null, upstairsGroup = null, upstairs = null, poorHouse = null;
 // {type:'box',x0,x1,z0,z1}; an optional `min` gates it to a house level.
 const worldColliders = [], groundColliders = [], upstairsColliders = [], shopColliders = [], shelterColliders = [], boughtHomeColliders = [], bizColliders = [], jailColliders = [];
 function activeColliders() {
-  if (state.inZoo) return zooColliders;     // the zoo grounds (zoo.js)
   if (state.inGray) return grayColliders;   // the Gray House interior (grayhouse.js)
   if (state.inHouse) return state.floor === 'upper' ? upstairsColliders : groundColliders;
   if (state.inShop) return shopColliders;

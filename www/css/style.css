@@ -747,6 +747,7 @@
   .nb-row .nb-code { color: #b8a078; font-size: 0.68rem; letter-spacing: 0.05em; }
   .nb-note { color: #b8906a; font-size: 0.74rem; font-style: italic; margin: 6px 0 10px; }
   .nb-townname { color: #f0d080; font-size: 1.15rem; margin-bottom: 4px; }
+  .zoo-want { font-size: 3.4rem; line-height: 1.1; margin-bottom: 4px; }
   .nb-stats { color: #d4b896; font-size: 0.78rem; line-height: 1.5; margin-bottom: 10px; }
   #townview-wrap { width: 100%; display: flex; justify-content: center; margin-bottom: 12px; }
   /* the postcard fits WHOLE on screen — sized by the smaller of width / viewport height */

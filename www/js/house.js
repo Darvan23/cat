@@ -268,7 +268,7 @@ function applyHouseLevel(level) {
 
 function updateEnterPrompt() {
   const btn = document.getElementById('enter-btn');
-  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inZoo) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
+  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
   const cp = catGroup.position;
   let target = null, label = '';
   if (Math.hypot(cp.x - (-3), cp.z - (-7.7)) < 2.6) { target = 'house'; label = '🚪 Enter Home'; }
@@ -277,7 +277,12 @@ function updateEnterPrompt() {
   else if (typeof GRAY_SPOT !== 'undefined' && Math.hypot(cp.x - GRAY_SPOT.x, cp.z - (GRAY_SPOT.z - 7)) < 4.4) {
     target = 'gray'; label = (state.politics && state.politics.phase === 'president') ? '🏛️ Enter the Gray House' : '🛑 Gray House · Security';
   }
-  else if (typeof ZOO !== 'undefined' && Math.hypot(cp.x - ZOO.gateX, cp.z - ZOO.gateZ) < 4.2) { target = 'zoo'; label = '🎫 Zoo — ticket 10 🪙'; }
+  else if (typeof ZOO !== 'undefined' && Math.hypot(cp.x - ZOO.gateX, cp.z - ZOO.gateZ) < 4.2) {
+    target = 'zoo';
+    label = (typeof _zooGateOpen !== 'undefined' && _zooGateOpen) ? '🚪 Close the gate'
+      : (state.zooShift || (typeof zooPassValid === 'function' && zooPassValid())) ? '🎫 Open the gate (pass)'
+      : '🎫 Buy a ticket · 10 🪙';
+  }
   else {
     for (const p of PROPERTIES) {
       if (p.type === 'home' && state.owned.homes.includes(p.id) && Math.hypot(cp.x - p.x, cp.z - (p.z + 2.6)) < 3.2) {
@@ -373,7 +378,6 @@ function toggleHouse() {
   else if (state.inBiz) exitBusiness();
   else if (state.inWork && typeof exitWorkplace === 'function') exitWorkplace();
   else if (state.inGray && typeof exitGrayHouse === 'function') exitGrayHouse();
-  else if (state.inZoo && typeof exitZoo === 'function') exitZoo();
   else if (state.nearBuilding === 'house') { if (state.disowned) millerRejection(); else enterHouse(); }
   else if (state.nearBuilding === 'shop') enterShop();
   else if (state.nearBuilding === 'shelter') enterShelter();
@@ -382,7 +386,7 @@ function toggleHouse() {
   else if (state.nearBuilding === 'civic') enterCivic(state.nearCivicId);
   else if (state.nearBuilding === 'workplace' && typeof enterWorkplace === 'function') enterWorkplace(state.nearWorkId);
   else if (state.nearBuilding === 'gray' && typeof tryEnterGrayHouse === 'function') tryEnterGrayHouse();
-  else if (state.nearBuilding === 'zoo' && typeof tryEnterZoo === 'function') tryEnterZoo();
+  else if (state.nearBuilding === 'zoo' && typeof zooGateAction === 'function') zooGateAction();
 }
 
 // ── Enter / leave the shop and the cat shelter ──
