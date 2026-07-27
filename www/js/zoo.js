@@ -144,6 +144,7 @@ function zooAnimal(type) {
     const head = E(0.2, 1, 0.95, 0.95, br, 0, 0.82, 0.1);
     E(0.13, 1, 0.8, 0.5, M(0xd8b090), 0, 0.78, 0.26);
     [-1, 1].forEach(d => E(0.07, 1, 1, 0.5, br, d * 0.2, 0.9, 0.05));
+    [-1, 1].forEach(d => { const arm = new THREE.Mesh(G.cyl(0.035, 0.045, 0.4), br); arm.position.set(d * 0.24, 0.42, 0.1); arm.rotation.z = d * 0.35; arm.castShadow = true; g.add(arm); });   // long arms to the ground
     const tail = new THREE.Mesh(G.cyl(0.035, 0.035, 0.8), br); tail.position.set(0, 0.5, -0.35); tail.rotation.x = 1.1; g.add(tail);
     g.userData.head = head;
   } else if (type === 'penguin') {
@@ -300,15 +301,26 @@ function zooAnimal(type) {
     E(0.13, 1.3, 0.3, 0.8, sl, 0, 0.24, -0.75);                                     // tail flipper
     g.userData.head = head; g.userData.body = body;
   } else if (type === 'snake') {
-    const sn = M(0x6a9a4a), sd = M(0x557a3c);
-    g.userData.coils = [];
-    for (let i = 0; i < 7; i++) {                                                    // a coiled body
-      const a = i * 0.9;
-      const c2 = E(0.11 - i * 0.008, 1, 0.9, 1, i % 2 ? sd : sn, Math.cos(a) * (0.32 - i * 0.02), 0.1, Math.sin(a) * (0.32 - i * 0.02));
-      g.userData.coils.push(c2);
+    const sn = M(0x3f7226, 0.55), sd = M(0x2c5216, 0.55);
+    g.scale.setScalar(1.25);
+    g.userData.segs = [];
+    const N = 15, path = [];
+    for (let i = 0; i < N; i++) {                                                    // a tapered body flowing in an S along the ground
+      const f = i / (N - 1);
+      path.push([-0.85 + f * 1.5, Math.sin(f * Math.PI * 2.4) * 0.26 * (1 - f * 0.25)]);
     }
-    const head = E(0.1, 1.1, 0.8, 1.3, sn, 0.34, 0.28, 0);                           // head raised off the coil
-    [-1, 1].forEach(d => E(0.02, 1, 1, 1, M(0xe8c030, 0.4), 0.4, 0.32, d * 0.05));   // eyes
+    for (let i = 0; i < N; i++) {
+      const f = i / (N - 1), [px, pz] = path[i];
+      const r = 0.05 + Math.sin(Math.min(f * 1.4, 1) * Math.PI) * 0.055;             // thin tail → thick middle → neck
+      const seg = E(r, 1.5, 0.85, 1, i % 2 ? sd : sn, px, r * 0.8, pz);
+      const [nx, nz] = path[Math.min(i + 1, N - 1)], [ax, az] = path[Math.max(i - 1, 0)];
+      seg.rotation.y = -Math.atan2(nz - az, nx - ax);                                // each scale lies ALONG the body
+      seg.userData = { bz: pz, i };
+      g.userData.segs.push(seg);
+    }
+    const head = E(0.085, 1.25, 0.7, 1.5, sn, 0.78, 0.16, 0);                        // wedge head, slightly raised
+    E(0.05, 1.3, 0.5, 1.1, sd, 0.8, 0.2, 0);                                         // brow scales
+    [-1, 1].forEach(d => { E(0.018, 1, 1.4, 1, M(0xe8c030, 0.3), 0.83, 0.19, d * 0.06); E(0.008, 1, 1.6, 0.4, M(0x1c1e24, 0.3), 0.835, 0.19, d * 0.06); });   // slit-pupil eyes
     g.userData.head = head;
   } else if (type === 'sloth') {
     const st = M(0x9a8a6a);
@@ -381,6 +393,44 @@ function zooAnimal(type) {
     case 'tortoise': eyes(0.38, 0.6, 0.05, 0.017); break;
   }
   return g;
+}
+
+// ── Habitat dressing: every pen furnished for ITS species ──
+function penHabitat(P) {
+  const cx = P.x, cz = P.z, kind = P.kinds[0];
+  const put = m => { m.castShadow = true; m.receiveShadow = true; scene.add(m); return m; };
+  const rock = (x, z, s) => { const r = put(new THREE.Mesh(G.sph(0.5, 12, 9), pbr(0x9a948a, 0.95))); r.scale.set(s, s * 0.6, s * 0.8); r.position.set(x, s * 0.28, z); return r; };
+  const pool = (x, z, r, col) => { const shore = put(new THREE.Mesh(new THREE.CylinderGeometry(r + 0.4, r + 0.4, 0.08, 22), pbr(0xb8a888, 0.9))); shore.position.set(x, 0.06, z); const w = put(new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.1, 22), pbr(col || 0x5ab6d8, 0.25))); w.position.set(x, 0.12, z); };
+  const log = (x, z, ry) => { const l = put(new THREE.Mesh(G.cyl(0.16, 0.19, 1.8, 10), pbr(0x6a4a30, 0.95))); l.rotation.z = Math.PI / 2; l.rotation.y = ry || 0.4; l.position.set(x, 0.18, z); };
+  const tuft = (x, z, col) => { for (let k = 0; k < 3; k++) { const tf = put(new THREE.Mesh(G.cone(0.06, 0.4, 5), pbr(col || 0xa8c060, 0.95))); tf.position.set(x + (k - 1) * 0.14, 0.2, z + (k % 2) * 0.1); } };
+  const tree2 = (x, z, kindT) => plantWildTree(kindT || 'tree', x, z);
+  const bamboo = (x, z) => { for (let k = 0; k < 5; k++) { const b = put(new THREE.Mesh(G.cyl(0.045, 0.055, 2.4 + (k % 3) * 0.5, 6), pbr(0x7ab048, 0.85))); b.position.set(x + (k % 3) * 0.3 - 0.3, 1.3, z + Math.floor(k / 3) * 0.3); const lf = put(new THREE.Mesh(G.sph(0.22, 8, 6), pbr(0x8ac858, 0.9))); lf.scale.set(1, 0.5, 1); lf.position.set(b.position.x, 2.6 + (k % 3) * 0.5, b.position.z); } };
+  const ice = (x, z, s) => { const f = put(new THREE.Mesh(new THREE.BoxGeometry(s, 0.18, s * 0.8), pbr(0xeef6fa, 0.4))); f.position.set(x, 0.1, z); f.rotation.y = Math.random(); };
+  const reeds = (x, z) => { for (let k = 0; k < 4; k++) { const rd = put(new THREE.Mesh(G.cyl(0.02, 0.03, 1.1, 5), pbr(0x6a9a4a, 0.9))); rd.position.set(x + (k % 2) * 0.2, 0.55, z + Math.floor(k / 2) * 0.2); const tip = put(new THREE.Mesh(G.sph(0.05, 6, 5), pbr(0x8a6a3a, 0.9))); tip.scale.y = 2.2; tip.position.set(rd.position.x, 1.2, rd.position.z); } };
+  const L = P.w / 2 - 2.5, Dh = P.d / 2 - 2.5;   // keep dressing off the fences
+  switch (kind) {
+    case 'elephant': pool(cx - L * 0.5, cz - Dh * 0.5, 2.2, 0x9a8468); rock(cx + L * 0.6, cz + Dh * 0.5, 1.6); tree2(cx + L * 0.4, cz - Dh * 0.6); break;   // the mud wallow
+    case 'giraffe': { tree2(cx - L * 0.5, cz + Dh * 0.5); const tr = put(new THREE.Mesh(G.cyl(0.14, 0.2, 3.4, 8), pbr(0x8a6a44, 0.95))); tr.position.set(cx + L * 0.5, 1.7, cz - Dh * 0.4); const cn = put(new THREE.Mesh(G.sph(1.3, 12, 8), pbr(0x6a9a48, 0.9))); cn.scale.set(1.4, 0.35, 1.4); cn.position.set(cx + L * 0.5, 3.6, cz - Dh * 0.4); } break;   // the tall acacia
+    case 'kangaroo': [[-0.5, 0.4], [0.5, -0.5]].forEach(([fx, fz]) => { const s = put(new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 0.1, 16), pbr(0xd89058, 0.95))); s.position.set(cx + L * fx, 0.06, cz + Dh * fz); }); rock(cx, cz + Dh * 0.6, 1.1); break;   // red sand
+    case 'zebra': tuft(cx - L * 0.5, cz - Dh * 0.4); tuft(cx + L * 0.6, cz + Dh * 0.3); tuft(cx, cz + Dh * 0.7); tree2(cx + L * 0.5, cz - Dh * 0.6); break;
+    case 'camel': [[-0.5, -0.4, 2.2], [0.4, 0.5, 1.7]].forEach(([fx, fz, s]) => { const d = put(new THREE.Mesh(G.sph(1, 12, 8), pbr(0xe0c088, 0.95))); d.scale.set(s, s * 0.3, s * 0.8); d.position.set(cx + L * fx, 0.2, cz + Dh * fz); }); tree2(cx + L * 0.5, cz - Dh * 0.6, 'palm'); break;   // dunes + a palm
+    case 'panda': bamboo(cx - L * 0.6, cz - Dh * 0.4); bamboo(cx + L * 0.5, cz + Dh * 0.5); rock(cx, cz - Dh * 0.6, 0.9); break;
+    case 'monkey': { [[-0.6, 0], [0.6, 0]].forEach(([fx]) => { const p = put(new THREE.Mesh(G.cyl(0.08, 0.1, 2.2, 8), pbr(0x8a6a44, 0.9))); p.position.set(cx + L * fx, 1.1, cz - Dh * 0.5); }); const bar = put(new THREE.Mesh(G.cyl(0.05, 0.05, L * 1.2, 8), pbr(0x8a6a44, 0.9))); bar.rotation.z = Math.PI / 2; bar.position.set(cx, 2.1, cz - Dh * 0.5); tree2(cx, cz + Dh * 0.55); } break;   // climbing frame
+    case 'parrot': tree2(cx - L * 0.5, cz + Dh * 0.4); tree2(cx + L * 0.5, cz - Dh * 0.4, 'blossom'); break;
+    case 'deer': tree2(cx - L * 0.5, cz - Dh * 0.4, 'pine'); tree2(cx + L * 0.5, cz + Dh * 0.4, 'pine'); log(cx, cz + Dh * 0.5, 1.2); break;
+    case 'sloth': tree2(cx - L * 0.6, cz - Dh * 0.4); tree2(cx + L * 0.6, cz + Dh * 0.4); break;
+    case 'lion': { rock(cx - L * 0.4, cz - Dh * 0.4, 2.0); rock(cx - L * 0.4 + 0.9, cz - Dh * 0.4 + 0.5, 1.3); tuft(cx + L * 0.5, cz + Dh * 0.4, 0xc8b060); tuft(cx + L * 0.2, cz - Dh * 0.6, 0xc8b060); } break;   // pride rock
+    case 'bear': { rock(cx + L * 0.5, cz - Dh * 0.5, 1.5); log(cx - L * 0.4, cz + Dh * 0.4, 0.8); const bush = put(new THREE.Mesh(G.sph(0.6, 10, 8), pbr(0x4a7a3c, 0.95))); bush.position.set(cx - L * 0.5, 0.5, cz - Dh * 0.5); for (let k = 0; k < 5; k++) { const berry = put(new THREE.Mesh(G.sph(0.05, 6, 5), pbr(0xd0483a, 0.6))); const a = k * 1.3; berry.position.set(cx - L * 0.5 + Math.cos(a) * 0.5, 0.6 + Math.sin(a * 2) * 0.25, cz - Dh * 0.5 + Math.sin(a) * 0.45); } } break;
+    case 'wolf': tree2(cx - L * 0.5, cz - Dh * 0.4, 'pine'); tree2(cx + L * 0.6, cz + Dh * 0.4, 'pine'); rock(cx + L * 0.3, cz - Dh * 0.6, 1.2); break;
+    case 'croc': { const w = put(new THREE.Mesh(new THREE.BoxGeometry(P.w - 3, 0.1, 3.2), pbr(0x4a8a78, 0.3))); w.position.set(cx, 0.1, cz - Dh * 0.4); log(cx + L * 0.3, cz - Dh * 0.4, 0.2); } break;   // the murky channel
+    case 'fox': { const bush = put(new THREE.Mesh(G.sph(0.7, 10, 8), pbr(0x5a8a44, 0.95))); bush.position.set(cx - L * 0.5, 0.55, cz - Dh * 0.4); log(cx + L * 0.4, cz + Dh * 0.4, 2.1); rock(cx + L * 0.5, cz - Dh * 0.5, 0.9); } break;
+    case 'hippo': { const bank = put(new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.12, 18), pbr(0xb09468, 0.95))); bank.position.set(cx + L * 0.5, 0.08, cz + Dh * 0.5); } break;   // a mud bank in the pool
+    case 'penguin': ice(cx - L * 0.4, cz - Dh * 0.4, 2.2); ice(cx + L * 0.5, cz + Dh * 0.3, 1.6); ice(cx, cz + Dh * 0.6, 1.2); break;
+    case 'flamingo': reeds(cx - L * 0.5, cz - Dh * 0.4); reeds(cx + L * 0.5, cz + Dh * 0.4); break;
+    case 'seal': { ice(cx - L * 0.4, cz - Dh * 0.3, 2.4); const ball = put(new THREE.Mesh(G.sph(0.28, 12, 10), pbr(0xd0483a, 0.5))); ball.position.set(cx + L * 0.4, 0.28, cz + Dh * 0.4); const stripe = put(new THREE.Mesh(G.sph(0.285, 12, 10), pbr(0xf0e8d8, 0.5))); stripe.scale.set(1, 0.4, 1); stripe.position.copy(ball.position); } break;   // beach ball!
+    case 'snake': { rock(cx - L * 0.4, cz - Dh * 0.4, 1.3); log(cx + L * 0.4, cz + Dh * 0.3, 0.9); const heat = put(new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 0.08, 16), pbr(0xc8a878, 0.95))); heat.position.set(cx, 0.06, cz); } break;   // basking stone
+    case 'hedgehog': { log(cx - 1, cz + 1, 0.5); for (let k = 0; k < 8; k++) { const leaf = put(new THREE.Mesh(G.sph(0.1, 6, 5), pbr(k % 2 ? 0xa8763a : 0xc09048, 0.95))); leaf.scale.set(1, 0.15, 1.3); leaf.position.set(cx - P.w / 2 + 1 + Math.random() * (P.w - 2), 0.05, cz - P.d / 2 + 1 + Math.random() * (P.d - 2)); } } break;   // autumn leaf litter
+  }
 }
 
 // ── The zoo compound — a walled hedge-maze full of life ──
@@ -463,6 +513,33 @@ function buildZoo() {
       state.zooAnimals.push({ group: a, type: k, phase: Math.random() * 6, home: { x: a.position.x, z: a.position.z }, pen: P });
     });
   });
+  ZOO_PENS.forEach(P => penHabitat(P));   // 🎨 dress every habitat for its residents
+  // 🌷 boulevard landscaping — trees & flower beds make the walk a garden
+  [[128, 20], [150, 20], [170, 20], [188, 20], [128, -20, 'blossom'], [150, -20, 'autumn'], [170, -20], [188, -20, 'blossom'], [135, 40, 'willow'], [170, 40, 'oak'], [135, -40, 'oak'], [170, -40, 'willow']]
+    .forEach(([tx, tz, k]) => plantWildTree(k || 'tree', tx, tz));
+  [[124, 10], [138, -10], [156, 10], [174, -10], [192, 10], [131, -5], [163, -7], [185, 7], [120, -12], [146, 12]]
+    .forEach(([fx, fz]) => plantWildTree('flowers', fx, fz));
+  // 🎈 Bobo the balloon man, drifting colour on the esplanade
+  const bm = buildHuman({ skin: 0xe0b080, hair: 0xd06a3a, hairStyle: 'short', hat: 'cap', hatColor: 0xd0483a, shirt: 0xe8c040, pants: 0x5a6ac0, height: 1.02, build: 'round', eye: 0x3a5a3a });
+  bm.group.position.set(136, 0, 2); bm.group.rotation.y = Math.PI / 2;
+  scene.add(bm.group);
+  const bunch = new THREE.Group();
+  const BALLOON_COLS = [0xd0483a, 0xe8c040, 0x5a9ad0, 0x6ac06a, 0xc06ad0, 0xf090a8];
+  for (let i = 0; i < 6; i++) {
+    const b = new THREE.Mesh(G.sph(0.22, 14, 10), pbr(BALLOON_COLS[i], 0.4));
+    b.scale.y = 1.15;
+    const a = i * 1.05;
+    b.position.set(Math.cos(a) * 0.4, 2.6 + (i % 3) * 0.35, Math.sin(a) * 0.4);
+    b.castShadow = true; bunch.add(b);
+    const str = new THREE.Mesh(G.cyl(0.008, 0.008, 1.4, 4), pbr(0xd8d8d8, 0.8));
+    str.position.set(b.position.x * 0.6, 1.7, b.position.z * 0.6);
+    str.rotation.z = -b.position.x * 0.3; str.rotation.x = b.position.z * 0.3;
+    bunch.add(str);
+  }
+  bunch.position.set(0.5, 0, 0.2);
+  bm.group.add(bunch);
+  state.zooBalloonMan = { group: bm.group, parts: bm.parts, phase: Math.random() * 6, bunch };
+
   // the free-roamers: Sheldon the tortoise + Percy the peacock own the paths
   [['tortoise', 118, 0], ['peacock', 158, 2]].forEach(([k, x, z]) => {
     const a = zooAnimal(k);
@@ -691,6 +768,27 @@ function zooBuyGift() {
   showNotif('🧸 One plush lion, bagged! Carry it home — the Miller kids will love it.');
 }
 
+// 🎈 a balloon of your very own — it follows the cat all day
+const BALLOON_PRICE = 5;
+function buyZooBalloon() {
+  if (state.coins < BALLOON_PRICE) { showNotif('🎈 A balloon is ' + BALLOON_PRICE + ' 🪙 — not enough!'); if (typeof sfx === 'function') sfx('sad'); return; }
+  state.coins -= BALLOON_PRICE;
+  document.getElementById('coin-count').textContent = state.coins;
+  if (state.catBalloon) catGroup.remove(state.catBalloon);
+  const cols = [0xd0483a, 0xe8c040, 0x5a9ad0, 0x6ac06a, 0xc06ad0, 0xf090a8];
+  const col = cols[Math.floor(Math.random() * cols.length)];
+  const grp = new THREE.Group();
+  const b = new THREE.Mesh(G.sph(0.2, 14, 10), pbr(col, 0.4));
+  b.scale.y = 1.15; b.castShadow = true; grp.add(b);
+  const knot = new THREE.Mesh(G.cone(0.04, 0.06, 6), pbr(col, 0.5)); knot.rotation.x = Math.PI; knot.position.y = -0.24; grp.add(knot);
+  const str = new THREE.Mesh(G.cyl(0.006, 0.006, 1.1, 4), pbr(0xe8e8e8, 0.8)); str.position.y = -0.82; grp.add(str);
+  grp.position.set(0.32, 1.9, -0.3);
+  catGroup.add(grp);
+  state.catBalloon = grp;
+  if (typeof sfx === 'function') sfx('sell');
+  showNotif('🎈 Bobo ties a balloon to your paw! It bobs along with you.');
+}
+
 // ── Working the booth: REAL visitors with BIG clear thought bubbles ──
 function makeThoughtSprite(want) {
   const c = document.createElement('canvas'); c.width = 256; c.height = 128;
@@ -831,6 +929,16 @@ function drawZooMinimap(ctx, cv) {
 let _zooFog = false;
 function updateZooLife(t) {
   if (state.zooKeeper) idleHuman(state.zooKeeper, t);
+  const bmn = state.zooBalloonMan;
+  if (bmn) {
+    idleHuman(bmn, t);
+    bmn.bunch.children.forEach((b, i) => { b.position.x += Math.sin(t * 1.3 + i) * 0.0016; b.rotation.z = Math.sin(t * 1.1 + i * 0.9) * 0.08; });   // balloons drift on the breeze
+    bmn.bunch.position.y = Math.sin(t * 0.9) * 0.04;
+  }
+  if (state.catBalloon) {   // your own balloon bobs along behind you
+    state.catBalloon.position.y = 1.9 + Math.sin(t * 1.4) * 0.08;
+    state.catBalloon.rotation.z = Math.sin(t * 1.1) * 0.12;
+  }
   if (state.zooCook) idleHuman(state.zooCook, t);
   if (state.zooClerk) idleHuman(state.zooClerk, t);
   updateZooBooth(t);
@@ -864,7 +972,10 @@ function updateZooLife(t) {
       case 'deer': if (ud.neck) ud.neck.rotation.x = -0.4 + q * 0.85 - (inMoment ? 0 : Math.sin(t * 0.5 + ph) * 0.05); break;   // grazes, then snaps alert
       case 'camel': if (ud.head) ud.head.rotation.z = Math.sin(t * 3 + ph) * q * 0.25; break;   // that sideways chew
       case 'seal': g.rotation.x = -q * 0.5; g.position.y += q * 0.12; if (ud.body) ud.body.rotation.z = Math.sin(t * 6) * q * 0.15; break;   // balances up, clapping
-      case 'snake': if (ud.head) { ud.head.position.y = 0.28 + q * 0.3; ud.head.rotation.z = Math.sin(t * 2 + ph) * 0.2; } if (ud.coils) ud.coils.forEach((c2, i) => c2.position.y = 0.1 + Math.sin(t * 2.4 + i * 0.9 + ph) * 0.02); break;   // rises to look around
+      case 'snake':
+        if (ud.segs) ud.segs.forEach(sg => { sg.position.z = sg.userData.bz + Math.sin(t * 2.6 + sg.userData.i * 0.55 + ph) * 0.05; });   // the endless slither
+        if (ud.head) { ud.head.position.y = 0.16 + q * 0.38; ud.head.rotation.z = Math.sin(t * 2 + ph) * 0.15 * (1 + q); }                     // rears up to look around
+        break;
       case 'sloth': if (ud.head) ud.head.rotation.y = Math.sin(t * 0.25 + ph) * 0.5 + q * 0.3; g.position.y = 0; break;   // the slowest look-around in the zoo
     }
     if (a.roam) {                                                    // Sheldon & Percy patrol the paths

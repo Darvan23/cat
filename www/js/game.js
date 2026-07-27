@@ -912,6 +912,10 @@ function updateContextButton() {
     if (typeof ZOO_GIFT !== 'undefined' && Math.hypot(cp.x - ZOO_GIFT.x, cp.z - ZOO_GIFT.z) < 3.2) {
       state.context = 'zoogift'; btn.textContent = '🧸 Plush lion · ' + ZOO_PLUSH + ' 🪙'; btn.classList.add('show'); return;
     }
+    // 🎈 Bobo the balloon man on the esplanade
+    if (typeof state.zooBalloonMan !== 'undefined' && state.zooBalloonMan && Math.hypot(cp.x - 136, cp.z - 2) < 3) {
+      state.context = 'zooballoon'; btn.textContent = '🎈 Balloon · ' + BALLOON_PRICE + ' 🪙'; btn.classList.add('show'); return;
+    }
     // 🎫 the zoo booth: serve the front visitor, or start/stop a booth shift
     if (typeof ZOO !== 'undefined' && Math.hypot(cp.x - (ZOO.gateX + 1.6), cp.z - (-6.4)) < 3.4) {
       const front = (typeof zooFrontVisitor === 'function') ? zooFrontVisitor() : null;
@@ -972,6 +976,7 @@ function doContextAction() {
   else if (state.context === 'zooshift') { if (typeof toggleZooShift === 'function') toggleZooShift(); }
   else if (state.context === 'zooeat') { if (typeof zooEatMeal === 'function') zooEatMeal(); }
   else if (state.context === 'zoogift') { if (typeof zooBuyGift === 'function') zooBuyGift(); }
+  else if (state.context === 'zooballoon') { if (typeof buyZooBalloon === 'function') buyZooBalloon(); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
