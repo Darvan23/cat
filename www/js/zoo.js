@@ -925,6 +925,99 @@ function drawZooMinimap(ctx, cv) {
   ctx.beginPath(); ctx.arc(X(cp.x), Z(cp.z), 8, 0, 7); ctx.fill(); ctx.stroke();
 }
 
+// ── 📖 the info boards: every species gets its story + fun facts ──
+const ZOO_FACTS = {
+  elephant: { e: '🐘', n: 'Elephants', home: 'African savannahs and forests', eat: 'Grass, fruit and tree bark — up to 150 kg a day!', facts: ['An elephant\'s trunk has about 40,000 muscles — your whole body has around 600!', 'Elephants say hello by wrapping their trunks together.', 'They can\'t jump, but they\'re wonderful swimmers.'] },
+  giraffe: { e: '🦒', n: 'Giraffes', home: 'African savannahs, wherever tall acacia trees grow', eat: 'Leaves from the very tops of trees — 30 kg a day', facts: ['A giraffe\'s neck has only 7 bones — the same as yours! They\'re just enormous.', 'Their tongue is blue-purple and half a metre long.', 'Giraffes only sleep about 30 minutes a day.'] },
+  kangaroo: { e: '🦘', n: 'Kangaroos', home: 'Australian grasslands and open bush', eat: 'Grass and shrubs, mostly at dawn and dusk', facts: ['A kangaroo can hop 8 metres in a single bound!', 'Baby kangaroos are called joeys and live in mum\'s pouch.', 'They can\'t walk backwards — hopping only goes forwards.'] },
+  zebra: { e: '🦓', n: 'Zebras', home: 'East African plains', eat: 'Grass, grass and more grass', facts: ['Every zebra\'s stripes are unique — like your fingerprint!', 'Stripes confuse biting flies, so they mostly leave zebras alone.', 'Zebras sleep standing up.'] },
+  camel: { e: '🐫', n: 'Camels', home: 'Deserts of Asia and Africa', eat: 'Thorny plants other animals can\'t chew', facts: ['The hump stores FAT, not water — it\'s a packed lunch for the desert.', 'A thirsty camel can drink 100 litres in ten minutes.', 'They have three sets of eyelids to keep sand out.'] },
+  panda: { e: '🐼', n: 'Giant Pandas', home: 'Misty bamboo mountains of China', eat: 'Bamboo — 12 hours of munching every day', facts: ['A newborn panda is smaller than a mango.', 'Pandas do somersaults just for fun.', 'They have a special wrist bone that works like a thumb for gripping bamboo.'] },
+  monkey: { e: '🐒', n: 'Monkeys', home: 'Rainforest treetops', eat: 'Fruit, leaves, nuts and the odd juicy bug', facts: ['A monkey\'s tail works like a fifth hand for swinging.', 'They groom each other to say \'we\'re friends\'.', 'Some monkeys use stones as tools to crack nuts.'] },
+  parrot: { e: '🦜', n: 'Parrots', home: 'Tropical rainforests', eat: 'Seeds, nuts and bright rainforest fruit', facts: ['Parrots can learn to copy human words — some know over 100!', 'They can live longer than people — some reach 80 years old.', 'Parrots dance in time to music. Really!'] },
+  deer: { e: '🦌', n: 'Deer', home: 'Quiet forests and meadows', eat: 'Grass, leaves, and fallen acorns in autumn', facts: ['A stag grows a whole new set of antlers every single year.', 'Fawns are born with white spots that work as camouflage.', 'Deer can swim across wide rivers.'] },
+  sloth: { e: '🦥', n: 'Sloths', home: 'Rainforest branches, hanging upside-down', eat: 'Leaves — digested VERY slowly, up to a month per meal', facts: ['Sloths only climb down their tree about once a week.', 'Green algae grows in their fur — free camouflage!', 'They\'re slow on land but surprisingly good swimmers.'] },
+  lion: { e: '🦁', n: 'Lions', home: 'African grasslands, living in family prides', eat: 'Meat — but they nap 20 hours a day between meals', facts: ['A lion\'s roar can be heard 8 kilometres away.', 'Lionesses do most of the hunting, together as a team.', 'Cubs practise pouncing on the grown-ups\' tails.'] },
+  bear: { e: '🐻', n: 'Brown Bears', home: 'Northern forests and mountains', eat: 'Berries, honey, fish — almost anything tasty', facts: ['Bears sleep through the whole winter without eating once.', 'They can smell food from over a kilometre away.', 'Despite their size, bears can sprint faster than any human.'] },
+  wolf: { e: '🐺', n: 'Wolves', home: 'Wild forests and snowy tundra, in close packs', eat: 'Meat, hunted as a family team', facts: ['Wolves howl to call their family — each has its own voice.', 'A pack looks after every member, old and young.', 'Wolf pups are born with blue eyes that turn gold.'] },
+  croc: { e: '🐊', n: 'Crocodiles', home: 'Warm rivers and swamps', eat: 'Fish, mostly — caught with a lightning SNAP', facts: ['Crocodiles have been around since the dinosaurs!', 'They can\'t chew — they swallow chunks whole.', 'A croc grows over 3,000 teeth in its lifetime.'] },
+  fox: { e: '🦊', n: 'Foxes', home: 'Woodlands, meadows — even towns at night', eat: 'A bit of everything: mice, berries, worms', facts: ['A fox\'s fluffy tail is called a brush, and it wraps it round itself like a scarf.', 'Foxes make over 40 different sounds.', 'They pounce high in the air to surprise mice under the snow.'] },
+  hippo: { e: '🦛', n: 'Hippos', home: 'African rivers and pools — in the water all day', eat: 'Grass, munched at night — 40 kg of it', facts: ['Hippos can hold their breath for 5 minutes.', 'Their yawns aren\'t sleepy — it\'s how they say \'this is MY pool\'.', 'Baby hippos are born underwater.'] },
+  penguin: { e: '🐧', n: 'Penguins', home: 'The icy Antarctic coast', eat: 'Fish and krill, caught on deep dives', facts: ['Penguins can\'t fly in the air — but they FLY underwater.', 'A penguin dad balances the egg on his feet to keep it warm.', 'They toboggan on their bellies because it\'s faster than walking.'] },
+  flamingo: { e: '🦩', n: 'Flamingos', home: 'Shallow salty lagoons', eat: 'Tiny pink shrimp — that\'s what makes THEM pink!', facts: ['Flamingos are born grey — the pink comes from their food.', 'They sleep standing on one leg.', 'They eat with their heads upside-down.'] },
+  seal: { e: '🦭', n: 'Seals', home: 'Cold coasts — half in the sea, half on the rocks', eat: 'Fish, squid, and the occasional crab', facts: ['Seals can sleep IN the water, floating like bottles.', 'Their whiskers feel fish swimming in the dark.', 'A seal can dive for over 30 minutes on one breath.'] },
+  snake: { e: '🐍', n: 'Snakes', home: 'Warm grasslands and forests — ours love the basking stone', eat: 'Small prey, swallowed whole — then no dinner for weeks', facts: ['Snakes smell with their flickering tongues.', 'They outgrow their skin and slither right out of it.', 'Snakes have no eyelids — they sleep with their eyes open!'] },
+  hedgehog: { e: '🦔', n: 'Hedgehogs', home: 'Hedgerows and leafy gardens', eat: 'Beetles, worms and slugs — a gardener\'s best friend', facts: ['A hedgehog has about 5,000 spines, and each one is a hollow hair.', 'When scared, they roll into a perfect prickly ball.', 'They snore tiny snores when they hibernate.'] },
+};
+
+// which pen sign is the cat standing at?
+function zooBoardNear(cp) {
+  for (const P of ZOO_PENS) {
+    const sz = P.z + (P.z < 0 ? P.d / 2 : -P.d / 2);
+    if (Math.hypot(cp.x - P.x, cp.z - sz) < 2.6) { const f = ZOO_FACTS[P.kinds[0]]; if (f) return { pen: P, f }; }
+  }
+  return null;
+}
+function openZooBoard(P) {
+  const f = ZOO_FACTS[P.kinds[0]]; if (!f) return;
+  state.uiOpen = true;
+  let h = `<div class="zoo-want">${f.e}</div>`;
+  h += `<div class="modal-sub" style="font-size:.95rem"><b>${f.n}</b> · ${P.kinds.length} living here</div>`;
+  h += `<div style="text-align:left;font-size:.86rem;line-height:1.45;margin:.5rem 0">`;
+  h += `<div>🏡 <b>Home:</b> ${f.home}</div>`;
+  h += `<div>🍽️ <b>They eat:</b> ${f.eat}</div>`;
+  h += `<div style="margin-top:.45rem"><b>✨ Fun facts</b></div>`;
+  f.facts.forEach(x => { h += `<div style="margin:.2rem 0">• ${x}</div>`; });
+  h += `</div><button class="modal-close" onclick="closeCheckout()">Lovely!</button>`;
+  document.getElementById('checkout-title').textContent = '📖 ' + f.n;
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+  if (typeof sfx === 'function') sfx('ui');
+}
+
+// ── 🎈 parting with your balloon: gift it (a good deed!) or let it fly ──
+function balloonGiveTarget(cp) {
+  let best = null, bd = 2.1;
+  const scan = (list, fallbackName) => (list || []).forEach(v => {
+    if (!v || !v.group || v._hasBalloon || v.group.visible === false) return;
+    const d = Math.hypot(cp.x - v.group.position.x, cp.z - v.group.position.z);
+    if (d < bd) { bd = d; best = { who: v, name: v.name || fallbackName }; }
+  });
+  scan(state.family, 'a Miller');
+  scan(state.npcs, 'a neighbour');
+  scan(state.peds, 'a passer-by');
+  scan(state.commuters, 'a passer-by');
+  scan(state.zooCrowd, 'a zoo visitor');
+  return best;
+}
+function giveBalloonTo(t) {
+  if (!state.catBalloon || !t || !t.who) return;
+  const grp = state.catBalloon;
+  catGroup.remove(grp);
+  grp.position.set(0.28, 2.35, 0.05);              // tied to their hand, floating overhead
+  t.who.group.add(grp);
+  t.who._hasBalloon = true;
+  state.givenBalloons = state.givenBalloons || [];
+  state.givenBalloons.push(grp);
+  state.catBalloon = null;
+  state.goodDeeds = (state.goodDeeds || 0) + 1;
+  if (typeof sfx === 'function') sfx('mail');
+  showNotif('❤️ You gave your balloon to ' + t.name + ' — they LOVE it! (+1 good deed)');
+}
+function releaseBalloon() {
+  if (!state.catBalloon) return;
+  const grp = state.catBalloon;
+  const wp = new THREE.Vector3(); grp.getWorldPosition(wp);
+  catGroup.remove(grp);
+  grp.position.copy(wp);
+  scene.add(grp);
+  state.flyingBalloons = state.flyingBalloons || [];
+  state.flyingBalloons.push({ m: grp, x0: wp.x, ph: Math.random() * 6 });
+  state.catBalloon = null;
+  if (typeof sfx === 'function') sfx('jump');
+  showNotif('🎈 You let go… up, up and away it sails!');
+}
+
 // ── per-frame zoo life — every animal has its own MOMENTS ──
 let _zooFog = false;
 function updateZooLife(t) {
@@ -938,6 +1031,16 @@ function updateZooLife(t) {
   if (state.catBalloon) {   // your own balloon bobs along behind you
     state.catBalloon.position.y = 1.9 + Math.sin(t * 1.4) * 0.08;
     state.catBalloon.rotation.z = Math.sin(t * 1.1) * 0.12;
+  }
+  (state.givenBalloons || []).forEach((b, i) => { b.rotation.z = Math.sin(t * 1.2 + i) * 0.1; b.rotation.x = Math.sin(t * 0.9 + i * 2) * 0.07; });
+  if (state.flyingBalloons && state.flyingBalloons.length) {   // released balloons sail into the sky
+    for (let i = state.flyingBalloons.length - 1; i >= 0; i--) {
+      const fb = state.flyingBalloons[i];
+      fb.m.position.y += 0.08;
+      fb.m.position.x = fb.x0 + Math.sin(t * 1.3 + fb.ph) * 0.5;
+      fb.m.rotation.z = Math.sin(t * 1.1 + fb.ph) * 0.25;
+      if (fb.m.position.y > 42) { scene.remove(fb.m); state.flyingBalloons.splice(i, 1); }
+    }
   }
   if (state.zooCook) idleHuman(state.zooCook, t);
   if (state.zooClerk) idleHuman(state.zooClerk, t);

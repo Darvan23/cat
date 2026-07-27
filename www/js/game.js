@@ -926,6 +926,16 @@ function updateContextButton() {
       btn.textContent = label; btn.classList.add('show');
       return;
     }
+    // 📖 the pen info boards — walk up to a sign to meet the species
+    if (typeof zooBoardNear === 'function') {
+      const zb = zooBoardNear(cp);
+      if (zb) { state.context = 'zooboard'; state._boardPen = zb.pen; btn.textContent = '📖 About the ' + zb.f.n; btn.classList.add('show'); return; }
+    }
+    // 🎈 pass your balloon on — kindness counts
+    if (state.catBalloon && typeof balloonGiveTarget === 'function') {
+      const bt = balloonGiveTarget(cp);
+      if (bt) { state.context = 'giveballoon'; state._balloonTo = bt; btn.textContent = '🎈 Give balloon to ' + bt.name; btn.classList.add('show'); return; }
+    }
     const rub = (typeof nearestRubble === 'function') ? nearestRubble(cp, 3.2) : null;
     const giver = (!isNight() && state.nearNPC && state.nearNPC.hasJob) ? state.nearNPC : null;
     const miller = nearestMiller(cp, 2.2);
@@ -955,7 +965,7 @@ function updateContextButton() {
       else if (dbag) { action = 'pickbag'; label = '🛍️ Pick up the bag'; }
       else if (bin) { action = 'searchbin'; label = '🗑️ Search bin'; state.trashTarget = bin; }
       else if (state.carryBag) { action = 'dropbag'; label = '⬇️ Put the bag down'; }
-      else { const p = nearestPerson(cp, 2.4); if (p) { action = 'pet'; label = '🤚 Get Petted'; state.petTarget = p; } }
+      else { const p = nearestPerson(cp, 2.4); if (p) { action = 'pet'; label = '🤚 Get Petted'; state.petTarget = p; } else if (state.catBalloon) { action = 'flyballoon'; label = '🎈 Let the balloon fly'; } }
     }
   }
   state.context = action;
@@ -977,6 +987,9 @@ function doContextAction() {
   else if (state.context === 'zooeat') { if (typeof zooEatMeal === 'function') zooEatMeal(); }
   else if (state.context === 'zoogift') { if (typeof zooBuyGift === 'function') zooBuyGift(); }
   else if (state.context === 'zooballoon') { if (typeof buyZooBalloon === 'function') buyZooBalloon(); }
+  else if (state.context === 'zooboard') { if (typeof openZooBoard === 'function') openZooBoard(state._boardPen); }
+  else if (state.context === 'giveballoon') { if (typeof giveBalloonTo === 'function') giveBalloonTo(state._balloonTo); }
+  else if (state.context === 'flyballoon') { if (typeof releaseBalloon === 'function') releaseBalloon(); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
