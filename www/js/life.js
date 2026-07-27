@@ -98,7 +98,9 @@ function applySit(p, a) {
   // seat the hips ON the bench seat (0.5 high) and settle slightly back toward the backrest
   const backX = a.use === 'bench' ? a.tx - Math.sin(a.face) * 0.1 : a.tx;
   const backZ = a.use === 'bench' ? a.tz - Math.cos(a.face) * 0.1 : a.tz;
-  p.group.position.set(backX, (a.use === 'bench' ? (0.5 - 0.84 * h) : -0.42 * h), backZ);
+  // bench: hips on the 0.5-high seat. Ground (tree/picnic): hips a whisker above the
+  // grass — the old -0.42h left them folded up in MID-AIR, hovering under the tree
+  p.group.position.set(backX, (a.use === 'bench' ? (0.5 - 0.84 * h) : -0.72 * h), backZ);
   p.wx = a.tx; p.wz = a.tz; p.x = a.tx; p.z = a.tz;
   p.group.rotation.y = a.face;
   const fwd = a.use === 'bench' ? -1.35 : -1.5;   // negative folds the legs FORWARD (seated), not backward

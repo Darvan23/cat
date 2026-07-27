@@ -341,6 +341,45 @@ function zooAnimal(type) {
     [[-0.26, 0.3], [0.26, 0.3], [-0.26, -0.3], [0.26, -0.3]].forEach(([lx, lz]) => E(0.09, 1, 0.7, 1, sk, lx, 0.14, lz));
     g.userData.head = head;
   }
+  // ── the accuracy pass: EVERY animal gets eyes, and each species its signature details ──
+  const dark = M(0x1c1e24, 0.35), ivory = M(0xf0ead8, 0.5), pink2 = M(0xe8a030, 0.6);
+  const eyes = (y, z, sp, r) => [-1, 1].forEach(d => {
+    E(r || 0.03, 1, 1, 1, dark, d * sp, y, z);
+    const gl = new THREE.Mesh(G.sph((r || 0.03) * 0.4, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    gl.position.set(d * sp + 0.01, y + (r || 0.03) * 0.4, z + (r || 0.03) * 0.8); g.add(gl);
+  });
+  switch (type) {
+    case 'elephant': eyes(1.5, 1.55, 0.24, 0.045);
+      [-1, 1].forEach(d => { const tk = new THREE.Mesh(G.cone(0.05, 0.42, 8), ivory); tk.position.set(d * 0.24, 1.02, 1.5); tk.rotation.x = 2.6; tk.castShadow = true; g.add(tk); });   // tusks
+      { const tl = new THREE.Mesh(G.cyl(0.03, 0.02, 0.7), M(0x8a8f9a)); tl.position.set(0, 0.85, -1.2); tl.rotation.x = 0.5; g.add(tl); } break;
+    case 'lion': eyes(1.06, 1.0, 0.12, 0.032); E(0.045, 1, 0.7, 0.8, dark, 0, 0.92, 1.05); E(0.07, 1, 1, 1, M(0x8a5a2a), 0, 1.14, -1.22); break;   // nose + tail tuft
+    case 'giraffe': eyes(3.52, 0.94, 0.11, 0.028); E(0.05, 1, 0.6, 0.8, dark, 0, 3.38, 1.0);
+      { const tl = new THREE.Mesh(G.cyl(0.025, 0.018, 0.8), M(0xe8c470)); tl.position.set(0, 1.15, -0.82); tl.rotation.x = 0.4; g.add(tl); E(0.05, 1, 1.4, 1, M(0x5a4028), 0, 0.78, -0.98); } break;
+    case 'monkey': eyes(0.86, 0.29, 0.07, 0.024); E(0.03, 1, 0.7, 0.7, dark, 0, 0.76, 0.34); break;
+    case 'penguin': eyes(0.87, 0.13, 0.06, 0.022); [-1, 1].forEach(d => E(0.06, 1.2, 0.35, 1.5, pink2, d * 0.1, 0.03, 0.1)); break;   // orange feet
+    case 'bear': eyes(1.4, 0.9, 0.13, 0.032); E(0.045, 1, 0.8, 0.8, dark, 0, 1.24, 1.02); E(0.09, 1, 1, 1, M(0x6a4a30), 0, 0.95, -0.78); break;   // nose + stub tail
+    case 'zebra': eyes(1.92, 0.94, 0.09, 0.026);
+      for (let i = 0; i < 4; i++) { const mn = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, 0.12), M(0x2a2c30)); mn.position.set(0, 1.55 + i * 0.14, 0.62 - i * 0.1); mn.rotation.x = -0.5; g.add(mn); }   // the mane
+      { const tl = new THREE.Mesh(G.cyl(0.02, 0.015, 0.6), M(0xeef0f2)); tl.position.set(0, 0.85, -0.85); tl.rotation.x = 0.45; g.add(tl); E(0.04, 1, 1.4, 1, M(0x2a2c30), 0, 0.55, -1.0); } break;
+    case 'flamingo': eyes(2.05, 0.48, 0.05, 0.016); E(0.05, 1.4, 0.3, 0.9, M(0x2a2c30), 0, 1.05, -0.28); break;   // black wing tips
+    case 'croc': for (let i = 0; i < 3; i++) [-1, 1].forEach(d => { const th = new THREE.Mesh(G.cone(0.02, 0.06, 6), ivory); th.position.set(d * 0.13, 0.22, 1.25 + i * 0.22); th.rotation.x = Math.PI; g.add(th); }); break;   // teeth
+    case 'hippo': [-1, 1].forEach(d => E(0.022, 1, 1, 1, dark, d * 0.09, 0.84, 1.56));   // nostrils
+      [-1, 1].forEach(d => { const th = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.04), ivory); th.position.set(d * 0.14, 0.52, 1.56); g.add(th); }); break;   // the famous teeth
+    case 'panda': [-1, 1].forEach(d => { E(0.026, 1, 1, 1, M(0xf5f5f2, 0.4), d * 0.13, 1.19, 0.75); E(0.014, 1, 1, 1, dark, d * 0.13, 1.19, 0.78); }); E(0.035, 1, 0.7, 0.8, dark, 0, 1.06, 0.75); break;
+    case 'kangaroo': eyes(1.68, 0.37, 0.08, 0.024); E(0.032, 1, 0.7, 0.8, dark, 0, 1.58, 0.44); break;
+    case 'wolf': eyes(1.06, 0.74, 0.09, 0.025); E(0.04, 1, 0.8, 0.8, dark, 0, 0.92, 1.02); break;
+    case 'parrot': eyes(1.22, 0.13, 0.05, 0.018); break;
+    case 'peacock': eyes(1.33, 0.32, 0.04, 0.015); break;
+    case 'fox': eyes(0.95, 0.7, 0.09, 0.025); E(0.035, 1, 0.8, 0.8, dark, 0, 0.79, 0.94); break;
+    case 'deer': eyes(1.9, 0.8, 0.08, 0.024); E(0.03, 1, 0.7, 0.8, dark, 0, 1.8, 0.9); break;
+    case 'camel': eyes(2.3, 1.03, 0.09, 0.025); { const tl = new THREE.Mesh(G.cyl(0.02, 0.015, 0.6), M(0xd8b070)); tl.position.set(0, 1.0, -0.85); tl.rotation.x = 0.45; g.add(tl); } break;
+    case 'seal': eyes(0.64, 0.76, 0.1, 0.028); break;
+    case 'snake': { const tg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.012), M(0xd0483a, 0.5)); tg.position.set(0.5, 0.27, 0); g.add(tg); } break;   // the flicking tongue
+    case 'sloth': [-1, 1].forEach(d => { const st2 = E(0.04, 1, 0.55, 0.4, M(0x5a4a34), d * 0.07, 0.81, 0.24); st2.rotation.z = d * 0.6; E(0.015, 1, 1, 1, dark, d * 0.07, 0.8, 0.27); });   // the iconic eye stripes
+      [-1, 1].forEach(d => { const cl = new THREE.Mesh(G.cone(0.02, 0.1, 6), ivory); cl.position.set(d * 0.18, 1.78, 0.05); g.add(cl); }); break;   // hook claws on the bar
+    case 'hedgehog': eyes(0.18, 0.33, 0.05, 0.015); break;
+    case 'tortoise': eyes(0.38, 0.6, 0.05, 0.017); break;
+  }
   return g;
 }
 
