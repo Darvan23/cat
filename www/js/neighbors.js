@@ -176,7 +176,7 @@ function drawTownPostcard(cv, snap) {
   if (!cv) return;
   const D = 1040; cv.width = D; cv.height = D;
   const g = cv.getContext('2d');
-  const SPAN = 404, S = D / SPAN, C = D / 2;
+  const SPAN = 444, S = D / SPAN, C = D / 2;
   const WX = x => C + x * S, WZ = z => C + z * S;
   const rr = (x, y, w, h, r) => { r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 

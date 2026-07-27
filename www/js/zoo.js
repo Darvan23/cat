@@ -6,39 +6,36 @@
 // the ZOO's own map. Gate: closed doors, 10🪙 day pass — or work the ticket booth.
 
 const GRAND_PARK = { x0: -45, x1: 45, z0: -130, z1: -72 };
-const ZOO = { x0: 106, x1: 190, z0: -48, z1: 48, gateX: 106, gateZ: 0 };   // east of town, gate faces west — a real ESTATE now
+const ZOO = { x0: 106, x1: 210, z0: -60, z1: 60, gateX: 106, gateZ: 0 };   // east of town, gate faces west — a SAFARI-scale estate
 const ZOO_TICKET = 10, ZOO_SALE_PAY = 2, ZOO_MEAL = 8, ZOO_PLUSH = 15;
 const WILD_KINDS = ['tree', 'tree', 'pine', 'blossom', 'oak', 'willow', 'autumn'];   // plain trees stay common
 
 // ── The zoo layout as DATA — the world build and the zoo map both read it ──
 const ZOO_PENS = [
-  { x: 118, z: 38, w: 18, d: 14, label: '🐘 ELEPHANTS', kinds: ['elephant', 'elephant'] },
-  { x: 140, z: 38, w: 16, d: 14, label: '🦒 GIRAFFES', kinds: ['giraffe', 'giraffe'] },
-  { x: 160, z: 38, w: 16, d: 14, label: '🦘 KANGAROOS', kinds: ['kangaroo', 'kangaroo'] },
-  { x: 178, z: 38, w: 14, d: 14, label: '🦓 ZEBRAS', kinds: ['zebra', 'zebra'] },
-  { x: 128, z: 16, w: 14, d: 12, label: '🐼 PANDAS', kinds: ['panda', 'panda'], floor: 0x9ec87c },
-  { x: 148, z: 16, w: 14, d: 12, label: '🐒 MONKEYS', kinds: ['monkey', 'monkey', 'monkey'] },
-  { x: 166, z: 16, w: 12, d: 12, label: '🦜 AVIARY', kinds: ['parrot', 'parrot', 'parrot'], floor: 0xb8d49a },
-  { x: 118, z: -38, w: 18, d: 14, label: '🦁 LIONS', kinds: ['lion', 'lion'], floor: 0xc8b070 },
-  { x: 140, z: -38, w: 16, d: 14, label: '🐻 BEARS', kinds: ['bear', 'bear'] },
-  { x: 160, z: -38, w: 16, d: 14, label: '🐺 WOLVES', kinds: ['wolf', 'wolf'], floor: 0x8aa06a },
-  { x: 178, z: -38, w: 14, d: 14, label: '🐊 CROCS', kinds: ['croc', 'croc'], floor: 0x7ab8a0 },
-  { x: 128, z: -16, w: 14, d: 12, label: '🦛 HIPPO POOL', kinds: ['hippo', 'hippo'], floor: 0x6fb6d8 },
-  { x: 148, z: -16, w: 14, d: 12, label: '🐧 PENGUINS', kinds: ['penguin', 'penguin', 'penguin'], floor: 0xcfe4ec },
-  { x: 166, z: -16, w: 12, d: 12, label: '🦩 FLAMINGOS', kinds: ['flamingo', 'flamingo', 'flamingo'], floor: 0x9ec8d8 },
+  { x: 118, z: 50, w: 18, d: 16, label: '🐘 ELEPHANTS', kinds: ['elephant', 'elephant'] },
+  { x: 140, z: 50, w: 16, d: 16, label: '🦒 GIRAFFES', kinds: ['giraffe', 'giraffe'] },
+  { x: 160, z: 50, w: 16, d: 16, label: '🦘 KANGAROOS', kinds: ['kangaroo', 'kangaroo'] },
+  { x: 180, z: 50, w: 16, d: 16, label: '🦓 ZEBRAS', kinds: ['zebra', 'zebra'] },
+  { x: 200, z: 50, w: 16, d: 16, label: '🐫 CAMELS', kinds: ['camel', 'camel'], floor: 0xd8c088 },
+  { x: 126, z: 28, w: 14, d: 12, label: '🐼 PANDAS', kinds: ['panda', 'panda'], floor: 0x9ec87c },
+  { x: 146, z: 28, w: 14, d: 12, label: '🐒 MONKEYS', kinds: ['monkey', 'monkey', 'monkey'] },
+  { x: 164, z: 28, w: 12, d: 12, label: '🦜 AVIARY', kinds: ['parrot', 'parrot', 'parrot'], floor: 0xb8d49a },
+  { x: 182, z: 28, w: 16, d: 12, label: '🦌 DEER', kinds: ['deer', 'deer', 'deer'] },
+  { x: 200, z: 28, w: 14, d: 12, label: '🦥 SLOTHS', kinds: ['sloth', 'sloth'], floor: 0x9ab87c },
+  { x: 118, z: -50, w: 18, d: 16, label: '🦁 LIONS', kinds: ['lion', 'lion'], floor: 0xc8b070 },
+  { x: 140, z: -50, w: 16, d: 16, label: '🐻 BEARS', kinds: ['bear', 'bear'] },
+  { x: 160, z: -50, w: 16, d: 16, label: '🐺 WOLVES', kinds: ['wolf', 'wolf'], floor: 0x8aa06a },
+  { x: 180, z: -50, w: 16, d: 16, label: '🐊 CROCS', kinds: ['croc', 'croc'], floor: 0x7ab8a0 },
+  { x: 200, z: -50, w: 16, d: 16, label: '🦊 FOXES', kinds: ['fox', 'fox'], floor: 0xa8c088 },
+  { x: 126, z: -28, w: 14, d: 12, label: '🦛 HIPPO POOL', kinds: ['hippo', 'hippo'], floor: 0x6fb6d8 },
+  { x: 146, z: -28, w: 14, d: 12, label: '🐧 PENGUINS', kinds: ['penguin', 'penguin', 'penguin'], floor: 0xcfe4ec },
+  { x: 164, z: -28, w: 12, d: 12, label: '🦩 FLAMINGOS', kinds: ['flamingo', 'flamingo', 'flamingo'], floor: 0x9ec8d8 },
+  { x: 182, z: -28, w: 16, d: 12, label: '🦭 SEALS', kinds: ['seal', 'seal', 'seal'], floor: 0x8ac4dc },
+  { x: 200, z: -28, w: 14, d: 12, label: '🐍 SNAKES', kinds: ['snake', 'snake'], floor: 0xd8c8a0 },
   { x: 112, z: 8, w: 8, d: 7, label: '🦔 HEDGEHOGS', kinds: ['hedgehog', 'hedgehog', 'hedgehog'], floor: 0xb0a878 },
 ];
-const ZOO_BENCHES = [[124, 8.6, Math.PI], [142, -8.6, 0], [158, 8.6, Math.PI], [176, -10.6, 0]];   // [x, z, faceRy] along the paths
-// the hedge maze: alternating walls turn the central spine into a serpentine puzzle
-const ZOO_HEDGES = [
-  // the serpentine spine — TALL hedges you cannot see over
-  [122, -10, 122, 7], [130, -7, 130, 10], [138, -10, 138, 7], [146, -7, 146, 10], [154, -10, 154, 7], [162, -7, 162, 10],
-  // corridor blockers between the rows — detours to earn each wing
-  [126, 22, 126, 31], [152, 22, 152, 31], [172, 22, 172, 31],
-  [126, -31, 126, -22], [152, -31, 152, -22], [172, -31, 172, -22],
-  // entrance plaza baffles
-  [118, 10, 118, 31], [118, -31, 118, -10],
-];
+const ZOO_BENCHES = [[124, 14, Math.PI], [142, -14, 0], [158, 14, Math.PI], [176, -14, 0], [194, 12, Math.PI], [194, -12, 0]];   // [x, z, faceRy] along the boulevards
+const ZOO_HEDGES = [];   // the maze experiment is over — open boulevards, see everything
 const ZOO_CAFE = { x: 181, z: 8 };      // 🍔 The Hungry Lion — the counter INSIDE the pavilion
 const ZOO_GIFT = { x: 113, z: -8.5 };   // 🎁 the gift shop — the counter INSIDE
 
@@ -60,8 +57,8 @@ function buildFrontier() {
   const IN = (x, z, r) => x > r.x0 - 6 && x < r.x1 + 6 && z > r.z0 - 6 && z < r.z1 + 6;
   const zones = [
     { x0: -155, x1: -100, z0: -135, z1: 50, n: 26 },
-    { x0: 100, x1: 190, z0: -135, z1: -56, n: 16 },
-    { x0: 100, x1: 190, z0: 54, z1: 58, n: 6 },
+    { x0: 100, x1: 210, z0: -135, z1: -68, n: 16 },
+    { x0: 196, x1: 230, z0: -60, z1: 60, n: 0 },
     { x0: -95, x1: 95, z0: -135, z1: -58, n: 26 },
   ];
   zones.forEach(zn => {
@@ -260,6 +257,68 @@ function zooAnimal(type) {
     g.add(fan);
     [[-0.09, 0], [0.09, 0]].forEach(([lx]) => { const leg = new THREE.Mesh(G.cyl(0.022, 0.022, 0.5), M(0x8a7a4a)); leg.position.set(lx, 0.25, 0.05); g.add(leg); });
     g.userData.head = head; g.userData.fan = fan;
+  } else if (type === 'fox') {
+    const or = M(0xd87838), wh = M(0xf0e8dc), bk = M(0x2a2c30);
+    E(0.3, 1.1, 0.9, 1.5, or, 0, 0.52, 0);
+    E(0.2, 1, 0.85, 0.9, wh, 0, 0.42, 0.4);                                        // white chest
+    const head = E(0.2, 1, 0.9, 1.15, or, 0, 0.88, 0.55);
+    E(0.09, 1, 0.7, 1.4, wh, 0, 0.8, 0.78);                                        // white snout
+    [-1, 1].forEach(d => E(0.07, 0.7, 1.6, 0.5, or, d * 0.13, 1.14, 0.45));        // big ears
+    const tail = E(0.12, 0.9, 0.9, 2.1, or, 0, 0.5, -0.75);
+    E(0.07, 1, 1, 1, wh, 0, 0.5, -1.05);                                           // white tail tip
+    [[-0.2, 0.36], [0.2, 0.36], [-0.2, -0.36], [0.2, -0.36]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.055, 0.065, 0.5), bk); leg.position.set(lx, 0.25, lz); leg.castShadow = true; g.add(leg); });
+    g.userData.head = head; g.userData.tail = tail;
+  } else if (type === 'deer') {
+    const tn = M(0xc09a6a);
+    E(0.34, 1.05, 0.9, 1.45, tn, 0, 0.92, 0);
+    [[0.15, 1.0, -0.2], [-0.18, 0.95, 0.15], [0.05, 1.05, 0.35]].forEach(([px, py, pz]) => E(0.05, 1, 1, 1, M(0xf0e8d8), px, py, pz));   // white dapples
+    const neck = new THREE.Mesh(G.cyl(0.1, 0.13, 0.8), tn); neck.position.set(0, 1.45, 0.5); neck.rotation.x = -0.4; neck.castShadow = true; g.add(neck);
+    const head = E(0.16, 1, 0.85, 1.25, tn, 0, 1.85, 0.72);
+    [-1, 1].forEach(d => E(0.06, 0.6, 1.3, 0.5, tn, d * 0.12, 2.05, 0.62));        // ears
+    [-1, 1].forEach(d => {                                                          // antlers
+      const a1 = new THREE.Mesh(G.cyl(0.02, 0.03, 0.5), M(0x8a6a4a)); a1.position.set(d * 0.1, 2.25, 0.6); a1.rotation.z = d * 0.5; a1.castShadow = true; g.add(a1);
+      const a2 = new THREE.Mesh(G.cyl(0.015, 0.02, 0.3), M(0x8a6a4a)); a2.position.set(d * 0.24, 2.4, 0.6); a2.rotation.z = d * 1.1; g.add(a2);
+    });
+    [[-0.22, 0.42], [0.22, 0.42], [-0.22, -0.42], [0.22, -0.42]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.05, 0.06, 0.9), tn); leg.position.set(lx, 0.45, lz); leg.castShadow = true; g.add(leg); });
+    g.userData.head = head; g.userData.neck = neck;
+  } else if (type === 'camel') {
+    const cm = M(0xd8b070);
+    E(0.44, 1.15, 0.9, 1.6, cm, 0, 1.1, 0);
+    E(0.24, 1, 1.2, 1, cm, 0, 1.6, -0.35);                                          // hump one
+    E(0.24, 1, 1.2, 1, cm, 0, 1.6, 0.25);                                           // hump two
+    const neck = new THREE.Mesh(G.cyl(0.13, 0.17, 1.0), cm); neck.position.set(0, 1.75, 0.72); neck.rotation.x = -0.35; neck.castShadow = true; g.add(neck);
+    const head = E(0.17, 1, 0.85, 1.35, cm, 0, 2.25, 0.95);
+    [-1, 1].forEach(d => E(0.05, 1, 1.2, 0.6, cm, d * 0.11, 2.42, 0.85));
+    [[-0.3, 0.5], [0.3, 0.5], [-0.3, -0.5], [0.3, -0.5]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.08, 0.1, 1.1), cm); leg.position.set(lx, 0.55, lz); leg.castShadow = true; g.add(leg); });
+    g.userData.head = head; g.userData.neck = neck;
+  } else if (type === 'seal') {
+    const sl = M(0x9aa4ae);
+    const body = E(0.32, 1.05, 0.85, 1.9, sl, 0, 0.32, 0);                          // sleek sausage
+    const head = E(0.2, 1, 0.9, 1, sl, 0, 0.55, 0.62);
+    E(0.03, 1, 1, 1, M(0x2a2c30, 0.4), 0, 0.58, 0.82);                              // nose
+    [-1, 1].forEach(d => E(0.11, 0.5, 0.3, 1.3, sl, d * 0.3, 0.2, 0.25));           // fore flippers
+    E(0.13, 1.3, 0.3, 0.8, sl, 0, 0.24, -0.75);                                     // tail flipper
+    g.userData.head = head; g.userData.body = body;
+  } else if (type === 'snake') {
+    const sn = M(0x6a9a4a), sd = M(0x557a3c);
+    g.userData.coils = [];
+    for (let i = 0; i < 7; i++) {                                                    // a coiled body
+      const a = i * 0.9;
+      const c2 = E(0.11 - i * 0.008, 1, 0.9, 1, i % 2 ? sd : sn, Math.cos(a) * (0.32 - i * 0.02), 0.1, Math.sin(a) * (0.32 - i * 0.02));
+      g.userData.coils.push(c2);
+    }
+    const head = E(0.1, 1.1, 0.8, 1.3, sn, 0.34, 0.28, 0);                           // head raised off the coil
+    [-1, 1].forEach(d => E(0.02, 1, 1, 1, M(0xe8c030, 0.4), 0.4, 0.32, d * 0.05));   // eyes
+    g.userData.head = head;
+  } else if (type === 'sloth') {
+    const st = M(0x9a8a6a);
+    const bar = new THREE.Mesh(G.cyl(0.05, 0.05, 1.6), M(0x6a4a30)); bar.rotation.z = Math.PI / 2; bar.position.set(0, 1.7, 0); bar.castShadow = true; g.add(bar);
+    [[-0.7], [0.7]].forEach(([px]) => { const post = new THREE.Mesh(G.cyl(0.07, 0.09, 1.7), M(0x6a4a30)); post.position.set(px, 0.85, 0); post.castShadow = true; g.add(post); });
+    const body = E(0.26, 1, 1.35, 0.9, st, 0, 1.15, 0);                              // hanging body
+    const head = E(0.17, 1, 0.9, 0.95, st, 0, 0.82, 0.05);                           // head hangs LOW
+    E(0.1, 1, 0.75, 0.6, M(0xc8b890), 0, 0.8, 0.18);                                 // pale face
+    [-1, 1].forEach(d => { const arm = new THREE.Mesh(G.cyl(0.05, 0.06, 0.7), st); arm.position.set(d * 0.18, 1.5, 0); arm.rotation.z = d * 0.25; arm.castShadow = true; g.add(arm); });
+    g.userData.head = head; g.userData.body = body; g.userData.hangs = true;
   } else if (type === 'hedgehog') {
     const br = M(0x8a6a4a), spikeM = M(0x5a4630);
     E(0.16, 1.2, 0.85, 1.35, br, 0, 0.16, 0);                                       // little body
@@ -291,8 +350,8 @@ function buildZoo() {
   const wallM = pbr(0x8a6a4a, 0.9), postM = pbr(0x6a4a30, 0.9), hedgeM = pbr(0x4a7a3c, 0.95);
   const wall = (x0, z0, x1, z1) => {
     const w = Math.max(Math.abs(x1 - x0), 0.4), d = Math.max(Math.abs(z1 - z0), 0.4);
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 3.0, d), wallM);
-    m.position.set((x0 + x1) / 2, 1.5, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1.8, d), wallM);
+    m.position.set((x0 + x1) / 2, 0.9, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m);
     worldColliders.push({ type: 'box', x0: Math.min(x0, x1) - 0.2, x1: Math.max(x0, x1) + 0.2, z0: Math.min(z0, z1) - 0.2, z1: Math.max(z0, z1) + 0.2 });
   };
   wall(ZOO.x0, ZOO.z0, ZOO.x1, ZOO.z0);
@@ -732,14 +791,6 @@ function drawZooMinimap(ctx, cv) {
 // ── per-frame zoo life — every animal has its own MOMENTS ──
 let _zooFog = false;
 function updateZooLife(t) {
-  // inside the compound: the camera comes DOWN among the hedges and a soft haze
-  // closes in — you discover the zoo one pen at a time, map in paw
-  const inside = (typeof catInZoo === 'function') && catInZoo();
-  if (inside) {
-    if (state.camHeight > 3.6) state.camHeight = Math.max(3.6, state.camHeight - 0.25);
-    if (!_zooFog) { _zooFog = true; scene.fog = new THREE.Fog(0xcfd8c8, 8, 24); }
-    if (scene.fog && scene.background && scene.background.isColor) scene.fog.color.copy(scene.background);
-  } else if (_zooFog) { _zooFog = false; scene.fog = null; }
   if (state.zooKeeper) idleHuman(state.zooKeeper, t);
   if (state.zooCook) idleHuman(state.zooCook, t);
   if (state.zooClerk) idleHuman(state.zooClerk, t);
@@ -748,7 +799,7 @@ function updateZooLife(t) {
   if (_zooGateOpen && Math.abs(catGroup.position.x - ZOO.gateX) > 10 && catGroup.position.x < ZOO.x0 - 6) setZooGate(false);
   (state.zooAnimals || []).forEach(a => {
     const g = a.group, ph = a.phase, ud = g.userData;
-    g.position.y = Math.abs(Math.sin(t * 1.1 + ph)) * 0.02;
+    if (!ud.hangs) g.position.y = Math.abs(Math.sin(t * 1.1 + ph)) * 0.02;
     if (ud.head) { ud.head.rotation.y = Math.sin(t * 0.7 + ph) * 0.3; ud.head.rotation.x = Math.sin(t * 0.5 + ph * 2) * 0.08; }
     // every animal gets an occasional MOMENT — its signature move
     if (!a._mT || t > a._mT + 1.6) { if (Math.random() < 0.003) { a._mT = t; } }
@@ -770,15 +821,21 @@ function updateZooLife(t) {
       case 'peacock': if (ud.fan) { const s = 0.25 + q * 0.85; ud.fan.scale.set(s, s, s); } break;                    // THE fan display
       case 'flamingo': if (ud.neck) ud.neck.rotation.x = -0.35 + Math.sin(t * 0.6 + ph) * 0.08 + q * 0.7; break;      // dabbles in the water
       case 'hedgehog': if (ud.head) ud.head.scale.setScalar(Math.max(0.05, 1 - q)); g.scale.y = 1 - q * 0.25; g.rotation.z = Math.sin(t * 10) * q * 0.06; break;   // curls into a wobbling ball
+      case 'fox': g.position.y = Math.abs(Math.sin(t * 5 + ph)) * q * 0.35; if (ud.tail) ud.tail.rotation.z = Math.sin(t * 4 + ph) * (0.1 + q * 0.3); break;   // the mousing pounce
+      case 'deer': if (ud.neck) ud.neck.rotation.x = -0.4 + q * 0.85 - (inMoment ? 0 : Math.sin(t * 0.5 + ph) * 0.05); break;   // grazes, then snaps alert
+      case 'camel': if (ud.head) ud.head.rotation.z = Math.sin(t * 3 + ph) * q * 0.25; break;   // that sideways chew
+      case 'seal': g.rotation.x = -q * 0.5; g.position.y += q * 0.12; if (ud.body) ud.body.rotation.z = Math.sin(t * 6) * q * 0.15; break;   // balances up, clapping
+      case 'snake': if (ud.head) { ud.head.position.y = 0.28 + q * 0.3; ud.head.rotation.z = Math.sin(t * 2 + ph) * 0.2; } if (ud.coils) ud.coils.forEach((c2, i) => c2.position.y = 0.1 + Math.sin(t * 2.4 + i * 0.9 + ph) * 0.02); break;   // rises to look around
+      case 'sloth': if (ud.head) ud.head.rotation.y = Math.sin(t * 0.25 + ph) * 0.5 + q * 0.3; g.position.y = 0; break;   // the slowest look-around in the zoo
     }
     if (a.roam) {                                                    // Sheldon & Percy patrol the paths
       const sp = a.type === 'peacock' ? 0.014 : 0.008;
       a.dir += (Math.random() - 0.5) * 0.02;
       const nx = g.position.x + Math.cos(a.dir) * sp, nz = g.position.z + Math.sin(a.dir) * sp;
-      const onPath = nx > ZOO.x0 + 3 && nx < ZOO.x1 - 3 && ((nz > -9 && nz < 9) || (nx > 172 && nz > -20 && nz < 20));
+      const onPath = nx > ZOO.x0 + 3 && nx < ZOO.x1 - 3 && nz > -20 && nz < 20 && !(nx < 119 && nz > 3) && !(nx < 118 && nz < -3.5);   // the central esplanade (clear of the hedgehogs & gift shop)
       if (onPath) { g.position.x = nx; g.position.z = nz; g.rotation.y = -a.dir + Math.PI / 2; }
       else a.dir += Math.PI / 2;
-    } else if (!a._wanderT || t > a._wanderT) {
+    } else if (ud.hangs || a.type === 'snake') { /* sloths hang, snakes coil — no ambling */ } else if (!a._wanderT || t > a._wanderT) {
       a._wanderT = t + 6 + Math.random() * 8;
       const P = a.pen;
       a._tx = P ? P.x + (Math.random() - 0.5) * (P.w - 4) : a.home.x;

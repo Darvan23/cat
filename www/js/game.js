@@ -2162,7 +2162,7 @@ function drawFullMap() {
   const cv = document.getElementById('map-canvas'); if (!cv) return;
   const D = 1040; cv.width = D; cv.height = D;
   const g = cv.getContext('2d');
-  const SPAN = 404, S = D / SPAN, C = D / 2;   // the frontier tripled the map (and the zoo became an estate)
+  const SPAN = 444, S = D / SPAN, C = D / 2;   // the frontier keeps growing — safari-scale zoo east
   const WX = x => C + x * S, WZ = z => C + z * S;
   const rr = (x, y, w, h, r) => { r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 
@@ -2275,7 +2275,7 @@ const mmCtx = mmCanvas.getContext('2d');
 function drawMinimap() {
   if (state.inGray && typeof drawGrayMinimap === 'function') { drawGrayMinimap(mmCtx, mmCanvas); return; }   // inside, the map IS the mansion
   if (typeof catInZoo === 'function' && catInZoo() && typeof drawZooMinimap === 'function') { drawZooMinimap(mmCtx, mmCanvas); return; }   // in the zoo, the map IS the zoo
-  const g = mmCtx, D = 240, S = D / 404, C = D / 2, X = x => C + x * S, Z = z => C + z * S;
+  const g = mmCtx, D = 240, S = D / 444, C = D / 2, X = x => C + x * S, Z = z => C + z * S;
   g.fillStyle = '#b3dc93'; g.fillRect(0, 0, D, D);                                    // grass
   const road = (z, hw) => { const y = Z(z), h = hw * 2 * S; g.fillStyle = '#d9ccb4'; g.fillRect(0, y - h / 2 - 2, D, h + 4); g.fillStyle = '#f5f0e6'; g.fillRect(0, y - h / 2, D, h); };
   road(-26, 3); road(0, 3.5); road(38, 3.5);
@@ -2420,7 +2420,7 @@ function animate(now) {
     // Resolve collisions (walls / furniture / trees), then clamp to the area
     const hit = collide(catGroup.position.x, catGroup.position.z, activeColliders(), state.inHouse ? 0.16 : 0.24);
     catGroup.position.x = hit.x; catGroup.position.z = hit.z;
-    let bx = 196, bzMin = -138, bzMax = 56;   // the frontier: the west wilds, Grand Park, and the zoo ESTATE
+    let bx = 216, bzMin = -138, bzMax = 64;   // the frontier: west wilds, Grand Park, and the safari-scale zoo
     if (state.inHouse) { bx = 3.2; bzMin = -2.6; bzMax = 2.6; }
     else if (state.inShop) { bx = 6.4; bzMin = -4.6; bzMax = 4.4; }   // incl. behind Dad's counter
     else if (state.inShelter) { bx = 11.4; bzMin = -7.4; bzMax = 7.4; }
