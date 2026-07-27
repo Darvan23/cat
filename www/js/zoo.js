@@ -1,13 +1,39 @@
-// zoo.js — 🦁 THE FRONTIER: the tripled map's wild woods, the GRAND PARK, and the TOWN ZOO.
-// The zoo is ONE real place in the world: animals live inside the walled compound, the
-// gate is CLOSED until you buy a day ticket (10🪙), and you can work the booth for real —
-// visitor NPCs queue up with big, clear thought bubbles and you sell each one the ticket
-// they're thinking of. No minigame — actual people, actual sales, 2🪙 a ticket.
+// zoo.js — 🦁 THE FRONTIER: wild woods, the GRAND PARK, and the TOWN ZOO.
+// The zoo is one real place in the world: a BIG walled compound (64×80) laid out as a
+// hedge MAZE — 14 pens, 16 species, 34 animals that actually DO things (lions yawn,
+// bears stand up, penguins belly-slide, crocs snap, peacocks fan their tails…), plus
+// a restaurant and a gift shop inside. While you're in the zoo, the minimap becomes
+// the ZOO's own map. Gate: closed doors, 10🪙 day pass — or work the ticket booth.
 
 const GRAND_PARK = { x0: -45, x1: 45, z0: -130, z1: -72 };
-const ZOO = { x0: 106, x1: 150, z0: -24, z1: 24, gateX: 106, gateZ: 0 };   // east of town, gate faces west
-const ZOO_TICKET = 10, ZOO_SALE_PAY = 2;
+const ZOO = { x0: 106, x1: 170, z0: -40, z1: 40, gateX: 106, gateZ: 0 };   // east of town, gate faces west
+const ZOO_TICKET = 10, ZOO_SALE_PAY = 2, ZOO_MEAL = 8, ZOO_PLUSH = 15;
 const WILD_KINDS = ['tree', 'tree', 'pine', 'blossom', 'oak', 'willow', 'autumn'];   // plain trees stay common
+
+// ── The zoo layout as DATA — the world build and the zoo map both read it ──
+const ZOO_PENS = [
+  { x: 116, z: 32, w: 16, d: 12, label: '🐘 ELEPHANTS', kinds: ['elephant', 'elephant'] },
+  { x: 133, z: 32, w: 14, d: 12, label: '🦒 GIRAFFES', kinds: ['giraffe', 'giraffe'] },
+  { x: 150, z: 32, w: 14, d: 12, label: '🦘 KANGAROOS', kinds: ['kangaroo', 'kangaroo'] },
+  { x: 164, z: 32, w: 11, d: 12, label: '🦓 ZEBRAS', kinds: ['zebra', 'zebra'] },
+  { x: 124, z: 14, w: 12, d: 10, label: '🐼 PANDAS', kinds: ['panda', 'panda'], floor: 0x9ec87c },
+  { x: 138, z: 14, w: 12, d: 10, label: '🐒 MONKEYS', kinds: ['monkey', 'monkey', 'monkey'] },
+  { x: 151, z: 14, w: 10, d: 10, label: '🦜 AVIARY', kinds: ['parrot', 'parrot', 'parrot'], floor: 0xb8d49a },
+  { x: 116, z: -32, w: 16, d: 12, label: '🦁 LIONS', kinds: ['lion', 'lion'], floor: 0xc8b070 },
+  { x: 133, z: -32, w: 14, d: 12, label: '🐻 BEARS', kinds: ['bear', 'bear'] },
+  { x: 150, z: -32, w: 14, d: 12, label: '🐺 WOLVES', kinds: ['wolf', 'wolf'], floor: 0x8aa06a },
+  { x: 164, z: -32, w: 11, d: 12, label: '🐊 CROCS', kinds: ['croc', 'croc'], floor: 0x7ab8a0 },
+  { x: 124, z: -14, w: 12, d: 10, label: '🦛 HIPPO POOL', kinds: ['hippo', 'hippo'], floor: 0x6fb6d8 },
+  { x: 138, z: -14, w: 12, d: 10, label: '🐧 PENGUINS', kinds: ['penguin', 'penguin', 'penguin'], floor: 0xcfe4ec },
+  { x: 151, z: -14, w: 10, d: 10, label: '🦩 FLAMINGOS', kinds: ['flamingo', 'flamingo', 'flamingo'], floor: 0x9ec8d8 },
+];
+// the hedge maze: alternating walls turn the central spine into a serpentine puzzle
+const ZOO_HEDGES = [
+  [120, -9, 120, 6], [128, -6, 128, 9], [136, -9, 136, 6], [144, -6, 144, 9], [152, -9, 152, 6],
+  [122, 20, 122, 26], [146, 19, 146, 26], [122, -26, 122, -20], [146, -26, 146, -19],
+];
+const ZOO_CAFE = { x: 163, z: 5 };      // 🍔 The Hungry Lion, on the east plaza
+const ZOO_GIFT = { x: 113, z: -6.5 };   // 🎁 the gift shop, by the entrance plaza
 
 // Plant a permanent wild tree of any planner kind (not a player piece — just scenery)
 function plantWildTree(kind, x, z) {
@@ -26,10 +52,10 @@ function buildFrontier() {
   buildZoo();
   const IN = (x, z, r) => x > r.x0 - 6 && x < r.x1 + 6 && z > r.z0 - 6 && z < r.z1 + 6;
   const zones = [
-    { x0: -155, x1: -100, z0: -135, z1: 50, n: 26 },    // the west wilds
-    { x0: 100, x1: 155, z0: -135, z1: -32, n: 16 },     // south-east woods (below the zoo)
-    { x0: 100, x1: 155, z0: 30, z1: 52, n: 8 },         // a strip above the zoo
-    { x0: -95, x1: 95, z0: -135, z1: -58, n: 26 },      // the southern reach (around the Grand Park)
+    { x0: -155, x1: -100, z0: -135, z1: 50, n: 26 },
+    { x0: 100, x1: 168, z0: -135, z1: -48, n: 16 },
+    { x0: 100, x1: 168, z0: 46, z1: 56, n: 8 },
+    { x0: -95, x1: 95, z0: -135, z1: -58, n: 26 },
   ];
   zones.forEach(zn => {
     for (let i = 0; i < zn.n; i++) {
@@ -48,13 +74,11 @@ function buildGrandPark() {
   const postM = pbr(0x9a8a6a, 0.9);
   for (let x = P.x0; x <= P.x1; x += 6) [P.z0, P.z1].forEach(z => { const p = new THREE.Mesh(G.cyl(0.09, 0.11, 1.0), postM); p.position.set(x, 0.5, z); p.castShadow = true; scene.add(p); });
   for (let z = P.z0; z <= P.z1; z += 6) [P.x0, P.x1].forEach(x => { const p = new THREE.Mesh(G.cyl(0.09, 0.11, 1.0), postM); p.position.set(x, 0.5, z); p.castShadow = true; scene.add(p); });
-  // the grand pond (drinkable)
   const pondX = 0, pondZ = (P.z0 + P.z1) / 2;
   const shore = new THREE.Mesh(new THREE.CylinderGeometry(9.4, 9.4, 0.16, 36), pbr(0xc8b088, 0.9)); shore.position.set(pondX, 0.08, pondZ); shore.receiveShadow = true; scene.add(shore);
   const water = new THREE.Mesh(new THREE.CylinderGeometry(8.7, 8.7, 0.2, 36), pbr(0x5ab6d8, 0.25)); water.position.set(pondX, 0.18, pondZ); scene.add(water);
   worldColliders.push({ type: 'circle', x: pondX, z: pondZ, r: 8.9 });
   if (typeof addWater === 'function') addWater(pondX, pondZ, 9.2);
-  // a REAL arboretum: ~20 trees of every kind
   const spots = [
     [-30, -86, 'oak'], [-18, -118, 'willow'], [22, -84, 'blossom'], [34, -112, 'pine'], [-34, -102, 'autumn'],
     [30, -124, 'oak'], [12, -76, 'tree'], [-8, -124, 'blossom'], [-40, -78, 'pine'], [40, -90, 'willow'],
@@ -78,7 +102,7 @@ function buildGrandPark() {
   }
 }
 
-// ── The animals (procedural, cute-blob style) ──
+// ── The animals (procedural, cute-blob style) — 16 species ──
 function zooAnimal(type) {
   const g = new THREE.Group();
   const M = (c, r = 0.85) => pbr(c, r);
@@ -88,7 +112,8 @@ function zooAnimal(type) {
     E(0.7, 1.3, 1.05, 1.7, gm, 0, 0.95, 0);
     const head = E(0.48, 1, 1, 1, gm, 0, 1.35, 1.15);
     [-1, 1].forEach(d => E(0.34, 0.25, 1, 0.9, gm, d * 0.52, 1.45, 1.05));
-    for (let i = 0; i < 4; i++) { const seg = new THREE.Mesh(G.cyl(0.13 - i * 0.02, 0.11 - i * 0.02, 0.34), gm); seg.position.set(0, 1.06 - i * 0.3, 1.62 + i * 0.1); seg.rotation.x = 0.5 + i * 0.12; seg.castShadow = true; g.add(seg); g.userData.trunk = g.userData.trunk || []; g.userData.trunk.push(seg); }
+    g.userData.trunk = [];
+    for (let i = 0; i < 4; i++) { const seg = new THREE.Mesh(G.cyl(0.13 - i * 0.02, 0.11 - i * 0.02, 0.34), gm); seg.position.set(0, 1.06 - i * 0.3, 1.62 + i * 0.1); seg.rotation.x = 0.5 + i * 0.12; seg.castShadow = true; g.add(seg); g.userData.trunk.push(seg); }
     [[-0.42, 0.55], [0.42, 0.55], [-0.42, -0.5], [0.42, -0.5]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.19, 0.22, 0.9), gm); leg.position.set(lx, 0.45, lz); leg.castShadow = true; g.add(leg); });
     g.userData.head = head;
   } else if (type === 'lion') {
@@ -103,7 +128,7 @@ function zooAnimal(type) {
   } else if (type === 'giraffe') {
     const yel = M(0xe8c470);
     E(0.5, 1.1, 1, 1.5, yel, 0, 1.35, 0);
-    [[0.2, 1.5, 0.3], [-0.25, 1.3, -0.3], [0.1, 1.2, -0.55]].forEach(([px, py, pz]) => E(0.13, 1, 0.8, 1, M(0xb08a40), px, py, pz));   // patches
+    [[0.2, 1.5, 0.3], [-0.25, 1.3, -0.3], [0.1, 1.2, -0.55]].forEach(([px, py, pz]) => E(0.13, 1, 0.8, 1, M(0xb08a40), px, py, pz));
     const neck = new THREE.Mesh(G.cyl(0.16, 0.2, 1.8), yel); neck.position.set(0, 2.5, 0.5); neck.rotation.x = -0.18; neck.castShadow = true; g.add(neck);
     const head = E(0.22, 1.1, 0.85, 1.25, yel, 0, 3.45, 0.75);
     [-1, 1].forEach(d => E(0.05, 1, 1.6, 1, M(0x8a6a3a), d * 0.1, 3.72, 0.68));
@@ -129,31 +154,108 @@ function zooAnimal(type) {
     const br = M(0x6a4a30);
     E(0.55, 1.25, 1.05, 1.5, br, 0, 0.78, 0);
     const head = E(0.36, 1, 0.95, 1, br, 0, 1.3, 0.6);
-    [-1, 1].forEach(d => E(0.11, 1, 1, 0.6, br, d * 0.26, 1.58, 0.5));            // round ears
-    E(0.14, 1, 0.8, 0.9, M(0xc8a070), 0, 1.22, 0.9);                              // muzzle
+    [-1, 1].forEach(d => E(0.11, 1, 1, 0.6, br, d * 0.26, 1.58, 0.5));
+    E(0.14, 1, 0.8, 0.9, M(0xc8a070), 0, 1.22, 0.9);
     [[-0.34, 0.42], [0.34, 0.42], [-0.34, -0.42], [0.34, -0.42]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.14, 0.16, 0.6), br); leg.position.set(lx, 0.3, lz); leg.castShadow = true; g.add(leg); });
     g.userData.head = head;
   } else if (type === 'zebra') {
     const wh = M(0xeef0f2), bk = M(0x2a2c30);
     E(0.42, 1.1, 0.95, 1.5, wh, 0, 0.85, 0);
-    for (let i = -2; i <= 2; i++) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.5, 0.1), bk); st.position.set(0, 0.95, i * 0.24); st.rotation.x = 0.15 * i; st.castShadow = true; g.add(st); }   // stripes
+    for (let i = -2; i <= 2; i++) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.5, 0.1), bk); st.position.set(0, 0.95, i * 0.24); st.rotation.x = 0.15 * i; st.castShadow = true; g.add(st); }
     const neck = new THREE.Mesh(G.cyl(0.13, 0.17, 0.9), wh); neck.position.set(0, 1.45, 0.55); neck.rotation.x = -0.5; neck.castShadow = true; g.add(neck);
     const head = E(0.19, 1, 0.85, 1.3, wh, 0, 1.85, 0.85);
-    E(0.1, 1, 0.7, 0.9, bk, 0, 1.78, 1.05);                                       // dark muzzle
+    E(0.1, 1, 0.7, 0.9, bk, 0, 1.78, 1.05);
     [-1, 1].forEach(d => E(0.06, 1, 1.6, 0.6, bk, d * 0.1, 2.05, 0.75));
     [[-0.28, 0.45], [0.28, 0.45], [-0.28, -0.45], [0.28, -0.45]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.08, 0.1, 0.85), wh); leg.position.set(lx, 0.42, lz); leg.castShadow = true; g.add(leg); });
-    g.userData.head = head;
+    g.userData.head = head; g.userData.neck = neck;
   } else if (type === 'flamingo') {
     const pk = M(0xf090a8);
-    E(0.22, 1.2, 1, 1.3, pk, 0, 1.05, 0);                                          // body
-    const leg = new THREE.Mesh(G.cyl(0.025, 0.025, 1.0), M(0xd87088)); leg.position.set(0.05, 0.5, 0); leg.castShadow = true; g.add(leg);   // the famous single leg
+    E(0.22, 1.2, 1, 1.3, pk, 0, 1.05, 0);
+    const leg = new THREE.Mesh(G.cyl(0.025, 0.025, 1.0), M(0xd87088)); leg.position.set(0.05, 0.5, 0); leg.castShadow = true; g.add(leg);
     const neck = new THREE.Mesh(G.cyl(0.045, 0.055, 0.85), pk); neck.position.set(0, 1.6, 0.22); neck.rotation.x = -0.35; neck.castShadow = true; g.add(neck);
     const head = E(0.1, 1, 1, 1.1, pk, 0, 2.02, 0.42);
     const beak = new THREE.Mesh(G.cone(0.045, 0.2, 8), M(0x2a2c30, 0.6)); beak.rotation.x = Math.PI / 2 + 0.5; beak.position.set(0, 1.96, 0.55); g.add(beak);
     g.userData.head = head; g.userData.neck = neck;
-  } else {   // tortoise — the free-roaming zoo mascot
+  } else if (type === 'croc') {
+    const gr = M(0x5a8a4a);
+    E(0.32, 1.4, 0.55, 2.4, gr, 0, 0.3, 0);                                        // long low body
+    const snout = E(0.16, 1.2, 0.5, 2.0, gr, 0, 0.28, 1.05);                       // upper snout
+    const jaw = new THREE.Mesh(G.sph(0.14), M(0x4a7a3c)); jaw.scale.set(1.15, 0.35, 1.9); jaw.position.set(0, 0.17, 1.05); jaw.castShadow = true; g.add(jaw);
+    [-1, 1].forEach(d => E(0.06, 1, 1, 1, M(0xe8e070, 0.5), d * 0.12, 0.48, 0.62));   // watchful eyes
+    const tail = E(0.16, 1, 0.6, 1.8, gr, 0, 0.26, -1.15);
+    for (let i = -3; i <= 3; i++) E(0.05, 1, 1.4, 1, M(0x486a3c), 0, 0.52, i * 0.26); // back ridges
+    [[-0.34, 0.5], [0.34, 0.5], [-0.34, -0.5], [0.34, -0.5]].forEach(([lx, lz]) => E(0.09, 1, 0.6, 1, gr, lx, 0.12, lz));
+    g.userData.head = snout; g.userData.jaw = jaw; g.userData.tail = tail;
+  } else if (type === 'hippo') {
+    const hp = M(0x8a7a8c);
+    E(0.62, 1.3, 0.95, 1.6, hp, 0, 0.62, 0);
+    const head = E(0.4, 1.1, 0.85, 1.1, hp, 0, 0.85, 0.95);
+    E(0.3, 1.2, 0.7, 1.0, M(0x9a8a9c), 0, 0.68, 1.3);                              // the great muzzle
+    [-1, 1].forEach(d => E(0.07, 1, 1, 0.7, hp, d * 0.28, 1.18, 0.8));             // little ears
+    [-1, 1].forEach(d => E(0.05, 1, 1, 1, M(0x2a2c30, 0.4), d * 0.18, 1.05, 1.15));
+    [[-0.4, 0.45], [0.4, 0.45], [-0.4, -0.45], [0.4, -0.45]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.15, 0.17, 0.5), hp); leg.position.set(lx, 0.25, lz); leg.castShadow = true; g.add(leg); });
+    g.userData.head = head;
+  } else if (type === 'panda') {
+    const wh = M(0xf0f0ec), bk = M(0x2a2c30);
+    E(0.45, 1.15, 1.0, 1.35, wh, 0, 0.62, 0);
+    const head = E(0.32, 1, 0.95, 0.95, wh, 0, 1.15, 0.42);
+    [-1, 1].forEach(d => E(0.1, 1, 1, 0.6, bk, d * 0.24, 1.42, 0.36));             // black ears
+    [-1, 1].forEach(d => E(0.09, 1, 1.2, 0.5, bk, d * 0.13, 1.18, 0.68));          // eye patches
+    E(0.05, 1, 0.8, 1, bk, 0, 1.06, 0.72);                                          // nose
+    [[-0.3, 0.4], [0.3, 0.4], [-0.3, -0.4], [0.3, -0.4]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.12, 0.14, 0.5), bk); leg.position.set(lx, 0.25, lz); leg.castShadow = true; g.add(leg); });
+    E(0.3, 1.1, 0.5, 0.7, bk, 0, 0.92, 0.1);                                        // the black shoulder band
+    g.userData.head = head;
+  } else if (type === 'kangaroo') {
+    const rd = M(0xb8845a);
+    const body = E(0.34, 1, 1.5, 1.05, rd, 0, 0.85, 0);                             // upright body
+    const head = E(0.2, 1, 1.05, 1.2, rd, 0, 1.62, 0.18);
+    [-1, 1].forEach(d => E(0.07, 1, 1.9, 0.6, rd, d * 0.12, 1.92, 0.05));           // tall ears
+    [-1, 1].forEach(d => E(0.09, 0.5, 1.3, 0.6, rd, d * 0.3, 0.55, 0.05));          // mighty thighs
+    [-1, 1].forEach(d => E(0.09, 0.6, 0.35, 1.8, rd, d * 0.26, 0.12, 0.28));        // long feet
+    [-1, 1].forEach(d => E(0.05, 0.6, 1.1, 0.6, rd, d * 0.2, 1.15, 0.3));           // little arms
+    const tail = E(0.13, 1, 0.7, 2.2, rd, 0, 0.3, -0.75);                            // thick tail
+    g.userData.head = head; g.userData.tail = tail; g.userData.body = body;
+  } else if (type === 'wolf') {
+    const gy = M(0x8a8f96);
+    E(0.34, 1.1, 0.9, 1.55, gy, 0, 0.62, 0);
+    const head = E(0.22, 1, 0.9, 1.1, gy, 0, 0.98, 0.62);
+    E(0.1, 1, 0.7, 1.4, M(0xa8adb4), 0, 0.9, 0.85);                                 // snout
+    [-1, 1].forEach(d => E(0.07, 0.7, 1.5, 0.6, gy, d * 0.14, 1.24, 0.52));         // pointy ears
+    const tail = E(0.11, 0.8, 0.8, 1.9, M(0x7a7f86), 0, 0.55, -0.85);               // bushy tail
+    [[-0.24, 0.42], [0.24, 0.42], [-0.24, -0.42], [0.24, -0.42]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.07, 0.08, 0.6), gy); leg.position.set(lx, 0.3, lz); leg.castShadow = true; g.add(leg); });
+    g.userData.head = head; g.userData.tail = tail;
+  } else if (type === 'parrot') {
+    const rd = M(0xd84a3a), bl = M(0x3a6ad0), yl = M(0xe8c040);
+    E(0.14, 1, 1.35, 1, rd, 0, 0.9, 0);
+    const head = E(0.1, 1, 1, 1, rd, 0, 1.18, 0.06);
+    const beak = new THREE.Mesh(G.cone(0.04, 0.12, 8), M(0x3a3a40, 0.5)); beak.rotation.x = Math.PI / 2 + 0.3; beak.position.set(0, 1.16, 0.16); g.add(beak);
+    [-1, 1].forEach(d => E(0.07, 0.4, 1.1, 0.8, bl, d * 0.13, 0.9, -0.02));         // blue wings
+    E(0.05, 0.8, 1.8, 0.6, yl, 0, 0.62, -0.16);                                     // yellow tail feathers
+    const perch = new THREE.Mesh(G.cyl(0.03, 0.03, 0.7), M(0x6a4a30)); perch.rotation.z = Math.PI / 2; perch.position.set(0, 0.7, 0); g.add(perch);
+    const post = new THREE.Mesh(G.cyl(0.05, 0.06, 0.72), M(0x6a4a30)); post.position.set(0, 0.35, 0); g.add(post);
+    g.userData.head = head;
+  } else if (type === 'peacock') {
+    const bl = M(0x2a5ab0);
+    E(0.2, 1, 1.15, 1.2, bl, 0, 0.62, 0);
+    const neck = new THREE.Mesh(G.cyl(0.05, 0.07, 0.55), bl); neck.position.set(0, 1.0, 0.16); neck.rotation.x = -0.2; neck.castShadow = true; g.add(neck);
+    const head = E(0.09, 1, 1, 1.1, bl, 0, 1.3, 0.26);
+    [-0.04, 0, 0.04].forEach(dx => E(0.025, 1, 1, 1, M(0x48c890, 0.5), dx, 1.48, 0.24));   // crest
+    const fan = new THREE.Group();                                                   // THE fan
+    for (let i = -3; i <= 3; i++) {
+      const f = new THREE.Mesh(G.sph(0.16), M(i % 2 ? 0x3a9a6a : 0x2a6ad0, 0.7));
+      f.scale.set(0.5, 2.2, 0.12);
+      const a = i * 0.28;
+      f.position.set(Math.sin(a) * 0.55, 0.55, -0.1 - Math.abs(i) * 0.015);
+      f.rotation.z = -a;
+      f.castShadow = true; fan.add(f);
+    }
+    fan.position.set(0, 0.5, -0.25); fan.scale.set(0.25, 0.25, 0.25);                // furled until the show
+    g.add(fan);
+    [[-0.09, 0], [0.09, 0]].forEach(([lx]) => { const leg = new THREE.Mesh(G.cyl(0.022, 0.022, 0.5), M(0x8a7a4a)); leg.position.set(lx, 0.25, 0.05); g.add(leg); });
+    g.userData.head = head; g.userData.fan = fan;
+  } else {   // tortoise — Sheldon, who owns the path
     const sh = M(0x5a7a4a), sk = M(0xa8b078);
-    const shell = E(0.34, 1.2, 0.75, 1.4, sh, 0, 0.34, 0);
+    E(0.34, 1.2, 0.75, 1.4, sh, 0, 0.34, 0);
     E(0.28, 1.1, 0.55, 1.25, M(0x486a3c), 0, 0.5, 0);
     const head = E(0.12, 1, 0.9, 1.15, sk, 0, 0.34, 0.52);
     [[-0.26, 0.3], [0.26, 0.3], [-0.26, -0.3], [0.26, -0.3]].forEach(([lx, lz]) => E(0.09, 1, 0.7, 1, sk, lx, 0.14, lz));
@@ -162,10 +264,10 @@ function zooAnimal(type) {
   return g;
 }
 
-// ── The zoo compound — everything lives in the WORLD, behind a real closed gate ──
+// ── The zoo compound — a walled hedge-maze full of life ──
 let _zooGateColl = null, _zooDoors = [], _zooGateOpen = false;
 function buildZoo() {
-  const wallM = pbr(0x8a6a4a, 0.9), postM = pbr(0x6a4a30, 0.9);
+  const wallM = pbr(0x8a6a4a, 0.9), postM = pbr(0x6a4a30, 0.9), hedgeM = pbr(0x4a7a3c, 0.95);
   const wall = (x0, z0, x1, z1) => {
     const w = Math.max(Math.abs(x1 - x0), 0.4), d = Math.max(Math.abs(z1 - z0), 0.4);
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1.8, d), wallM);
@@ -177,12 +279,19 @@ function buildZoo() {
   wall(ZOO.x1, ZOO.z0, ZOO.x1, ZOO.z1);
   wall(ZOO.x0, ZOO.z0, ZOO.x0, -3.2);
   wall(ZOO.x0, 3.2, ZOO.x0, ZOO.z1);
+  // the maze hedges
+  ZOO_HEDGES.forEach(([x0, z0, x1, z1]) => {
+    const w = Math.max(Math.abs(x1 - x0), 0.8), d = Math.max(Math.abs(z1 - z0), 0.8);
+    const h = new THREE.Mesh(new THREE.BoxGeometry(w, 1.4, d), hedgeM);
+    h.position.set((x0 + x1) / 2, 0.7, (z0 + z1) / 2); h.castShadow = true; h.receiveShadow = true; scene.add(h);
+    worldColliders.push({ type: 'box', x0: Math.min(x0, x1) - 0.3, x1: Math.max(x0, x1) + 0.3, z0: Math.min(z0, z1) - 0.3, z1: Math.max(z0, z1) + 0.3 });
+  });
   // the gate: real double doors, CLOSED until a ticket opens them
   [-1, 1].forEach(s => {
     const door = new THREE.Mesh(new THREE.BoxGeometry(0.24, 2.6, 3.0), pbr(0x7a4a26, 0.8));
     door.position.set(ZOO.gateX, 1.3, s * 1.6);
     door.castShadow = true; scene.add(door);
-    _zooDoors.push({ mesh: door, closedZ: s * 1.6, openZ: s * 4.6 });   // doors slide behind the walls
+    _zooDoors.push({ mesh: door, closedZ: s * 1.6, openZ: s * 4.6 });
   });
   _zooGateColl = { type: 'box', x0: ZOO.gateX - 0.4, x1: ZOO.gateX + 0.4, z0: -3.2, z1: 3.2 };
   worldColliders.push(_zooGateColl);
@@ -206,53 +315,93 @@ function buildZoo() {
   booth.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
   scene.add(booth);
   worldColliders.push({ type: 'box', x0: ZOO.gateX + 0.4, x1: ZOO.gateX + 2.8, z0: -7.6, z1: -5.2 });
-  // Zita the keeper stands by her booth
   const zc = (typeof NEIGHBOURS !== 'undefined' && NEIGHBOURS['Zita']) || { skin: 0xc89468, hair: 0x241a10, hairStyle: 'bun', shirt: 0x8a7a4a, pants: 0x5a5236 };
   const zk = buildHuman(zc);
   zk.group.position.set(ZOO.gateX + 3.4, 0, -6.4); zk.group.rotation.y = -Math.PI / 2;
   scene.add(zk.group);
   state.zooKeeper = { group: zk.group, parts: zk.parts, phase: Math.random() * 6 };
 
-  // ── the pens & their residents — INSIDE the compound, visible through the gate ──
+  // ── the pens (from ZOO_PENS data) ──
   state.zooAnimals = [];
   const penFence = pbr(0x7a5a3a, 0.9);
-  const pen = (cx, cz, w, d, label, kinds, floorCol) => {
+  ZOO_PENS.forEach(P => {
+    const { x: cx, z: cz, w, d } = P;
     [[cx - w / 2, cz, 0.16, d], [cx + w / 2, cz, 0.16, d], [cx, cz - d / 2, w, 0.16], [cx, cz + d / 2, w, 0.16]].forEach(([fx, fz, fw, fd]) => {
       const f = new THREE.Mesh(new THREE.BoxGeometry(fw, 1.0, fd), penFence); f.position.set(fx, 0.5, fz); f.castShadow = true; scene.add(f);
       worldColliders.push({ type: 'box', x0: fx - fw / 2 - 0.1, x1: fx + fw / 2 + 0.1, z0: fz - fd / 2 - 0.1, z1: fz + fd / 2 + 0.1 });
     });
-    const lawn = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.4, d - 0.4), pbr(floorCol || 0xa8d088, 0.95));
+    const lawn = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.4, d - 0.4), pbr(P.floor || 0xa8d088, 0.95));
     lawn.rotation.x = -Math.PI / 2; lawn.position.set(cx, 0.05, cz); lawn.receiveShadow = true; scene.add(lawn);
     if (typeof makeTextSign === 'function') {
-      const sg = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.55, 0.08), new THREE.MeshStandardMaterial({ map: makeTextSign(label, '#3a2a14', '#ffe9c0', 280, 50), roughness: 0.7 }));
-      sg.position.set(cx, 1.4, cz + (cz < 0 ? d / 2 : -d / 2) + (cz < 0 ? 0.06 : -0.06)); scene.add(sg);   // signs face the central path
+      const sg = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.55, 0.08), new THREE.MeshStandardMaterial({ map: makeTextSign(P.label, '#3a2a14', '#ffe9c0', 280, 50), roughness: 0.7 }));
+      sg.position.set(cx, 1.4, cz + (cz < 0 ? d / 2 : -d / 2) + (cz < 0 ? 0.06 : -0.06)); scene.add(sg);
     }
-    kinds.forEach((k, i) => {
+    P.kinds.forEach((k, i) => {
       const a = zooAnimal(k);
-      a.position.set(cx - w / 2 + 1.6 + (i % 3) * ((w - 3.2) / 2), 0, cz - d / 2 + 1.6 + Math.floor(i / 3) * (d - 3.2));
+      a.position.set(cx - w / 2 + 1.8 + (i % 3) * ((w - 3.6) / 2), 0, cz - d / 2 + 1.8 + Math.floor(i / 3) * (d - 3.6));
       a.rotation.y = Math.random() * 6.28;
       scene.add(a);
-      state.zooAnimals.push({ group: a, type: k, phase: Math.random() * 6, home: { x: a.position.x, z: a.position.z } });
+      state.zooAnimals.push({ group: a, type: k, phase: Math.random() * 6, home: { x: a.position.x, z: a.position.z }, pen: P });
     });
-  };
-  // north row (z 5..22) and south row (z -22..-5), path along z ±4 and the crossway
-  pen(113, 14, 12, 15, '🐘 ELEPHANTS', ['elephant', 'elephant']);
-  pen(127, 14, 12, 15, '🦁 LIONS', ['lion', 'lion']);
-  pen(142, 14, 13, 15, '🦒 GIRAFFES', ['giraffe', 'giraffe']);
-  pen(113, -14, 12, 15, '🐻 BEARS', ['bear', 'bear']);
-  pen(127, -14, 12, 15, '🦓 ZEBRAS', ['zebra', 'zebra']);
-  pen(142, -14, 13, 15, '🐒 MONKEYS', ['monkey', 'monkey', 'monkey']);
-  pen(146.5, 2.5, 6, 6, '🐧 PENGUINS', ['penguin', 'penguin', 'penguin'], 0xcfe4ec);
-  pen(138, 2.5, 8, 6, '🦩 FLAMINGOS', ['flamingo', 'flamingo', 'flamingo'], 0x9ec8d8);
-  // Sheldon the tortoise roams the main path, free as anything
-  const tort = zooAnimal('tortoise');
-  tort.position.set(118, 0, 0); scene.add(tort);
-  state.zooAnimals.push({ group: tort, type: 'tortoise', phase: 0, roam: true, dir: 0, home: { x: 118, z: 0 } });
+  });
+  // the free-roamers: Sheldon the tortoise + Percy the peacock own the paths
+  [['tortoise', 118, 0], ['peacock', 158, 2]].forEach(([k, x, z]) => {
+    const a = zooAnimal(k);
+    a.position.set(x, 0, z); scene.add(a);
+    state.zooAnimals.push({ group: a, type: k, phase: Math.random() * 6, roam: true, dir: Math.random() * 6, home: { x, z } });
+  });
+
+  // ── 🍔 The Hungry Lion (restaurant, east plaza) ──
+  const cafe = new THREE.Group();
+  const cbody = new THREE.Mesh(new THREE.BoxGeometry(7, 3.2, 5), pbr(0xe8d8b8, 0.9)); cbody.position.y = 1.6; cafe.add(cbody);
+  const croof = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.4, 5.6), pbr(0xc0563a, 0.8)); croof.position.y = 3.4; cafe.add(croof);
+  const cwin = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.1, 0.2), pbr(0x2a1c12, 0.4)); cwin.position.set(0, 1.5, -2.55); cafe.add(cwin);   // serving window faces the plaza (south side)
+  if (typeof makeTextSign === 'function') {
+    const cs = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.9, 0.14), new THREE.MeshStandardMaterial({ map: makeTextSign('🍔 THE HUNGRY LION', '#7a3a1a', '#ffe9c0', 400, 66), roughness: 0.6 }));
+    cs.position.set(0, 2.75, -2.62); cafe.add(cs);
+  }
+  cafe.position.set(ZOO_CAFE.x, 0, ZOO_CAFE.z + 2.5);
+  cafe.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  scene.add(cafe);
+  worldColliders.push({ type: 'box', x0: ZOO_CAFE.x - 3.6, x1: ZOO_CAFE.x + 3.6, z0: ZOO_CAFE.z + 0.2, z1: ZOO_CAFE.z + 5.2 });
+  // parasol tables out front
+  [[-3.4, -2.2], [0.4, -3.4], [3.4, -2.0]].forEach(([dx, dz]) => {
+    const tx = ZOO_CAFE.x + dx, tz = ZOO_CAFE.z + dz;
+    const tab = new THREE.Mesh(G.cyl(0.7, 0.7, 0.08, 14), pbr(0xd8c8a8, 0.8)); tab.position.set(tx, 0.72, tz); tab.castShadow = true; scene.add(tab);
+    const tleg = new THREE.Mesh(G.cyl(0.06, 0.08, 0.72), pbr(0x8a6a4a, 0.8)); tleg.position.set(tx, 0.36, tz); scene.add(tleg);
+    const pole = new THREE.Mesh(G.cyl(0.03, 0.03, 1.6), pbr(0x8a6a4a, 0.8)); pole.position.set(tx, 1.6, tz); scene.add(pole);
+    const um = new THREE.Mesh(G.cone(1.0, 0.5, 8), pbr([0xd0563a, 0xe8c060, 0x5a9ad0][Math.floor(Math.random() * 3)], 0.8)); um.position.set(tx, 2.5, tz); um.castShadow = true; scene.add(um);
+    worldColliders.push({ type: 'circle', x: tx, z: tz, r: 0.75 });
+  });
+  const cook = buildHuman({ skin: 0xe0a878, hair: 0x3a2a1a, hairStyle: 'short', apron: true, apronColor: 0xf2f2f2, shirt: 0xc0563a, pants: 0x4a4030, height: 1.04, build: 'round', eye: 0x3a2a1a });
+  cook.group.position.set(ZOO_CAFE.x, 0, ZOO_CAFE.z + 1.2); cook.group.rotation.y = Math.PI;
+  scene.add(cook.group);
+  state.zooCook = { group: cook.group, parts: cook.parts, phase: Math.random() * 6 };
+
+  // ── 🎁 The gift shop (entrance plaza) ──
+  const gift = new THREE.Group();
+  const gbody = new THREE.Mesh(new THREE.BoxGeometry(5, 2.9, 4), pbr(0xc8a0c8, 0.9)); gbody.position.y = 1.45; gift.add(gbody);
+  const groof = new THREE.Mesh(new THREE.ConeGeometry(3.6, 1.6, 4), pbr(0x8a5a9a, 0.85)); groof.position.y = 3.6; groof.rotation.y = Math.PI / 4; groof.castShadow = true; gift.add(groof);
+  const gwin = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.0, 0.2), pbr(0x2a1c12, 0.4)); gwin.position.set(0, 1.4, 2.05); gift.add(gwin);   // window faces the plaza (north side)
+  if (typeof makeTextSign === 'function') {
+    const gs = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.7, 0.14), new THREE.MeshStandardMaterial({ map: makeTextSign('🎁 GIFT SHOP', '#5a2a6a', '#ffe9f0', 300, 56), roughness: 0.6 }));
+    gs.position.set(0, 2.5, 2.12); gift.add(gs);
+  }
+  gift.position.set(ZOO_GIFT.x, 0, ZOO_GIFT.z - 2.2);
+  gift.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  scene.add(gift);
+  worldColliders.push({ type: 'box', x0: ZOO_GIFT.x - 2.6, x1: ZOO_GIFT.x + 2.6, z0: ZOO_GIFT.z - 4.4, z1: ZOO_GIFT.z - 0.4 });
+  const clerk = buildHuman({ skin: 0xf0c8a0, hair: 0xd06a8a, hairStyle: 'long', shirt: 0x9a5aa8, pants: 0x4a3a52, height: 0.96, build: 'slim', eye: 0x3a5a3a });
+  clerk.group.position.set(ZOO_GIFT.x, 0, ZOO_GIFT.z - 1.0);
+  scene.add(clerk.group);
+  state.zooClerk = { group: clerk.group, parts: clerk.parts, phase: Math.random() * 6 };
+
   state.zooVisitors = [];
 }
 
 // ── The gate: tickets open it; it closes behind you ──
 function zooPassValid() { return state.zooPassDay === (state.dayCount || 0); }
+function catInZoo() { const p = catGroup.position; return p.x > ZOO.x0 && p.x < ZOO.x1 && p.z > ZOO.z0 && p.z < ZOO.z1; }
 function setZooGate(open) {
   _zooGateOpen = open;
   _zooDoors.forEach(d => { d.mesh.position.z = open ? d.openZ : d.closedZ; });
@@ -275,7 +424,27 @@ function zooGateAction() {
   setZooGate(true);
   if (typeof sfx === 'function') sfx('sell');
   showNotif('🎫 One ticket — a DAY PASS! The gate is open, enjoy the zoo.');
-  if (!state._seenZoo) { state._seenZoo = true; showDialogue('🦁 Town Zoo', 'Welcome in! Mind the lions, don\'t feed the monkeys, and Sheldon the tortoise owns the path. 🐢', 5600); }
+  if (!state._seenZoo) { state._seenZoo = true; showDialogue('🦁 Town Zoo', 'Welcome in! The paths twist like a maze — check your map. Lunch at the Hungry Lion, souvenirs at the gift shop, and Sheldon owns the walkway. 🐢', 6400); }
+}
+
+// ── The restaurant & gift shop counters ──
+function zooEatMeal() {
+  if (state.coins < ZOO_MEAL) { showNotif('🍔 A zoo lunch is ' + ZOO_MEAL + ' 🪙…'); if (typeof sfx === 'function') sfx('sad'); return; }
+  state.coins -= ZOO_MEAL;
+  document.getElementById('coin-count').textContent = state.coins;
+  state.needs.hunger = 100; state.needs.thirst = 100;
+  if (typeof sfx === 'function') sfx('eat');
+  _catHappyT = 1.6; if (typeof spawnHeart === 'function') spawnHeart();
+  showNotif('🍔 A Hungry Lion special — belly full, whiskers greasy. Delicious!');
+}
+function zooBuyGift() {
+  if (state.carryBag) { showNotif('🛍️ Your mouth is full — deliver what you\'re carrying first!'); return; }
+  if (state.coins < ZOO_PLUSH) { showNotif('🧸 The plush lion is ' + ZOO_PLUSH + ' 🪙…'); if (typeof sfx === 'function') sfx('sad'); return; }
+  state.coins -= ZOO_PLUSH;
+  document.getElementById('coin-count').textContent = state.coins;
+  if (typeof setCarryBag === 'function') setCarryBag({ id: 'plush', name: 'Plush Lion', e: '🧸', price: ZOO_PLUSH }, 'the Zoo Gift Shop');
+  if (typeof sfx === 'function') sfx('sell');
+  showNotif('🧸 One plush lion, bagged! Carry it home — the Miller kids will love it.');
 }
 
 // ── Working the booth: REAL visitors with BIG clear thought bubbles ──
@@ -322,7 +491,6 @@ function spawnZooVisitor() {
   const spr = makeThoughtSprite(want); spr.visible = false; group.add(spr);
   state.zooVisitors.push({ group, parts, want, spr, wx: group.position.x, wz: group.position.z, phase: Math.random() * 6, state: 'queue' });
 }
-// queue spots in front of the booth window
 function zooQueueSpot(i) { return { x: ZOO.gateX - 0.4 - i * 1.3, z: -6.4 }; }
 function updateZooBooth(t) {
   const V = state.zooVisitors || [];
@@ -330,18 +498,17 @@ function updateZooBooth(t) {
     state._zooSpawnT = (state._zooSpawnT || 0) - 0.016;
     const queued = V.filter(v => v.state === 'queue').length;
     if (state._zooSpawnT <= 0 && queued < 4) { spawnZooVisitor(); state._zooSpawnT = 5 + Math.random() * 5; }
-    // shift auto-ends if you wander off the booth
     const d = Math.hypot(catGroup.position.x - (ZOO.gateX + 1.6), catGroup.position.z - (-6.4));
     if (d > 8) toggleZooShift();
   }
   for (let i = V.length - 1; i >= 0; i--) {
     const v = V[i];
-    if (v.leaving) {                                             // walk off west & vanish
+    if (v.leaving) {
       v.spr.visible = false;
       if (walkToward(v, ZOO.gateX - 22, -8, 0.05)) { scene.remove(v.group); V.splice(i, 1); }
       continue;
     }
-    if (v.state === 'enter') {                                   // a happy customer walks through the gate
+    if (v.state === 'enter') {
       v.spr.visible = false;
       const inside = walkToward(v, ZOO.gateX + 4, 0, 0.045);
       if (inside) { scene.remove(v.group); V.splice(i, 1); }
@@ -351,7 +518,7 @@ function updateZooBooth(t) {
     const spot = zooQueueSpot(qi);
     const arrived = walkToward(v, spot.x, spot.z, 0.04);
     if (arrived) { v.group.rotation.y = Math.PI / 2; idleHuman(v, t); }
-    v.spr.visible = qi === 0 && Math.hypot(v.wx - spot.x, v.wz - spot.z) < 0.6;   // the BIG clear bubble — front of the queue only
+    v.spr.visible = qi === 0 && Math.hypot(v.wx - spot.x, v.wz - spot.z) < 0.6;
   }
 }
 function zooFrontVisitor() {
@@ -381,7 +548,7 @@ function sellZooTicket(id) {
     document.getElementById('coin-count').textContent = state.coins;
     if (typeof sfx === 'function') sfx('sell');
     showNotif('🎫 Sold! +' + ZOO_SALE_PAY + ' 🪙 — they\'re heading in happy.');
-    if (typeof schoolEvent === 'function') schoolEvent('minigame');   // counts as honest odd-job work
+    if (typeof schoolEvent === 'function') schoolEvent('minigame');
   } else {
     v.leaving = true;
     if (typeof sfx === 'function') sfx('sad');
@@ -389,29 +556,77 @@ function sellZooTicket(id) {
   }
 }
 
-// ── per-frame zoo life (runs in the overworld loop) ──
+// ── The zoo's OWN map: pens, maze hedges, shops — shown on the minimap while inside ──
+function drawZooMinimap(ctx, cv) {
+  const D = cv.width;
+  ctx.fillStyle = '#d8c9a0'; ctx.fillRect(0, 0, D, D);
+  const sx = D / (ZOO.x1 - ZOO.x0 + 4), sz = D / (ZOO.z1 - ZOO.z0 + 4);
+  const X = x => (x - ZOO.x0 + 2) * sx, Z = z => (z - ZOO.z0 + 2) * sz;
+  ctx.strokeStyle = '#8a6a4a'; ctx.lineWidth = 4;
+  ctx.strokeRect(X(ZOO.x0), Z(ZOO.z0), (ZOO.x1 - ZOO.x0) * sx, (ZOO.z1 - ZOO.z0) * sz);
+  ZOO_PENS.forEach(P => {
+    ctx.fillStyle = '#' + (P.floor || 0xa8d088).toString(16).padStart(6, '0');
+    ctx.fillRect(X(P.x - P.w / 2), Z(P.z - P.d / 2), P.w * sx, P.d * sz);
+    ctx.strokeStyle = '#7a5a3a'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(X(P.x - P.w / 2), Z(P.z - P.d / 2), P.w * sx, P.d * sz);
+    ctx.font = (11 * sx) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(P.label.split(' ')[0], X(P.x), Z(P.z));
+  });
+  ctx.strokeStyle = '#3f6b2e'; ctx.lineWidth = Math.max(3, 1.2 * sx); ctx.lineCap = 'round';
+  ZOO_HEDGES.forEach(([x0, z0, x1, z1]) => { ctx.beginPath(); ctx.moveTo(X(x0), Z(z0)); ctx.lineTo(X(x1), Z(z1)); ctx.stroke(); });
+  ctx.font = (12 * sx) + 'px serif'; ctx.textAlign = 'center';
+  ctx.fillText('🍔', X(ZOO_CAFE.x), Z(ZOO_CAFE.z + 2));
+  ctx.fillText('🎁', X(ZOO_GIFT.x), Z(ZOO_GIFT.z - 2));
+  ctx.fillText('🚪', X(ZOO.gateX + 1), Z(0));
+  const cp = catGroup.position;
+  ctx.fillStyle = '#f0b828'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(X(cp.x), Z(cp.z), 8, 0, 7); ctx.fill(); ctx.stroke();
+}
+
+// ── per-frame zoo life — every animal has its own MOMENTS ──
 function updateZooLife(t) {
   if (state.zooKeeper) idleHuman(state.zooKeeper, t);
+  if (state.zooCook) idleHuman(state.zooCook, t);
+  if (state.zooClerk) idleHuman(state.zooClerk, t);
   updateZooBooth(t);
-  // the gate closes itself once you've wandered away from the zoo
   if (_zooGateOpen && Math.abs(catGroup.position.x - ZOO.gateX) > 10 && catGroup.position.x < ZOO.x0 - 6) setZooGate(false);
   (state.zooAnimals || []).forEach(a => {
-    const g = a.group, ph = a.phase;
+    const g = a.group, ph = a.phase, ud = g.userData;
     g.position.y = Math.abs(Math.sin(t * 1.1 + ph)) * 0.02;
-    const head = g.userData.head;
-    if (head) { head.rotation.y = Math.sin(t * 0.7 + ph) * 0.3; head.rotation.x = Math.sin(t * 0.5 + ph * 2) * 0.08; }
-    if (a.type === 'penguin') g.rotation.z = Math.sin(t * 2.2 + ph) * 0.08;
-    if (a.type === 'elephant' && g.userData.trunk) g.userData.trunk.forEach((seg, i) => { seg.rotation.x = 0.5 + i * 0.12 + Math.sin(t * 1.4 + ph) * 0.1; });
-    if ((a.type === 'giraffe' || a.type === 'flamingo') && g.userData.neck) g.userData.neck.rotation.x = (a.type === 'giraffe' ? -0.18 : -0.35) + Math.sin(t * 0.6 + ph) * 0.08;
-    if (a.roam) {                                                // Sheldon patrols the path, slowly
+    if (ud.head) { ud.head.rotation.y = Math.sin(t * 0.7 + ph) * 0.3; ud.head.rotation.x = Math.sin(t * 0.5 + ph * 2) * 0.08; }
+    // every animal gets an occasional MOMENT — its signature move
+    if (!a._mT || t > a._mT + 1.6) { if (Math.random() < 0.003) { a._mT = t; } }
+    const inMoment = a._mT && t - a._mT < 1.6;
+    const q = inMoment ? Math.sin(((t - a._mT) / 1.6) * Math.PI) : 0;   // 0→1→0 over the moment
+    switch (a.type) {
+      case 'elephant': if (ud.trunk) ud.trunk.forEach((seg, i) => { seg.rotation.x = 0.5 + i * 0.12 + Math.sin(t * 1.4 + ph) * 0.1 - q * (0.5 + i * 0.2); }); break;   // trumpets: trunk swings UP
+      case 'lion': if (ud.head) ud.head.rotation.x += q * 0.55; g.rotation.z = q * 0.06; break;                       // the great yawn
+      case 'bear': g.rotation.x = -q * 0.5; break;                                                                    // stands right up
+      case 'penguin': g.rotation.z = Math.sin(t * 2.2 + ph) * 0.08; g.rotation.x = -q * 1.2; g.position.y += q * 0.06; break;   // belly slide!
+      case 'monkey': g.position.y = Math.abs(Math.sin(t * (inMoment ? 6 : 1.4) + ph)) * (inMoment ? 0.3 : 0.05); break;         // bounces wild
+      case 'kangaroo': g.position.y = Math.abs(Math.sin(t * 4 + ph)) * (inMoment ? 0.4 : 0.06); if (ud.tail) ud.tail.rotation.x = 0.2 + q * 0.3; break;
+      case 'giraffe': if (ud.neck) ud.neck.rotation.x = -0.18 + Math.sin(t * 0.6 + ph) * 0.08 + q * 0.9; break;       // dips down to graze
+      case 'zebra': if (ud.neck) ud.neck.rotation.x = -0.5 + q * 0.8; break;                                          // grazes too
+      case 'croc': if (ud.jaw) ud.jaw.rotation.x = q * 0.55; if (ud.tail) ud.tail.rotation.y = Math.sin(t * 1.8 + ph) * 0.2; break;   // SNAP
+      case 'hippo': g.position.y = -0.22 + q * 0.24 + Math.sin(t * 0.9 + ph) * 0.04; break;                           // wallows, surfaces to breathe
+      case 'wolf': if (ud.tail) ud.tail.rotation.z = Math.sin(t * (inMoment ? 9 : 2) + ph) * (inMoment ? 0.4 : 0.12); if (inMoment && ud.head) ud.head.rotation.x = -0.5 * q; break;   // howls at nothing
+      case 'parrot': g.position.y = Math.abs(Math.sin(t * (inMoment ? 8 : 2) + ph)) * (inMoment ? 0.16 : 0.04) + 0.0; break;   // flutters on the perch
+      case 'peacock': if (ud.fan) { const s = 0.25 + q * 0.85; ud.fan.scale.set(s, s, s); } break;                    // THE fan display
+      case 'flamingo': if (ud.neck) ud.neck.rotation.x = -0.35 + Math.sin(t * 0.6 + ph) * 0.08 + q * 0.7; break;      // dabbles in the water
+    }
+    if (a.roam) {                                                    // Sheldon & Percy patrol the paths
+      const sp = a.type === 'peacock' ? 0.014 : 0.008;
       a.dir += (Math.random() - 0.5) * 0.02;
-      const nx = g.position.x + Math.cos(a.dir) * 0.008, nz = g.position.z + Math.sin(a.dir) * 0.008;
-      if (nx > ZOO.x0 + 3 && nx < ZOO.x1 - 3 && nz > -3 && nz < 3) { g.position.x = nx; g.position.z = nz; g.rotation.y = -a.dir + Math.PI / 2; }
+      const nx = g.position.x + Math.cos(a.dir) * sp, nz = g.position.z + Math.sin(a.dir) * sp;
+      const onPath = nx > ZOO.x0 + 3 && nx < ZOO.x1 - 3 && ((nz > -8 && nz < 8) || (nx > 154 && nz > -18 && nz < 18));
+      if (onPath) { g.position.x = nx; g.position.z = nz; g.rotation.y = -a.dir + Math.PI / 2; }
       else a.dir += Math.PI / 2;
-    } else if (!a._wanderT || t > a._wanderT) {                  // penned animals amble to a new corner now and then
+    } else if (!a._wanderT || t > a._wanderT) {
       a._wanderT = t + 6 + Math.random() * 8;
-      a._tx = a.home.x + (Math.random() - 0.5) * 3; a._tz = a.home.z + (Math.random() - 0.5) * 3;
-    } else if (a._tx != null) {
+      const P = a.pen;
+      a._tx = P ? P.x + (Math.random() - 0.5) * (P.w - 4) : a.home.x;
+      a._tz = P ? P.z + (Math.random() - 0.5) * (P.d - 4) : a.home.z;
+    } else if (a._tx != null && !inMoment) {
       const dx = a._tx - g.position.x, dz = a._tz - g.position.z, d = Math.hypot(dx, dz);
       if (d > 0.1) {
         g.position.x += dx / d * 0.012; g.position.z += dz / d * 0.012;

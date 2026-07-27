@@ -905,6 +905,13 @@ function updateContextButton() {
   } else if (typeof nearWater === 'function' && nearWater(cp.x, cp.z)) {
     action = 'drink'; label = '💧 Drink';
   } else {
+    // 🍔 the Hungry Lion & 🎁 the gift shop, inside the zoo
+    if (typeof ZOO_CAFE !== 'undefined' && Math.hypot(cp.x - ZOO_CAFE.x, cp.z - ZOO_CAFE.z) < 3.4) {
+      state.context = 'zooeat'; btn.textContent = '🍔 Zoo lunch · ' + ZOO_MEAL + ' 🪙'; btn.classList.add('show'); return;
+    }
+    if (typeof ZOO_GIFT !== 'undefined' && Math.hypot(cp.x - ZOO_GIFT.x, cp.z - ZOO_GIFT.z) < 3.2) {
+      state.context = 'zoogift'; btn.textContent = '🧸 Plush lion · ' + ZOO_PLUSH + ' 🪙'; btn.classList.add('show'); return;
+    }
     // 🎫 the zoo booth: serve the front visitor, or start/stop a booth shift
     if (typeof ZOO !== 'undefined' && Math.hypot(cp.x - (ZOO.gateX + 1.6), cp.z - (-6.4)) < 3.4) {
       const front = (typeof zooFrontVisitor === 'function') ? zooFrontVisitor() : null;
@@ -963,6 +970,8 @@ function doContextAction() {
   else if (state.context === 'chooseflag') { if (typeof openFlagPicker === 'function') openFlagPicker(); }
   else if (state.context === 'zooserve') { if (typeof openZooServe === 'function') openZooServe(); }
   else if (state.context === 'zooshift') { if (typeof toggleZooShift === 'function') toggleZooShift(); }
+  else if (state.context === 'zooeat') { if (typeof zooEatMeal === 'function') zooEatMeal(); }
+  else if (state.context === 'zoogift') { if (typeof zooBuyGift === 'function') zooBuyGift(); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
@@ -2153,7 +2162,7 @@ function drawFullMap() {
   const cv = document.getElementById('map-canvas'); if (!cv) return;
   const D = 1040; cv.width = D; cv.height = D;
   const g = cv.getContext('2d');
-  const SPAN = 340, S = D / SPAN, C = D / 2;   // the frontier tripled the map
+  const SPAN = 364, S = D / SPAN, C = D / 2;   // the frontier tripled the map (and the zoo grew again)
   const WX = x => C + x * S, WZ = z => C + z * S;
   const rr = (x, y, w, h, r) => { r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 
@@ -2265,7 +2274,8 @@ const mmCanvas = document.getElementById('minimap-canvas');
 const mmCtx = mmCanvas.getContext('2d');
 function drawMinimap() {
   if (state.inGray && typeof drawGrayMinimap === 'function') { drawGrayMinimap(mmCtx, mmCanvas); return; }   // inside, the map IS the mansion
-  const g = mmCtx, D = 240, S = D / 340, C = D / 2, X = x => C + x * S, Z = z => C + z * S;
+  if (typeof catInZoo === 'function' && catInZoo() && typeof drawZooMinimap === 'function') { drawZooMinimap(mmCtx, mmCanvas); return; }   // in the zoo, the map IS the zoo
+  const g = mmCtx, D = 240, S = D / 364, C = D / 2, X = x => C + x * S, Z = z => C + z * S;
   g.fillStyle = '#b3dc93'; g.fillRect(0, 0, D, D);                                    // grass
   const road = (z, hw) => { const y = Z(z), h = hw * 2 * S; g.fillStyle = '#d9ccb4'; g.fillRect(0, y - h / 2 - 2, D, h + 4); g.fillStyle = '#f5f0e6'; g.fillRect(0, y - h / 2, D, h); };
   road(-26, 3); road(0, 3.5); road(38, 3.5);
@@ -2410,7 +2420,7 @@ function animate(now) {
     // Resolve collisions (walls / furniture / trees), then clamp to the area
     const hit = collide(catGroup.position.x, catGroup.position.z, activeColliders(), state.inHouse ? 0.16 : 0.24);
     catGroup.position.x = hit.x; catGroup.position.z = hit.z;
-    let bx = 158, bzMin = -138, bzMax = 56;   // the frontier: 3× the roaming room (west wilds, Grand Park, the zoo)
+    let bx = 176, bzMin = -138, bzMax = 56;   // the frontier: 3× the roaming room (west wilds, Grand Park, the BIG zoo)
     if (state.inHouse) { bx = 3.2; bzMin = -2.6; bzMax = 2.6; }
     else if (state.inShop) { bx = 6.4; bzMin = -4.6; bzMax = 4.4; }   // incl. behind Dad's counter
     else if (state.inShelter) { bx = 11.4; bzMin = -7.4; bzMax = 7.4; }
