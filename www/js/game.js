@@ -340,6 +340,7 @@ function saveGame() {
       bizTill: state.bizTill, bizOpen: state.bizOpen, millerHome: state.millerHome,
       civics: state.civics, townGrowth: state.townGrowth,
       townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay, dcPassDay: state.dcPassDay, dcTickets: state.dcTickets, dcBandDay: state.dcBandDay,
+      myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk,
     }));
   } catch (e) {}
 }
@@ -432,6 +433,10 @@ function applySave(s) {
   state.dcPassDay = (s.dcPassDay != null) ? s.dcPassDay : -1;
   state.dcTickets = s.dcTickets || 0;
   state.dcBandDay = (s.dcBandDay != null) ? s.dcBandDay : -1;
+  state.myCars = s.myCars || [];
+  state.activeCar = s.activeCar || null;
+  state.carPos = s.carPos || null;
+  state.carTrunk = s.carTrunk || [];
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets
@@ -760,7 +765,7 @@ function millerTalk(f) {
 }
 
 // ── Kids' escort quest: a kid asks you to walk them to the park & back — a kindness that builds your reputation ──
-function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray || state.inManor || state.inFun); }
+function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray || state.inManor || state.inFun || state.inShow); }
 function anyKidWantsPark() { return state.family.some(f => f.wantsPark); }
 function startEscort(kid) {
   kid.wantsPark = false;
@@ -845,6 +850,18 @@ function updateContextButton() {
     if (here && state.millerHome === here) { state.context = 'millermoveout'; btn.textContent = '🏠 Send Millers back'; btn.classList.add('show'); }
     else if (here) { state.context = 'millermovein'; btn.textContent = '🏡 Move the Millers in'; btn.classList.add('show'); }
     else { state.context = null; btn.classList.remove('show'); }
+    return;
+  }
+  if (state.driving) {   // 🚗 at the wheel: only car business on the button
+    const cc = (typeof carContext === 'function') ? carContext(cp) : null;
+    state.context = cc ? cc.id : null; state._carCtx = cc;
+    if (cc) { btn.textContent = cc.label; btn.classList.add('show'); } else btn.classList.remove('show');
+    return;
+  }
+  if (state.inShow) {   // 🚗 in the showroom: the cars sell themselves
+    const sc = (typeof carShowContext === 'function') ? carShowContext(cp) : null;
+    state.context = sc ? sc.id : null; state._carCtx = sc;
+    if (sc) { btn.textContent = sc.label; btn.classList.add('show'); } else btn.classList.remove('show');
     return;
   }
   if (state.inFun) {   // 🪞 inside the Fun House — mirrors, ball pit, trampoline, confetti
@@ -951,6 +968,11 @@ function updateContextButton() {
       const bt = balloonGiveTarget(cp);
       if (bt) { state.context = 'giveballoon'; state._balloonTo = bt; btn.textContent = '🎈 Give balloon to ' + bt.name; btn.classList.add('show'); return; }
     }
+    // 🚗 Whisker Motors + your parked car + the trunk
+    if (typeof carContext === 'function') {
+      const cc = carContext(cp);
+      if (cc) { state.context = cc.id; state._carCtx = cc; btn.textContent = cc.label; btn.classList.add('show'); return; }
+    }
     // 🎢 Dream City: rides, stalls, food, Dreamy — one hook handles the whole park
     if (typeof dcContext === 'function') {
       const dcc = dcContext(cp);
@@ -1011,6 +1033,7 @@ function doContextAction() {
   else if (state.context === 'giveballoon') { if (typeof giveBalloonTo === 'function') giveBalloonTo(state._balloonTo); }
   else if (state.context === 'flyballoon') { if (typeof releaseBalloon === 'function') releaseBalloon(); }
   else if (state.context && state.context.indexOf('dc:') === 0) { if (typeof dcAction === 'function' && state._dcCtx) dcAction(state._dcCtx); }
+  else if (state.context && state.context.indexOf('car:') === 0) { if (typeof carAction === 'function' && state._carCtx) carAction(state._carCtx); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
@@ -2313,6 +2336,19 @@ function closeMap() { state.uiOpen = false; document.getElementById('map').class
 const mmCanvas = document.getElementById('minimap-canvas');
 const mmCtx = mmCanvas.getContext('2d');
 function drawMinimap() {
+  if (state.inShow) {   // the showroom floor
+    const g2 = mmCtx, D = mmCanvas.width;
+    g2.fillStyle = '#e8ecf2'; g2.fillRect(0, 0, D, D);
+    g2.strokeStyle = '#c84a6a'; g2.lineWidth = 3; g2.strokeRect(24, 44, D - 48, D - 88);
+    const MX = x => D / 2 + x * ((D - 60) / 15.2), MZ = z => D / 2 + z * ((D - 100) / 9.6);
+    g2.font = '12px serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    ['🐞','🛻','🥛','🏎️','👑'].forEach((e, i) => g2.fillText(e, MX(-5.4 + i * 2.7), MZ(-2.4)));
+    g2.fillText('🧑‍💼', MX(5), MZ(2.6));
+    g2.fillStyle = '#fff'; g2.beginPath(); g2.arc(MX(catGroup.position.x), MZ(catGroup.position.z), 5, 0, 7); g2.fill();
+    g2.fillStyle = '#e05a4a'; g2.beginPath(); g2.arc(MX(catGroup.position.x), MZ(catGroup.position.z), 3.4, 0, 7); g2.fill();
+    g2.fillStyle = '#7a1a34'; g2.font = 'bold 11px sans-serif'; g2.fillText('🚗 WHISKER MOTORS', D / 2, 18);
+    return;
+  }
   if (state.inFun) {   // a rainbow floor plan
     const g2 = mmCtx, D = mmCanvas.width;
     g2.fillStyle = '#f4e4fa'; g2.fillRect(0, 0, D, D);
@@ -2419,6 +2455,7 @@ function animate(now) {
   if (typeof updateGrayGuards === 'function') updateGrayGuards(t);   // the mansion's security detail
   if (typeof updateZooLife === 'function' && state.zooAnimals) updateZooLife(t);   // 🦁 the zoo lives in the world now
   if (typeof updateDreamCity === 'function') updateDreamCity(t);                   // 🎢 and so does Dream City
+  if (typeof updateDriving === 'function') updateDriving(t);                       // 🚗 the cat car rolls with you
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it
@@ -2445,7 +2482,7 @@ function animate(now) {
     inF = -joy.y; inS = joy.x;                           // stick up = walk away from the camera
     moveMag = Math.min(1, Math.hypot(joy.x, joy.y));     // gentle tilt = slow prowl, full tilt = full stride
   }
-  const moving = !state.uiOpen && !state.cinematic && moveMag > 0;
+  const moving = !state.uiOpen && !state.cinematic && !state.driving && moveMag > 0;
   if (state.catSitting && (moving || state.isJumping)) catStandUp();   // get up to walk/hop
 
   // ── Sprint: hold Run to dash for up to 5s, then a 3s rest before running again ──
@@ -2501,7 +2538,8 @@ function animate(now) {
     else if (state.inJail) { bx = 3.1; bzMin = -2.5; bzMax = 2.6; }   // locked in the cell
     else if (state.inManor) { bx = 6.4; bzMin = -4.2; bzMax = 4.2; }   // the manor's great hall
     else if (state.inFun) { bx = 5.7; bzMin = -3.7; bzMax = 3.7; }   // the fun house
-    if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inJail || state.inManor || state.inFun) bxMin = -bx;
+    else if (state.inShow) { bx = 7.1; bzMin = -4.5; bzMax = 4.5; }   // the car showroom
+    if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inJail || state.inManor || state.inFun || state.inShow) bxMin = -bx;
     catGroup.position.x = Math.max(bxMin, Math.min(bx, catGroup.position.x));
     catGroup.position.z = Math.max(bzMin, Math.min(bzMax, catGroup.position.z));
   }
@@ -2662,6 +2700,21 @@ function animate(now) {
     return;
   }
 
+  if (state.inShow) {   // 🚗 inside Whisker Motors
+    if (state._showSal) idleHuman(state._showSal, t);
+    (state._showCars || []).forEach((sc, i) => { sc.car.rotation.y = 0.5 + Math.sin(t * 0.3 + i) * 0.25; });
+    updateEnterPrompt();
+    updateContextButton();
+    drawMinimap();
+    const sX = catGroup.position.x + Math.sin(state.camYaw) * state.camDist;
+    const sZ = catGroup.position.z + Math.cos(state.camYaw) * state.camDist;
+    camera.position.x += (sX - camera.position.x) * 0.1;
+    camera.position.z += (sZ - camera.position.z) * 0.1;
+    camera.position.y += (state.camHeight - camera.position.y) * 0.1;
+    camera.lookAt(catGroup.position.x, 0.6, catGroup.position.z);
+    renderer.render(showScene, camera);
+    return;
+  }
   if (state.inFun) {   // 🪞 inside the Fun House — brightest room in the county
     if (typeof updateFunFrame === 'function') updateFunFrame(t);
     updateEnterPrompt();

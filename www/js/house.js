@@ -268,7 +268,8 @@ function applyHouseLevel(level) {
 
 function updateEnterPrompt() {
   const btn = document.getElementById('enter-btn');
-  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inManor || state.inFun) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
+  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inManor || state.inFun || state.inShow) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
+  if (state.driving) { state.nearBuilding = null; btn.classList.remove('show'); return; }   // park before you go indoors
   const cp = catGroup.position;
   let target = null, label = '';
   if (Math.hypot(cp.x - (-3), cp.z - (-7.7)) < 2.6) { target = 'house'; label = '🚪 Enter Home'; }
@@ -386,6 +387,7 @@ function toggleHouse() {
   else if (state.inGray && typeof exitGrayHouse === 'function') exitGrayHouse();
   else if (state.inManor && typeof exitManor === 'function') exitManor();
   else if (state.inFun && typeof exitFunhouse === 'function') exitFunhouse();
+  else if (state.inShow && typeof exitCarShow === 'function') exitCarShow();
   else if (state.nearBuilding === 'house') { if (state.disowned) millerRejection(); else enterHouse(); }
   else if (state.nearBuilding === 'shop') enterShop();
   else if (state.nearBuilding === 'shelter') enterShelter();

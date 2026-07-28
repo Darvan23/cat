@@ -86,3 +86,7 @@ How to make everything we've built so far **deeper, prettier, and more alive**. 
 2. 🟡 **Per-property bought-home interiors** (§3) — you asked for this when we did the Miller move-in.
 3. 🟢 **Tap-a-Miller at home** (§3) + **NPC reactions to your reputation** (§8) — cheap personality.
 4. 🔴 **One new building-minigame** (§4) — turns the hospital/school/café into places you *do* something.
+
+## things i want to improve
+
+we need to improve the planner and make it easier to use also the roads should curve when you put next to it like 

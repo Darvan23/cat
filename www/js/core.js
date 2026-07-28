@@ -33,7 +33,12 @@ const state = {
   zooPassDay: -1,
   dcPassDay: -1,     // 🎢 Dream City day pass
   dcTickets: 0,      // 🎟️ ride tickets in your paw
-  dcBandDay: -1,     // ⌚ all-rides wristband day     // the day your zoo ticket is valid for (a day pass)
+  dcBandDay: -1,     // ⌚ all-rides wristband day
+  myCars: [],        // 🚗 cat cars you own (style ids)
+  activeCar: null,   // the one parked in the world
+  carPos: null,      // where it's parked {x,z,h}
+  carTrunk: [],      // the shopping riding in the back
+  driving: false,     // the day your zoo ticket is valid for (a day pass)
   zooShift: false,    // working the zoo ticket booth right now
   neighbors: [],      // friends' towns you can visit from above [{code, name}]
   uiOpen: false,      // a give/rescue overlay is open
@@ -224,6 +229,7 @@ const worldColliders = [], groundColliders = [], upstairsColliders = [], shopCol
 function activeColliders() {
   if (state.inGray) return grayColliders;   // the Gray House interior (grayhouse.js)
   if (state.inManor) return (typeof manorColliders !== 'undefined') ? manorColliders : worldColliders;   // 👻 the Haunted Manor (dreamcity.js)
+  if (state.inShow) return (typeof showColliders !== 'undefined') ? showColliders : worldColliders;   // 🚗 Whisker Motors (carshow.js)
   if (state.inFun) return (typeof funColliders !== 'undefined') ? funColliders : worldColliders;   // 🪞 the Fun House (dreamcity.js)
   if (state.inHouse) return state.floor === 'upper' ? upstairsColliders : groundColliders;
   if (state.inShop) return shopColliders;

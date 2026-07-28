@@ -836,3 +836,39 @@
     #decor-tools button, #build-tools button { padding: 8px 9px; font-size: 0.72rem; }
     #decor-tools .hint { display: none; }
   }
+
+/* ── 🚗 driving controls: wheel left, pedals right ── */
+#drive-ui { display: none; }
+body.driving #drive-ui { display: block; }
+body.driving #joystick, body.driving #btn-jump { display: none !important; }
+#wheel-zone { position: fixed; left: 14px; bottom: 14px; width: 140px; height: 140px; z-index: 40; touch-action: none; }
+#wheel {
+  width: 118px; height: 118px; margin: 11px; border-radius: 50%;
+  border: 11px solid #4a3a52; background: radial-gradient(circle at 50% 42%, #2e2436, #1c1622);
+  box-shadow: 0 4px 14px rgba(0,0,0,.4), inset 0 2px 6px rgba(255,255,255,.08);
+  position: relative; will-change: transform;
+}
+.wheel-spoke { position: absolute; left: 50%; top: 50%; width: 10px; height: 96px; margin: -48px 0 0 -5px; background: #4a3a52; border-radius: 5px; }
+.wheel-spoke.s2 { transform: rotate(90deg); }
+.wheel-hub { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: #6a5a7a; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+#pedals { position: fixed; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 40; align-items: flex-end; }
+#pedals button {
+  border: none; border-radius: 14px; font-family: inherit; font-weight: 700; color: #ffe9c0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.35); touch-action: none; -webkit-user-select: none; user-select: none;
+}
+#pedal-gas { width: 92px; height: 76px; font-size: 1.5rem; background: linear-gradient(#3f7226, #2c5216); }
+#pedal-brake { width: 92px; height: 62px; font-size: 1.25rem; background: linear-gradient(#a03028, #701c18); }
+#pedals button small { font-size: .58rem; letter-spacing: .08em; }
+#park-btn { width: 92px; height: 40px; font-size: .85rem; background: linear-gradient(#4a5a8a, #32406a); flex-direction: row !important; }
+#horn-btn { width: 92px; height: 40px; font-size: 1.1rem; background: linear-gradient(#b8862a, #8a6018); }
+#pedal-gas:active, #pedal-brake:active, #park-btn:active, #horn-btn:active { transform: scale(.94); filter: brightness(1.15); }
+@media (orientation: landscape) and (max-height: 560px) {
+  #wheel-zone { width: 120px; height: 120px; }
+  #wheel { width: 100px; height: 100px; margin: 10px; border-width: 9px; }
+  .wheel-spoke { height: 82px; margin-top: -41px; }
+  #pedals button { border-radius: 12px; }
+  #pedal-gas { width: 84px; height: 64px; }
+  #pedal-brake { width: 84px; height: 52px; }
+  #park-btn, #horn-btn { width: 84px; height: 34px; }
+}

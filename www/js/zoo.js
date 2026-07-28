@@ -55,6 +55,7 @@ function buildFrontier() {
   buildGrandPark();
   buildZoo();
   if (typeof buildDreamCity === 'function') buildDreamCity();   // 🎢 the amusement park
+  if (typeof buildCarShow === 'function') buildCarShow();       // 🚗 Whisker Motors by the Gray House
   const IN = (x, z, r) => x > r.x0 - 6 && x < r.x1 + 6 && z > r.z0 - 6 && z < r.z1 + 6;
   const zones = [
     { x0: -155, x1: -100, z0: -135, z1: 50, n: 26 },
