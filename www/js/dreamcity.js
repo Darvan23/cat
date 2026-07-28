@@ -993,25 +993,6 @@ function dcAction(ctx) {
     }
     enterFunhouse();
   }
-  else if (ctx.id === 'dc:ballpit') {
-    const F = DC_R.fun;
-    F.balls.forEach(ball => { ball.userData.vy = 1.6 + Math.random() * 2.4; const a = Math.random() * Math.PI * 2; ball.userData.vx = Math.cos(a) * 1.4; ball.userData.vz = Math.sin(a) * 1.4; });
-    _funBounceT = 1.2;
-    _catHappyT = 2.0; if (typeof spawnHeart === 'function') spawnHeart();
-    if (typeof sfx === 'function') sfx('catch');
-    const day = state.dayCount || 0;
-    if (state._dcPitDay !== day) {
-      state._dcPitDay = day;
-      state.dcTickets = (state.dcTickets || 0) + 1;
-      showNotif('🌈 SPLOOSH! Balls everywhere — and look, a lost RIDE TICKET at the bottom! +1 🎟️');
-    } else showNotif('🌈 SPLOOSH! You vanish into the balls. Ten out of ten.');
-  }
-  else if (ctx.id === 'dc:tramp') {
-    _funBounceT = 2.4;
-    _catHappyT = 2.0; if (typeof spawnHeart === 'function') spawnHeart();
-    if (typeof sfx === 'function') { sfx('jump'); setTimeout(() => sfx('jump'), 460); setTimeout(() => sfx('jump'), 920); }
-    showNotif('🤸 BOING! BOING! BOING! Your whiskers reach the disco ball!');
-  }
   else if (ctx.id === 'dc:confetti') {
     const cols = [0xe05a4a, 0xe8d040, 0x5a9ad0, 0x9a6ad0];
     for (let b2 = 0; b2 < 3; b2++) {
@@ -1630,16 +1611,14 @@ function buildFunInterior() {
     ball.userData = { hy: ball.position.y, vy: 0 };
     F.balls.push(ball);
   }
-  F.pit = pit;
-  funColliders.push({ type: 'circle', x: pit.x, z: pit.z, r: pit.r + 0.4 });
+  F.pit = pit;   // no collider — you WADE right in
 
   // 🤸 the trampoline
   const tramp = { x: 4.2, z: 2.2 };
   CY(1.3, 1.4, 0.28, pbr(0xd0483a, 0.7), tramp.x, 0.35, tramp.z, 16);
   const mat2 = F.trampMat = add(new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.08, 16), pbr(0x2a2a38, 0.6))); mat2.position.set(tramp.x, 0.44, tramp.z);
   [[-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9], [0.9, 0.9]].forEach(([lx, lz]) => CY(0.07, 0.09, 0.36, pbr(0x8a8a98, 0.6), tramp.x + lx * 0.9, 0.18, tramp.z + lz * 0.9, 8));
-  F.tramp = tramp;
-  funColliders.push({ type: 'circle', x: tramp.x, z: tramp.z, r: 1.15 });
+  F.tramp = tramp;   // no collider — climb on and BOUNCE
 
   // 🎉 the confetti cannon
   const can = { x: 0, z: -1.2 };
@@ -1659,7 +1638,7 @@ function enterFunhouse() {
   state.camYaw = 0; state.camHeight = 3.4; state.camDist = 4.4;
   camera.position.set(0, state.camHeight, FUN_D - 0.8 + state.camDist);
   if (typeof sfx === 'function') sfx('door');
-  showNotif('🪞 Mirrors ahead! Go say hello to Long Cat, Pancake Cat and Wobble Cat.');
+  showNotif('🪞 Meet Long Cat, Pancake Cat & Wobble Cat — then JUMP on the trampoline and dive in the ball pit!');
 }
 function exitFunhouse() {
   state.inFun = false;
@@ -1696,13 +1675,54 @@ function updateFunFrame(t) {
       if (ball.position.y <= u.hy) { ball.position.y = u.hy; u.vy = 0; u.vx = 0; u.vz = 0; }
     }
   });
-  // trampoline bounces YOU
-  if (_funBounceT > 0) {
-    _funBounceT = Math.max(0, _funBounceT - 0.016);
-    const b = Math.abs(Math.sin((2.4 - _funBounceT) * 5.2)) * 1.5 * Math.min(1, _funBounceT);
-    catGroup.position.y = b;
-    F.trampMat.position.y = 0.44 - Math.max(0, 0.3 - b) * 0.3;
-    if (_funBounceT === 0) { catGroup.position.y = 0; F.trampMat.position.y = 0.44; }
+  // 🤸 STAND ON the trampoline and it bounces you — bigger and bigger
+  const cx2 = catGroup.position.x, cz2 = catGroup.position.z;
+  const onTramp = Math.hypot(cx2 - F.tramp.x, cz2 - F.tramp.z) < 1.25;
+  if (onTramp && !state.isJumping) {
+    F.trampT = (F.trampT || 0) + 0.016;
+    F.trampPow = Math.min(1, (F.trampPow || 0) + 0.01);              // every bounce feeds the next
+    const y = Math.abs(Math.sin(F.trampT * 4.6)) * (0.5 + F.trampPow * 1.7);
+    if ((F._trampPrevY || 0) > 0.06 && y <= 0.06 && typeof sfx === 'function') { sfx('jump'); if (Math.random() < 0.3 && typeof spawnHeart === 'function') spawnHeart(); }
+    F._trampPrevY = y;
+    catGroup.position.y = y;
+    F._trampCtl = true;
+    F.trampMat.position.y = 0.44 - Math.max(0, 0.3 - y) * 0.6;       // the mat flexes under you
+    if (!F._trampHi && typeof showNotif === 'function') { F._trampHi = true; showNotif('🤸 BOING! Stay on to bounce HIGHER!'); }
+  } else {
+    if (!onTramp) { F.trampT = 0; F.trampPow = 0; F._trampHi = false; }
+    F.trampMat.position.y = 0.44;
+    if (F._trampCtl && !state.isJumping) {                           // ease back to the floor after hopping off
+      catGroup.position.y *= 0.72;
+      if (catGroup.position.y < 0.03) { catGroup.position.y = 0; F._trampCtl = false; }
+    }
+  }
+  // 🌈 WADE INTO the ball pit — splash on entry, balls part around you
+  const pitD = Math.hypot(cx2 - F.pit.x, cz2 - F.pit.z);
+  const inPit = pitD < F.pit.r + 0.05;
+  if (inPit) {
+    if (!F._inPit) {                                                 // the SPLASH of arrival
+      F._inPit = true;
+      F.balls.forEach(ball => {
+        const d = Math.hypot(ball.position.x - cx2, ball.position.z - cz2);
+        if (d < 1.3) { ball.userData.vy = 1.4 + Math.random() * 2.2; const a = Math.atan2(ball.position.z - cz2, ball.position.x - cx2); ball.userData.vx = Math.cos(a) * 1.6; ball.userData.vz = Math.sin(a) * 1.6; }
+      });
+      if (typeof sfx === 'function') sfx('catch');
+      _catHappyT = 2.0; if (typeof spawnHeart === 'function') spawnHeart();
+      const day = state.dayCount || 0;
+      if (state._dcPitDay !== day) {
+        state._dcPitDay = day;
+        state.dcTickets = (state.dcTickets || 0) + 1;
+        showNotif('🌈 SPLOOSH! You dive in — and find a lost RIDE TICKET at the bottom! +1 🎟️');
+      } else showNotif('🌈 SPLOOSH! You vanish into the balls. Ten out of ten.');
+    }
+    if (!state.isJumping && !F._trampCtl) catGroup.position.y = 0.3; // belly-deep in balls
+    F.balls.forEach(ball => {                                        // wading pushes them aside
+      const d = Math.hypot(ball.position.x - cx2, ball.position.z - cz2);
+      if (d < 0.5 && ball.userData.vy === 0) { ball.userData.vy = 0.5 + Math.random() * 0.7; const a = Math.atan2(ball.position.z - cz2, ball.position.x - cx2); ball.userData.vx = Math.cos(a) * 1.2; ball.userData.vz = Math.sin(a) * 1.2; }
+    });
+  } else if (F._inPit) {
+    F._inPit = false;
+    if (!state.isJumping && !F._trampCtl) catGroup.position.y = 0;   // hop out, back on solid floor
   }
   // confetti falls
   for (let i = FUN_CONF.length - 1; i >= 0; i--) {
@@ -1724,8 +1744,6 @@ function updateFunFrame(t) {
 
 function dcFunContext(cp) {
   const F = DC_R.fun; if (!F) return null;
-  if (Math.hypot(cp.x - F.pit.x, cp.z - F.pit.z) < F.pit.r + 1.1) return { id: 'dc:ballpit', label: '🌈 Dive into the ball pit!' };
-  if (Math.hypot(cp.x - F.tramp.x, cp.z - F.tramp.z) < 2.2) return { id: 'dc:tramp', label: '🤸 Bounce on the trampoline!' };
   if (Math.hypot(cp.x - F.cannon.x, cp.z - F.cannon.z) < 1.6) return { id: 'dc:confetti', label: '🎉 Fire the confetti cannon!' };
   return null;
 }

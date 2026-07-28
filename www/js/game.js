@@ -2671,8 +2671,8 @@ function animate(now) {
     const fZ = catGroup.position.z + Math.cos(state.camYaw) * state.camDist;
     camera.position.x += (fX - camera.position.x) * 0.1;
     camera.position.z += (fZ - camera.position.z) * 0.1;
-    camera.position.y += (state.camHeight - camera.position.y) * 0.1;
-    camera.lookAt(catGroup.position.x, 0.6, catGroup.position.z);
+    camera.position.y += (state.camHeight + catGroup.position.y * 0.5 - camera.position.y) * 0.1;
+    camera.lookAt(catGroup.position.x, 0.6 + catGroup.position.y * 0.7, catGroup.position.z);   // keep the bouncing cat in frame
     renderer.render(funScene, camera);
     return;
   }
