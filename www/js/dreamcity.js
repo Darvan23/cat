@@ -875,7 +875,7 @@ function dcContext(cp) {
   if (state.dcBalloonSeller && near(state.dcBalloonSeller.group.position.x, state.dcBalloonSeller.group.position.z, 2.6) && !state.catBalloon) return { id: 'dc:balloon', label: '🎈 Balloon · 5 🪙' };
   if (state.dcDreamy && near(state.dcDreamy.group.position.x, state.dcDreamy.group.position.z, 2.4)) return { id: 'dc:hug', label: '🤗 Hug Dreamy' };
   if (near(DC_MANOR.x, DC_MANOR.z + 4.5, 2.8)) return { id: 'dc:manor', label: state.dcManorDay === (state.dayCount || 0) ? '👻 Enter the Haunted Manor' : '👻 Enter the Haunted Manor · 1 🎟️' };
-  if (state.dcFunDay !== (state.dayCount || 0) && near(DC_FUN.x, DC_FUN.z + 3, 2.4)) return { id: 'dc:funhouse', label: '🪞 Enter the Fun House · 1 🎟️' };
+  if (near(DC_FUN.x, DC_FUN.z + 3, 2.6)) return { id: 'dc:funhouse', label: state.dcFunDay === (state.dayCount || 0) ? '🪞 Enter the Fun House' : '🪞 Enter the Fun House · 1 🎟️' };
   if (near(DC_STAGE.x + 4.8, DC_STAGE.z, 2.6)) return { id: 'dc:mascot', label: state.dcMascot ? '🎭 Hang up the Dreamy suit' : '🎭 Wear the Dreamy suit (job)' };
   if (state.dcMascot) { const gst = (state.dcGuests || []).find(v => v._waved !== (state.dayCount || 0) && Math.hypot(cp.x - v.group.position.x, cp.z - v.group.position.z) < 2.2); if (gst) { return { id: 'dc:wave', guest: gst, label: '👋 Wave to the visitors! (+2 🪙)' }; } }
   return null;
@@ -987,11 +987,50 @@ function dcAction(ctx) {
     showNotif('🪙 CREEEAK… three dusty coins glitter inside! The chest sighs.');
   }
   else if (ctx.id === 'dc:funhouse') {
-    if (!spendDcTicket(1, '🪞 Fun House')) return;
-    state.dcFunDay = state.dayCount || 0;
-    const i = worldColliders.indexOf(_dcFunColl); if (i >= 0) worldColliders.splice(i, 1);
-    if (typeof sfx === 'function') sfx('door');
-    showNotif('🪞 In you go! Mirrors ahead — is that a VERY tall cat? A very ROUND cat?');
+    if (state.dcFunDay !== (state.dayCount || 0)) {
+      if (!spendDcTicket(1, '🪞 Fun House')) return;
+      state.dcFunDay = state.dayCount || 0;
+    }
+    enterFunhouse();
+  }
+  else if (ctx.id === 'dc:ballpit') {
+    const F = DC_R.fun;
+    F.balls.forEach(ball => { ball.userData.vy = 1.6 + Math.random() * 2.4; const a = Math.random() * Math.PI * 2; ball.userData.vx = Math.cos(a) * 1.4; ball.userData.vz = Math.sin(a) * 1.4; });
+    _funBounceT = 1.2;
+    _catHappyT = 2.0; if (typeof spawnHeart === 'function') spawnHeart();
+    if (typeof sfx === 'function') sfx('catch');
+    const day = state.dayCount || 0;
+    if (state._dcPitDay !== day) {
+      state._dcPitDay = day;
+      state.dcTickets = (state.dcTickets || 0) + 1;
+      showNotif('🌈 SPLOOSH! Balls everywhere — and look, a lost RIDE TICKET at the bottom! +1 🎟️');
+    } else showNotif('🌈 SPLOOSH! You vanish into the balls. Ten out of ten.');
+  }
+  else if (ctx.id === 'dc:tramp') {
+    _funBounceT = 2.4;
+    _catHappyT = 2.0; if (typeof spawnHeart === 'function') spawnHeart();
+    if (typeof sfx === 'function') { sfx('jump'); setTimeout(() => sfx('jump'), 460); setTimeout(() => sfx('jump'), 920); }
+    showNotif('🤸 BOING! BOING! BOING! Your whiskers reach the disco ball!');
+  }
+  else if (ctx.id === 'dc:confetti') {
+    const cols = [0xe05a4a, 0xe8d040, 0x5a9ad0, 0x9a6ad0];
+    for (let b2 = 0; b2 < 3; b2++) {
+      const n = 26, geo = new THREE.BufferGeometry();
+      const posArr = new Float32Array(n * 3), vel = new Float32Array(n * 3);
+      for (let k = 0; k < n; k++) {
+        posArr[k * 3] = 0; posArr[k * 3 + 1] = 1.4; posArr[k * 3 + 2] = -1.4;
+        const th = Math.random() * Math.PI * 2, sp = 1 + Math.random() * 2.2;
+        vel[k * 3] = Math.cos(th) * sp; vel[k * 3 + 1] = 2.2 + Math.random() * 1.8; vel[k * 3 + 2] = Math.sin(th) * sp * 0.7 + 0.8;
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+      const mat = new THREE.PointsMaterial({ color: cols[(Math.random() * 4) | 0], size: 0.09, transparent: true, opacity: 1 });
+      const pts = new THREE.Points(geo, mat);
+      funScene.add(pts);
+      FUN_CONF.push({ pts, mat, vel, n, age: 0 });
+    }
+    if (typeof sfx === 'function') sfx('upgrade');
+    _catHappyT = 1.6;
+    showNotif('🎉 POOMPH! Confetti rains over the whole fun house!');
   }
   else if (ctx.id === 'dc:mascot') {
     state.dcMascot = !state.dcMascot;
@@ -1507,5 +1546,186 @@ function dcManorContext(cp) {
   if (Math.hypot(cp.x - (-4.5), cp.z - 2.6) < 1.7) return { id: 'dc:cauldron', label: '🥄 Stir the cauldron' };
   if (Math.hypot(cp.x - 4.8, cp.z - 3.0) < 1.8) return { id: 'dc:organ', label: '🎹 Play the spooky organ' };
   if (Math.hypot(cp.x - 5.4, cp.z - (-3.2)) < 1.8) return { id: 'dc:chest', label: '🪙 Open the creaky chest' };
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  🪞 THE FUN HOUSE INTERIOR — mirrors, ball pit, trampoline & confetti
+// ═══════════════════════════════════════════════════════════════════════════
+let funScene = null, _funBuilt = false;
+const funColliders = [];
+const FUN_W = 5.8, FUN_D = 3.8;
+const FUN_CONF = [];                                   // live confetti bursts
+
+function buildFunInterior() {
+  if (_funBuilt) return;
+  _funBuilt = true;
+  funScene = new THREE.Scene();
+  funScene.background = new THREE.Color(0xf0e0f8);
+  const S = funScene;
+  S.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const sun2 = new THREE.DirectionalLight(0xfff0d8, 0.7); sun2.position.set(3, 8, 5); S.add(sun2);
+  const F = DC_R.fun = { mirrors: [], balls: [], wobbles: [], pins: [] };
+  const add = m => { m.castShadow = true; m.receiveShadow = true; S.add(m); return m; };
+  const B = (w, h, d, mat, x, y, z, ry) => { const me = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)); me.position.set(x, y, z); if (ry) me.rotation.y = ry; return me; };
+  const CY = (r0, r1, h, mat, x, y, z, seg) => { const me = add(new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, seg || 12), mat)); me.position.set(x, y, z); return me; };
+  const RAINBOW = [0xe05a4a, 0xe8a030, 0xe8d040, 0x6ac06a, 0x5a9ad0, 0x9a6ad0];
+
+  // checkerboard floor with a few wobbly tiles
+  for (let ix = 0; ix < 8; ix++) for (let iz = 0; iz < 6; iz++) {
+    const tile = add(new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.08, 1.35), pbr((ix + iz) % 2 ? 0xf0e8f6 : 0xd8b8e8, 0.9)));
+    tile.position.set(-FUN_W + 0.85 + ix * 1.58, 0.02, -FUN_D + 0.75 + iz * 1.38);
+    if ((ix * 7 + iz * 3) % 11 === 0) { tile.userData.ph = ix + iz; F.wobbles.push(tile); }
+  }
+  // candy-striped walls + ceiling
+  for (let i = 0; i < 8; i++) { B(1.55, 3.6, 0.25, pbr(RAINBOW[i % 6], 0.85), -FUN_W + 0.85 + i * 1.58, 1.8, -FUN_D - 0.35); if (i < 6) B(1.55, 3.6, 0.25, pbr(RAINBOW[(i + 3) % 6], 0.85), -FUN_W + 0.85 + i * 1.58, 1.8, FUN_D + 0.35); }
+  B(1.6, 3.6, 0.25, pbr(RAINBOW[3], 0.85), -FUN_W + 0.85 + 6 * 1.58, 1.8, FUN_D + 0.35);
+  for (let i = 0; i < 6; i++) [-1, 1].forEach(sd => B(0.25, 3.6, 1.35, pbr(RAINBOW[(i + (sd > 0 ? 2 : 4)) % 6], 0.85), sd * (FUN_W + 0.35), 1.8, -FUN_D + 0.75 + i * 1.38));
+  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(FUN_W * 2 + 1, FUN_D * 2 + 1), pbr(0xe8d8f4, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.y = 3.6;
+  funColliders.push(
+    { type: 'box', x0: -FUN_W - 0.7, x1: -FUN_W - 0.1, z0: -FUN_D - 1, z1: FUN_D + 1 },
+    { type: 'box', x0: FUN_W + 0.1, x1: FUN_W + 0.7, z0: -FUN_D - 1, z1: FUN_D + 1 },
+    { type: 'box', x0: -FUN_W - 1, x1: FUN_W + 1, z0: -FUN_D - 0.7, z1: -FUN_D - 0.1 },
+    { type: 'box', x0: -FUN_W - 1, x1: FUN_W + 1, z0: FUN_D + 0.1, z1: FUN_D + 0.7 });
+  // the door you came in by + a rainbow arch over the room
+  B(1.8, 2.8, 0.12, pbr(0x8a4ab0, 0.7), 0, 1.4, FUN_D + 0.22);
+  RAINBOW.forEach((col, i) => { const arc = add(new THREE.Mesh(new THREE.TorusGeometry(2.6 - i * 0.16, 0.09, 8, 24, Math.PI), pbr(col, 0.7))); arc.position.set(0, 1.4, 0); });
+  // the spinning disco ball
+  const disco = F.disco = add(new THREE.Mesh(G.sph(0.45, 16, 14), new THREE.MeshStandardMaterial({ color: 0xd8e0f0, metalness: 0.95, roughness: 0.15 })));
+  disco.position.set(0, 3.1, 0);
+  CY(0.02, 0.02, 0.5, pbr(0x8a8a98, 0.5), 0, 3.55, 0, 5);
+  // spinning wall pinwheels
+  [[-FUN_W - 0.2, -1.5, 1], [FUN_W + 0.2, 1.5, 1], [-2.5, FUN_D + 0.2, 0]].forEach(([px2, pz2, side], i) => {
+    const pin = new THREE.Group();
+    for (let k = 0; k < 6; k++) { const blade = new THREE.Mesh(G.cone(0.14, 0.5, 6), pbr(RAINBOW[k], 0.7)); blade.position.set(Math.cos(k * 1.047) * 0.3, Math.sin(k * 1.047) * 0.3, 0); blade.rotation.z = k * 1.047 + Math.PI / 2; pin.add(blade); }
+    pin.position.set(px2, 2.2, pz2); if (side) pin.rotation.y = Math.PI / 2;
+    S.add(pin); F.pins.push(pin);
+  });
+
+  // 🪞 THREE TRICK MIRRORS — they show a very silly you
+  const mirM = new THREE.MeshStandardMaterial({ color: 0xdfe8f2, metalness: 0.9, roughness: 0.12 });
+  const gold = pbr(0xc8a850, 0.4, 0.4);
+  [[-3.6, 'tall'], [0, 'wide'], [3.6, 'wavy']].forEach(([mx, kind], i) => {
+    B(1.9, 3.0, 0.14, gold, mx, 1.6, -FUN_D - 0.05);
+    const panel = add(new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.7, 0.06), mirM)); panel.position.set(mx, 1.6, -FUN_D + 0.02);
+    const label = ['📏 LONG CAT', '🥞 PANCAKE CAT', '🌊 WOBBLE CAT'][i];
+    if (typeof makeTextSign === 'function') { const sg = add(new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.34, 0.08), new THREE.MeshStandardMaterial({ map: makeTextSign(label, '#6a2a5a', '#ffe9a0', 200, 42), roughness: 0.6 }))); sg.position.set(mx, 3.3, -FUN_D - 0.02); }
+    const mc = buildCatModel(state.chosenCat || { body: 0x8a8a92, accent: 0xd8d8de, eye: 0x4a8a5a, markings: 'solid' });
+    mc.group.position.set(mx, 0, -FUN_D + 0.55);
+    if (kind === 'tall') mc.group.scale.set(0.5, 1.9, 0.5);
+    if (kind === 'wide') mc.group.scale.set(1.65, 0.42, 1.65);
+    S.add(mc.group);
+    F.mirrors.push({ x: mx, kind, cat: mc.group });
+  });
+  funColliders.push({ type: 'box', x0: -FUN_W, x1: FUN_W, z0: -FUN_D - 0.4, z1: -FUN_D + 0.75 });
+
+  // 🌈 the ball pit
+  const pit = { x: -4.2, z: 2.2, r: 1.6 };
+  CY(pit.r + 0.25, pit.r + 0.35, 0.5, pbr(0x8a4ab0, 0.8), pit.x, 0.25, pit.z, 18);
+  const pitIn = add(new THREE.Mesh(new THREE.CylinderGeometry(pit.r, pit.r, 0.4, 18), pbr(0x5a2a7a, 0.9))); pitIn.position.set(pit.x, 0.28, pit.z);
+  for (let i = 0; i < 24; i++) {
+    const a = Math.random() * Math.PI * 2, rr = Math.random() * (pit.r - 0.25);
+    const ball = add(new THREE.Mesh(G.sph(0.16, 10, 8), pbr(RAINBOW[i % 6], 0.55)));
+    ball.position.set(pit.x + Math.cos(a) * rr, 0.55 + (i % 3) * 0.1, pit.z + Math.sin(a) * rr);
+    ball.userData = { hy: ball.position.y, vy: 0 };
+    F.balls.push(ball);
+  }
+  F.pit = pit;
+  funColliders.push({ type: 'circle', x: pit.x, z: pit.z, r: pit.r + 0.4 });
+
+  // 🤸 the trampoline
+  const tramp = { x: 4.2, z: 2.2 };
+  CY(1.3, 1.4, 0.28, pbr(0xd0483a, 0.7), tramp.x, 0.35, tramp.z, 16);
+  const mat2 = F.trampMat = add(new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.08, 16), pbr(0x2a2a38, 0.6))); mat2.position.set(tramp.x, 0.44, tramp.z);
+  [[-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9], [0.9, 0.9]].forEach(([lx, lz]) => CY(0.07, 0.09, 0.36, pbr(0x8a8a98, 0.6), tramp.x + lx * 0.9, 0.18, tramp.z + lz * 0.9, 8));
+  F.tramp = tramp;
+  funColliders.push({ type: 'circle', x: tramp.x, z: tramp.z, r: 1.15 });
+
+  // 🎉 the confetti cannon
+  const can = { x: 0, z: -1.2 };
+  CY(0.16, 0.22, 0.8, pbr(0x3a3a48, 0.6), can.x, 0.4, can.z, 10);
+  const barrel = add(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.11, 0.9, 10), pbr(0xe8c040, 0.5)));
+  barrel.position.set(can.x, 1.05, can.z - 0.18); barrel.rotation.x = -0.5;
+  for (let i = 0; i < 3; i++) { const stripe = add(new THREE.Mesh(new THREE.TorusGeometry(0.145, 0.025, 6, 14), pbr(0xd0483a, 0.6))); stripe.position.set(can.x, 0.85 + i * 0.25, can.z - 0.07 - i * 0.13); stripe.rotation.x = -0.5 + Math.PI / 2; }
+  F.cannon = can;
+  funColliders.push({ type: 'circle', x: can.x, z: can.z, r: 0.45 });
+}
+
+function enterFunhouse() {
+  buildFunInterior();
+  state.inFun = true;
+  funScene.add(catGroup);
+  catGroup.position.set(0, 0, FUN_D - 0.8); catGroup.rotation.y = Math.PI;
+  state.camYaw = 0; state.camHeight = 3.4; state.camDist = 4.4;
+  camera.position.set(0, state.camHeight, FUN_D - 0.8 + state.camDist);
+  if (typeof sfx === 'function') sfx('door');
+  showNotif('🪞 Mirrors ahead! Go say hello to Long Cat, Pancake Cat and Wobble Cat.');
+}
+function exitFunhouse() {
+  state.inFun = false;
+  scene.add(catGroup);
+  catGroup.position.set(DC_FUN.x, 0, DC_FUN.z + 4.2); catGroup.rotation.y = 0;
+  if (typeof sfx === 'function') sfx('door');
+}
+
+let _funBounceT = 0;
+function updateFunFrame(t) {
+  const F = DC_R.fun; if (!F) return;
+  F.disco.rotation.y = t * 1.2;
+  F.pins.forEach((pin, i) => { pin.rotation.z = t * (1.2 + i * 0.4) * (i % 2 ? -1 : 1); });
+  F.wobbles.forEach(tile => { tile.rotation.z = Math.sin(t * 2.2 + tile.userData.ph) * 0.05; tile.position.y = 0.02 + Math.abs(Math.sin(t * 2.2 + tile.userData.ph)) * 0.05; });
+  // the mirrors mimic you — with opinions
+  F.mirrors.forEach(mi => {
+    const mc = mi.cat;
+    const wantX = Math.max(mi.x - 1.0, Math.min(mi.x + 1.0, catGroup.position.x));
+    mc.position.x += (wantX - mc.position.x) * 0.2;
+    mc.position.y = catGroup.position.y * (mi.kind === 'tall' ? 1.7 : mi.kind === 'wide' ? 0.4 : 1);
+    mc.rotation.y = Math.atan2(catGroup.position.x - mc.position.x, catGroup.position.z - mc.position.z);
+    if (mi.kind === 'wavy') mc.scale.set(1 + Math.sin(t * 3.2) * 0.35, 1 + Math.sin(t * 3.2 + 2.1) * 0.45, 1 + Math.sin(t * 3.2 + 4.2) * 0.35);
+  });
+  // ball pit physics (after a dive)
+  F.balls.forEach(ball => {
+    const u = ball.userData;
+    if (u.vy !== 0 || ball.position.y > u.hy + 0.01) {
+      u.vy -= 0.012;
+      ball.position.y += u.vy * 0.016 * 3;
+      ball.position.x += (u.vx || 0) * 0.016;
+      ball.position.z += (u.vz || 0) * 0.016;
+      const d = Math.hypot(ball.position.x - F.pit.x, ball.position.z - F.pit.z);
+      if (d > F.pit.r - 0.2) { const s2 = (F.pit.r - 0.2) / d; ball.position.x = F.pit.x + (ball.position.x - F.pit.x) * s2; ball.position.z = F.pit.z + (ball.position.z - F.pit.z) * s2; }
+      if (ball.position.y <= u.hy) { ball.position.y = u.hy; u.vy = 0; u.vx = 0; u.vz = 0; }
+    }
+  });
+  // trampoline bounces YOU
+  if (_funBounceT > 0) {
+    _funBounceT = Math.max(0, _funBounceT - 0.016);
+    const b = Math.abs(Math.sin((2.4 - _funBounceT) * 5.2)) * 1.5 * Math.min(1, _funBounceT);
+    catGroup.position.y = b;
+    F.trampMat.position.y = 0.44 - Math.max(0, 0.3 - b) * 0.3;
+    if (_funBounceT === 0) { catGroup.position.y = 0; F.trampMat.position.y = 0.44; }
+  }
+  // confetti falls
+  for (let i = FUN_CONF.length - 1; i >= 0; i--) {
+    const cf = FUN_CONF[i];
+    cf.age += 0.016;
+    const pos = cf.pts.geometry.attributes.position;
+    for (let k = 0; k < cf.n; k++) {
+      pos.array[k * 3] += cf.vel[k * 3] * 0.016;
+      pos.array[k * 3 + 1] += cf.vel[k * 3 + 1] * 0.016;
+      pos.array[k * 3 + 2] += cf.vel[k * 3 + 2] * 0.016;
+      cf.vel[k * 3 + 1] -= 0.055;
+      if (pos.array[k * 3 + 1] < 0.05) { pos.array[k * 3 + 1] = 0.05; cf.vel[k * 3 + 1] = 0; }
+    }
+    pos.needsUpdate = true;
+    cf.mat.opacity = Math.max(0, 1 - cf.age / 2.6);
+    if (cf.age > 2.6) { funScene.remove(cf.pts); cf.pts.geometry.dispose(); cf.mat.dispose(); FUN_CONF.splice(i, 1); }
+  }
+}
+
+function dcFunContext(cp) {
+  const F = DC_R.fun; if (!F) return null;
+  if (Math.hypot(cp.x - F.pit.x, cp.z - F.pit.z) < F.pit.r + 1.1) return { id: 'dc:ballpit', label: '🌈 Dive into the ball pit!' };
+  if (Math.hypot(cp.x - F.tramp.x, cp.z - F.tramp.z) < 2.2) return { id: 'dc:tramp', label: '🤸 Bounce on the trampoline!' };
+  if (Math.hypot(cp.x - F.cannon.x, cp.z - F.cannon.z) < 1.6) return { id: 'dc:confetti', label: '🎉 Fire the confetti cannon!' };
   return null;
 }

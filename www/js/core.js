@@ -224,6 +224,7 @@ const worldColliders = [], groundColliders = [], upstairsColliders = [], shopCol
 function activeColliders() {
   if (state.inGray) return grayColliders;   // the Gray House interior (grayhouse.js)
   if (state.inManor) return (typeof manorColliders !== 'undefined') ? manorColliders : worldColliders;   // 👻 the Haunted Manor (dreamcity.js)
+  if (state.inFun) return (typeof funColliders !== 'undefined') ? funColliders : worldColliders;   // 🪞 the Fun House (dreamcity.js)
   if (state.inHouse) return state.floor === 'upper' ? upstairsColliders : groundColliders;
   if (state.inShop) return shopColliders;
   if (state.inShelter) return shelterColliders;

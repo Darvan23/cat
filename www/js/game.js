@@ -760,7 +760,7 @@ function millerTalk(f) {
 }
 
 // ── Kids' escort quest: a kid asks you to walk them to the park & back — a kindness that builds your reputation ──
-function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray || state.inManor); }
+function playerIndoors() { return !!(state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inGray || state.inManor || state.inFun); }
 function anyKidWantsPark() { return state.family.some(f => f.wantsPark); }
 function startEscort(kid) {
   kid.wantsPark = false;
@@ -845,6 +845,12 @@ function updateContextButton() {
     if (here && state.millerHome === here) { state.context = 'millermoveout'; btn.textContent = '🏠 Send Millers back'; btn.classList.add('show'); }
     else if (here) { state.context = 'millermovein'; btn.textContent = '🏡 Move the Millers in'; btn.classList.add('show'); }
     else { state.context = null; btn.classList.remove('show'); }
+    return;
+  }
+  if (state.inFun) {   // 🪞 inside the Fun House — mirrors, ball pit, trampoline, confetti
+    const fc = (typeof dcFunContext === 'function') ? dcFunContext(cp) : null;
+    state.context = fc ? fc.id : null; state._dcCtx = fc;
+    if (fc) { btn.textContent = fc.label; btn.classList.add('show'); } else btn.classList.remove('show');
     return;
   }
   if (state.inManor) {   // 👻 inside the Haunted Manor — ghosts, cauldron, organ, chest
@@ -2307,6 +2313,20 @@ function closeMap() { state.uiOpen = false; document.getElementById('map').class
 const mmCanvas = document.getElementById('minimap-canvas');
 const mmCtx = mmCanvas.getContext('2d');
 function drawMinimap() {
+  if (state.inFun) {   // a rainbow floor plan
+    const g2 = mmCtx, D = mmCanvas.width;
+    g2.fillStyle = '#f4e4fa'; g2.fillRect(0, 0, D, D);
+    g2.strokeStyle = '#b878d0'; g2.lineWidth = 3; g2.strokeRect(24, 44, D - 48, D - 88);
+    const MX = x => D / 2 + x * ((D - 60) / 12.4), MZ = z => D / 2 + z * ((D - 100) / 7.8);
+    g2.font = '13px serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.fillText('🪞', MX(-3.6), MZ(-3.2)); g2.fillText('🪞', MX(0), MZ(-3.2)); g2.fillText('🪞', MX(3.6), MZ(-3.2));
+    g2.fillText('🌈', MX(-4.2), MZ(2.2)); g2.fillText('🤸', MX(4.2), MZ(2.2)); g2.fillText('🎉', MX(0), MZ(-1.2));
+    g2.fillText('🕺', MX(0), MZ(0.6));
+    g2.fillStyle = '#fff'; g2.beginPath(); g2.arc(MX(catGroup.position.x), MZ(catGroup.position.z), 5, 0, 7); g2.fill();
+    g2.fillStyle = '#e05a4a'; g2.beginPath(); g2.arc(MX(catGroup.position.x), MZ(catGroup.position.z), 3.4, 0, 7); g2.fill();
+    g2.fillStyle = '#8a4ab0'; g2.font = 'bold 11px sans-serif'; g2.fillText('🪞 FUN HOUSE', D / 2, 18);
+    return;
+  }
   if (state.inManor) {   // a candlelit floor plan
     const g2 = mmCtx, D = mmCanvas.width;
     g2.fillStyle = '#1a1226'; g2.fillRect(0, 0, D, D);
@@ -2480,7 +2500,8 @@ function animate(now) {
     else if (state.inGray) { bx = 16.4; bzMin = -11.4; bzMax = 11.4; }   // the Gray House is HUGE
     else if (state.inJail) { bx = 3.1; bzMin = -2.5; bzMax = 2.6; }   // locked in the cell
     else if (state.inManor) { bx = 6.4; bzMin = -4.2; bzMax = 4.2; }   // the manor's great hall
-    if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inJail || state.inManor) bxMin = -bx;
+    else if (state.inFun) { bx = 5.7; bzMin = -3.7; bzMax = 3.7; }   // the fun house
+    if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inJail || state.inManor || state.inFun) bxMin = -bx;
     catGroup.position.x = Math.max(bxMin, Math.min(bx, catGroup.position.x));
     catGroup.position.z = Math.max(bzMin, Math.min(bzMax, catGroup.position.z));
   }
@@ -2641,6 +2662,20 @@ function animate(now) {
     return;
   }
 
+  if (state.inFun) {   // 🪞 inside the Fun House — brightest room in the county
+    if (typeof updateFunFrame === 'function') updateFunFrame(t);
+    updateEnterPrompt();
+    updateContextButton();
+    drawMinimap();
+    const fX = catGroup.position.x + Math.sin(state.camYaw) * state.camDist;
+    const fZ = catGroup.position.z + Math.cos(state.camYaw) * state.camDist;
+    camera.position.x += (fX - camera.position.x) * 0.1;
+    camera.position.z += (fZ - camera.position.z) * 0.1;
+    camera.position.y += (state.camHeight - camera.position.y) * 0.1;
+    camera.lookAt(catGroup.position.x, 0.6, catGroup.position.z);
+    renderer.render(funScene, camera);
+    return;
+  }
   if (state.inManor) {   // 👻 inside the Haunted Manor — its own little world
     if (typeof updateManorFrame === 'function') updateManorFrame(t);
     updateEnterPrompt();
