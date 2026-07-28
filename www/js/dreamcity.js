@@ -29,9 +29,9 @@ const DC_RIDES = {
   swings:   { x: -180, z: 28,  e: '⛓️', name: 'Sky Swings',         cost: 1, dur: 10, r: 6.4 },
   teacups:  { x: -122, z: 32,  e: '🍵', name: 'Twirling Teacups',   cost: 1, dur: 9,  r: 5.2 },
   flume:    { x: -168, z: -48, e: '🪵', name: 'Log Flume',          cost: 1, dur: 12, r: 3.0 },
-  train:    { x: -122, z: -30, e: '🚂', name: 'Dream Express',      cost: 1, dur: 22, r: 2.4 },
+  train:    { x: -125, z: -85, e: '🚂', name: 'Dream Express',      cost: 1, dur: 26, r: 2.6 },
   slide:    { x: -214, z: 30,  e: '🌈', name: 'Rainbow Slide',      cost: 1, dur: 7,  r: 3.4 },
-  dodgem:   { x: -196, z: -74, e: '🚗', name: 'Bumper Cars',        cost: 1, dur: 11, r: 3.0 },
+  dodgem:   { x: -190, z: -100, e: '🚗', name: 'Bumper Cars',       cost: 1, dur: 20, r: 3.0 },
 };
 // games alley stalls (each is a REAL minigame — 1 🎟️ a play, prizes for aces)
 const DC_STALLS = [
@@ -183,7 +183,7 @@ function buildDreamCity() {
     [-1, 1].forEach(d => { const e = new THREE.Mesh(G.sph(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0x202038 })); e.position.set(d * 0.15, 0.12, 0.36); gh.add(e); });
     gh.position.set(m0.x - 3 + i * 3, 1.3, m0.z - 1 + (i % 2) * 2);
     scene.add(gh);
-    DC_R.ghosts.push({ g: gh, ph: i * 2.1 });
+    DC_R.ghosts.push({ g: gh, ph: i * 2.1, hx: gh.position.x, hz: gh.position.z, flipT: 0 });
   }
   [[-3, 3.2], [3, 3.2]].forEach(([dx, dz]) => { const pk = new THREE.Mesh(G.sph(0.3, 10, 8), pbr(0xe08a30, 0.8)); pk.scale.y = 0.8; pk.position.set(m0.x + dx, 0.35, m0.z + dz); pk.castShadow = true; scene.add(pk); });
 
@@ -222,8 +222,8 @@ function buildDreamCity() {
 
   // planting: trees + flowers make it a garden too
   [[-118, 18], [-128, 44, 'blossom'], [-150, 46, 'willow'], [-176, 44, 'blossom'], [-206, 50, 'oak'],
-   [-116, -18, 'blossom'], [-152, -32, 'autumn'], [-124, -56, 'oak'], [-148, -76, 'blossom'], [-168, -66, 'willow'],
-   [-120, -90], [-144, -100, 'autumn'], [-170, -92, 'oak'], [-196, -100, 'blossom'], [-216, -80, 'pine'], [-224, -50, 'pine'], [-220, -108, 'pine'], [-190, -120], [-150, -122, 'blossom'], [-120, -118, 'oak']]
+   [-116, -18, 'blossom'], [-152, -32, 'autumn'], [-124, -56, 'oak'], [-148, -88, 'blossom'], [-168, -66, 'willow'],
+   [-120, -90], [-144, -100, 'autumn'], [-170, -92, 'oak'], [-206, -95, 'blossom'], [-216, -80, 'pine'], [-224, -50, 'pine'], [-226, -112, 'pine'], [-190, -114], [-150, -116, 'blossom'], [-120, -118, 'oak']]
     .forEach(([tx, tz, k]) => plantWildTree(k || 'tree', tx, tz));
   [[-116, 4], [-127, 8], [-141, 3.6], [-151, -3.6], [-163, 3.6], [-130, -16], [-172, -16], [-138, -58], [-128, -74], [-160, -70], [-140, -88], [-180, -88]]
     .forEach(([fx, fz]) => plantWildTree('flowers', fx, fz));
@@ -385,7 +385,7 @@ function buildDcRides() {
   }
 
   // 🚂 Dream Express — the little train that loops the whole park
-  { const T = DC_R.train = { g: new THREE.Group(), cx: -168, cz: -40, rx: 52, rz: 78, s: 0 };
+  { const T = DC_R.train = { g: new THREE.Group(), cx: -166, cz: -100, rx: 55, rz: 26, s: 0 };   // the Meadow Line: a dedicated loop with nothing in its way
     const tieM = pbr(0x8a7a5a, 0.95);
     for (let i = 0; i < 96; i++) {
       const s = i / 96 * Math.PI * 2;
@@ -409,10 +409,10 @@ function buildDcRides() {
     T.g.position.set(T.cx + T.rx, 0.1, T.cz);   // parked on the loop from frame one
     scene.add(T.g);
     // the station by the plaza
-    _dcBox(4.4, 0.25, 2.4, pbr(0xc8b090, 0.9), -121, 0.12, -30);
-    [-1.8, 1.8].forEach(d => _dcCyl(0.1, 0.13, 2.4, pbr(0x8a6a4a, 0.85), -121 + d, 1.2, -30, 8));
-    _dcBox(4.8, 0.18, 2.8, pbr(0xd0483a, 0.75), -121, 2.5, -30);
-    _dcSign('🚂 DREAM EXPRESS · 1🎟️', '#4a2a1a', '#ffe9c0', 3.8, 0.6, -121, 1.8, -28.5);
+    _dcBox(2.4, 0.25, 4.4, pbr(0xc8b090, 0.9), -125.5, 0.12, -85);
+    [-1.8, 1.8].forEach(d => _dcCyl(0.1, 0.13, 2.4, pbr(0x8a6a4a, 0.85), -125.5, 1.2, -85 + d, 8));
+    _dcBox(2.8, 0.18, 4.8, pbr(0xd0483a, 0.75), -125.5, 2.5, -85);
+    _dcSign('🚂 DREAM EXPRESS · 1🎟️', '#4a2a1a', '#ffe9c0', 3.8, 0.6, -125.5, 1.8, -82.4);
   }
 
   // 🌈 Rainbow Slide
@@ -626,7 +626,7 @@ function updateDreamCity(t) {
     });
     // the Dream Express circles the whole park
     const TR = DC_R.train;
-    TR.s = t * 0.055;
+    TR.s = t * 0.1;
     const hx = TR.cx + Math.cos(TR.s) * TR.rx, hz = TR.cz + Math.sin(TR.s) * TR.rz;
     TR.g.position.set(hx, 0.1, hz);
     const s2t = TR.s + 0.06;
@@ -642,8 +642,27 @@ function updateDreamCity(t) {
       const sp = Math.hypot(u.vx, u.vz); if (sp > 2.2) { u.vx *= 2.2 / sp; u.vz *= 2.2 / sp; } if (sp < 0.8) { u.vx *= 1.4; u.vz *= 1.4; }
       car.rotation.y = Math.atan2(u.vx, u.vz);
     });
-    // ghosts drift & moan (silently)
-    DC_R.ghosts.forEach(gh => { gh.g.position.y = 1.3 + Math.sin(t * 1.4 + gh.ph) * 0.25; gh.g.rotation.y = Math.sin(t * 0.7 + gh.ph) * 0.6; });
+    // ghosts drift & moan — and when YOU step inside, they come to play
+    const m0 = DC_MANOR, inManor = Math.abs(catGroup.position.x - m0.x) < 5.6 && Math.abs(catGroup.position.z - m0.z) < 4.2;
+    DC_R.ghosts.forEach((gh, gi) => {
+      gh.flipT = Math.max(0, gh.flipT - dt2);
+      if (inManor) {                                                       // swirl around the cat, begging for high-fives
+        const tx = catGroup.position.x + Math.cos(t * 0.9 + gi * 2.1) * 1.5;
+        const tz = catGroup.position.z + Math.sin(t * 0.9 + gi * 2.1) * 1.2;
+        gh.g.position.x += (Math.max(m0.x - 5.2, Math.min(m0.x + 5.2, tx)) - gh.g.position.x) * 0.03;
+        gh.g.position.z += (Math.max(m0.z - 3.8, Math.min(m0.z + 3.8, tz)) - gh.g.position.z) * 0.03;
+        gh.g.position.y = 1.1 + Math.sin(t * 2.6 + gh.ph) * 0.35;
+        gh.g.lookAt(catGroup.position.x, 1.2, catGroup.position.z);
+        if (Math.random() < 0.002 && typeof sfx === 'function') sfx('meow');   // a tiny spectral giggle
+      } else {
+        gh.g.position.x += (gh.hx - gh.g.position.x) * 0.02;
+        gh.g.position.z += (gh.hz - gh.g.position.z) * 0.02;
+        gh.g.position.y = 1.3 + Math.sin(t * 1.4 + gh.ph) * 0.25;
+        gh.g.rotation.y = Math.sin(t * 0.7 + gh.ph) * 0.6;
+      }
+      if (gh.flipT > 0) { gh.g.rotation.z = Math.sin((0.9 - gh.flipT) / 0.9 * Math.PI * 2) * 1.2; const s2 = 1 + Math.sin((0.9 - gh.flipT) / 0.9 * Math.PI) * 0.3; gh.g.scale.setScalar(s2); }
+      else { gh.g.rotation.z = 0; gh.g.scale.setScalar(1); }
+    });
     // fountain jets pulse, gate flags wave
     DC_R.fountain.jets.forEach(j => { j.scale.y = 0.8 + Math.sin(t * 3 + j.userData.ph) * 0.25; });
     (DC_R.gateFlags || []).forEach((fl, i) => { fl.rotation.y = Math.sin(t * 3 + i * 2) * 0.3; });
@@ -712,7 +731,7 @@ function updateDreamCity(t) {
   }
 
   // a ride in progress drives the camera
-  if (state.dcRide) updateDcRide(t);
+  if (state.dcRide) updateDcRide(t, dt2);
 }
 
 function dcLaunchFirework() {
@@ -739,11 +758,20 @@ function startDcRide(kind) {
   if (!r || state.dcRide) return;
   if (!spendDcTicket(r.cost, r.e + ' ' + r.name)) return;
   state.dcRide = { kind, t0: null, dur: r.dur };
+  if (kind === 'dodgem') {                                   // fresh grid: you in car 1, rivals spread out
+    const B = DC_R.dodgem;
+    B.cars.forEach((car, i) => {
+      car.position.set(r.x - 4 + (i % 3) * 4, 0.12, r.z - 2.5 + Math.floor(i / 3) * 5);
+      car.userData.vx = 0; car.userData.vz = 0;
+    });
+    showNotif('🚗 YOU drive the red car — joystick to steer, BUMP everyone!');
+  }
   state.cinematic = true;
   if (typeof sfx === 'function') sfx('upgrade');
   showNotif(r.e + ' Hold on tight — enjoy the ' + r.name + '!');
 }
-function updateDcRide(t) {
+function updateDcRide(t, dt2) {
+  if (dt2 === undefined) dt2 = 0.016;
   const R = state.dcRide;
   if (R.t0 === null) R.t0 = t;
   const e = t - R.t0, f = Math.min(1, e / R.dur);
@@ -792,14 +820,44 @@ function updateDcRide(t) {
     else { const ff = (f - 0.3) / 0.7, a = ff * Math.PI * 2.4, y = 10.4 - ff * 9.4;
       cam = { px: D.x + Math.cos(a) * 2.6, py: y + 0.7, pz: D.z + Math.sin(a) * 2.6, lx: D.x + Math.cos(a + 0.5) * 3.2, ly: y - 0.4, lz: D.z + Math.sin(a + 0.5) * 3.2 }; }
   } else if (R.kind === 'dodgem') {
-    const car = DC_R.dodgem.cars[0];
-    cam = { px: car.position.x, py: 1.3, pz: car.position.z, lx: DC_R.dodgem.cars[1].position.x, ly: 0.8, lz: DC_R.dodgem.cars[1].position.z };
+    const B = DC_R.dodgem, car = B.cars[0], u = car.userData;
+    // read the wheel: joystick or arrow keys, steering is camera-relative like the cat
+    let inF = (state.keys['ArrowUp'] || state.keys['w'] ? 1 : 0) - (state.keys['ArrowDown'] || state.keys['s'] ? 1 : 0);
+    let inS = (state.keys['ArrowRight'] || state.keys['d'] ? 1 : 0) - (state.keys['ArrowLeft'] || state.keys['a'] ? 1 : 0);
+    if (joy.active && Math.hypot(joy.x, joy.y) > 0.18) { inF = -joy.y; inS = joy.x; }
+    const fX = -Math.sin(state.camYaw), fZ = -Math.cos(state.camYaw);
+    const rX = Math.cos(state.camYaw), rZ = -Math.sin(state.camYaw);
+    u.vx += (fX * inF + rX * inS) * 0.14;
+    u.vz += (fZ * inF + rZ * inS) * 0.14;
+    const sp = Math.hypot(u.vx, u.vz); if (sp > 3.2) { u.vx *= 3.2 / sp; u.vz *= 3.2 / sp; }
+    // rival cars hunt you down (gently)
+    B.cars.forEach((o, i2) => { if (i2 === 0) return; const ou = o.userData; ou.vx += (car.position.x - o.position.x) * 0.0011; ou.vz += (car.position.z - o.position.z) * 0.0011; });
+    // count your bumps!
+    R.bumpCd = Math.max(0, (R.bumpCd || 0) - dt2);
+    if (R.bumpCd === 0) {
+      const hit = B.cars.some((o, i2) => i2 !== 0 && Math.hypot(o.position.x - car.position.x, o.position.z - car.position.z) < 1.35);
+      if (hit) { R.bumps = (R.bumps || 0) + 1; R.bumpCd = 0.7; if (typeof sfx === 'function') sfx('catch'); showNotif('💥 BUMP! ×' + R.bumps); }
+    }
+    // chase cam orbits with the drag finger — steer AND look, 360°
+    cam = { px: car.position.x + Math.sin(state.camYaw) * 3.8, py: 2.4, pz: car.position.z + Math.cos(state.camYaw) * 3.8, lx: car.position.x, ly: 0.9, lz: car.position.z };
+  }
+  if (cam && R.kind !== 'dodgem') {                                      // 🔄 drag the screen to look all around while you ride
+    if (R.yaw0 === undefined) { R.yaw0 = state.camYaw; R.h0 = state.camHeight; }
+    const yo = state.camYaw - R.yaw0;
+    if (Math.abs(yo) > 0.0001) {
+      const dx = cam.lx - cam.px, dz = cam.lz - cam.pz;
+      const cs = Math.cos(yo), sn = Math.sin(yo);
+      cam.lx = cam.px + dx * cs - dz * sn;
+      cam.lz = cam.pz + dx * sn + dz * cs;
+    }
+    cam.ly += (R.h0 - state.camHeight) * 0.45;                             // drag up/down to tilt your gaze
   }
   if (cam) state.cineCam = cam;
   if (f >= 1) {
+    const bumpLine = (R.kind === 'dodgem' && R.bumps) ? ' ' + R.bumps + ' bumps — what a driver! 🏁' : '';
     state.dcRide = null; state.cinematic = false; state.cineCam = null;
     if (typeof sfx === 'function') sfx('coin');
-    showNotif(D.e + ' What a ride! Again? 😺');
+    showNotif(D.e + ' What a ride!' + bumpLine + ' Again? 😺');
     _catHappyT = 2.0; if (typeof spawnHeart === 'function') spawnHeart();
   }
 }
@@ -814,6 +872,18 @@ function dcContext(cp) {
   for (const s of DC_FOOD) { if (near(s.x, s.z, 2.2)) return { id: 'dc:food', food: s, label: s.e + ' ' + s.name + ' · ' + s.cost + ' 🪙' }; }
   if (near(DC_GIFT.x, DC_GIFT.z - 1.6, 2.6)) return { id: 'dc:gift', label: '🧸 Dreamy plush · 15 🪙' };
   if (near(DC_WELL.x, DC_WELL.z, 2.0)) return { id: 'dc:well', label: '🪙 Make a wish · 1 🪙' };
+  if (DC_R.ghosts && Math.abs(cp.x - DC_MANOR.x) < 5.6 && Math.abs(cp.z - DC_MANOR.z) < 4.2) {
+    const got = (state._dcSpook && state._dcSpook.day === (state.dayCount || 0)) ? state._dcSpook.got : {};
+    let gi = -1, bd = 1.8, giAny = -1, bdAny = 1.8;
+    DC_R.ghosts.forEach((gh, i) => {
+      if (gh.flipT > 0) return;
+      const d = Math.hypot(cp.x - gh.g.position.x, cp.z - gh.g.position.z);
+      if (d < bdAny) { bdAny = d; giAny = i; }
+      if (!got[i] && d < bd) { bd = d; gi = i; }               // an un-fived ghost gets first dibs
+    });
+    if (gi < 0) gi = giAny;
+    if (gi >= 0) return { id: 'dc:ghost', gi, label: '🖐️ High-five the ghost!' };
+  }
   if (state.dcBalloonSeller && near(state.dcBalloonSeller.group.position.x, state.dcBalloonSeller.group.position.z, 2.6) && !state.catBalloon) return { id: 'dc:balloon', label: '🎈 Balloon · 5 🪙' };
   if (state.dcDreamy && near(state.dcDreamy.group.position.x, state.dcDreamy.group.position.z, 2.4)) return { id: 'dc:hug', label: '🤗 Hug Dreamy' };
   if (state.dcManorDay !== (state.dayCount || 0) && near(DC_MANOR.x, DC_MANOR.z + 4.5, 2.6)) return { id: 'dc:manor', label: '👻 Enter the Haunted Manor · 1 🎟️' };
@@ -867,6 +937,24 @@ function dcAction(ctx) {
     const roll = Math.random();
     if (roll < 0.12) { state.coins += 4; coinEl(); showNotif('✨ The well GLOWS — four coins bubble up! Lucky whiskers!'); if (typeof sfx === 'function') sfx('coin'); }
     else showNotif(['🌟 You wish for warm sunbeams… somewhere, a cloud moves aside.', '💭 You wish the Millers every happiness. The water shimmers.', '🐟 You wish for fish. You can almost smell it…', '🌈 Your coin spins twice before it sinks — a good sign!', '💜 You hear a tiny echo: "dream big, little cat."'][Math.floor(Math.random() * 5)]);
+  }
+  else if (ctx.id === 'dc:ghost') {
+    const gh = DC_R.ghosts[ctx.gi];
+    gh.flipT = 0.9;                                          // the delighted somersault
+    if (typeof sfx === 'function') sfx('jump');
+    _catHappyT = 1.6; if (typeof spawnHeart === 'function') spawnHeart();
+    const day = state.dayCount || 0;
+    if (!state._dcSpook || state._dcSpook.day !== day) state._dcSpook = { day, got: {}, paid: false };
+    state._dcSpook.got[ctx.gi] = true;
+    const n = Object.keys(state._dcSpook.got).length;
+    if (n >= 3 && !state._dcSpook.paid) {
+      state._dcSpook.paid = true;
+      state.coins += 4; document.getElementById('coin-count').textContent = state.coins;
+      if (typeof sfx === 'function') sfx('coin');
+      showNotif('👻👻👻 The GHOST TRIO high-fived! They rain 4 spectral coins on you!');
+    } else {
+      showNotif(['👻 The ghost LOOPS with joy — your paw tingles!', '👻 Cold and giggly, like high-fiving a cloud!', '👻 The ghost does a little somersault. Best friends now.'][Math.min(n - 1, 2)] + ' (' + Math.min(n, 3) + '/3)');
+    }
   }
   else if (ctx.id === 'dc:balloon') { if (typeof buyZooBalloon === 'function') buyZooBalloon(); }
   else if (ctx.id === 'dc:hug') {
