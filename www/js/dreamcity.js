@@ -278,6 +278,8 @@ function buildDcRides() {
       if (i === 0) { const head = new THREE.Mesh(G.sph(0.42, 10, 8), pbr(0x4aa04a, 0.6)); head.position.set(0, 0.35, 0.8); car.add(head);
         [-1, 1].forEach(d => { const horn = new THREE.Mesh(G.cone(0.09, 0.35, 6), pbr(0xffd040, 0.5)); horn.position.set(d * 0.2, 0.75, 0.7); car.add(horn); });
         [-1, 1].forEach(d => { const eye = new THREE.Mesh(G.sph(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff })); eye.position.set(d * 0.18, 0.45, 1.14); car.add(eye); }); }
+      const s0 = i * 0.22;
+      car.position.set(C.cx + Math.cos(s0) * C.rx, py(s0) + 0.3, C.cz + Math.sin(s0) * C.rz);   // born ON the track, not at world origin
       scene.add(car); C.cars.push(car);
     }
     C.py = py;
@@ -375,6 +377,8 @@ function buildDcRides() {
     for (let i = 0; i < 3; i++) {
       const log = new THREE.Group();
       const body = new THREE.Mesh(G.cyl(0.42, 0.46, 1.6, 10), pbr(0x8a6242, 0.9)); body.rotation.x = Math.PI / 2; body.castShadow = true; log.add(body);
+      const s0 = i * 2.1;
+      log.position.set(F.cx + Math.cos(s0) * F.rx, F.hy ? 0.85 : 0.85, F.cz + Math.sin(s0) * F.rz);   // born in the channel
       scene.add(log); F.logs.push(log);
     }
     _dcSign('🪵 LOG FLUME · 1🎟️', '#2a4a3a', '#d8ffe8', 3.0, 0.55, r.x, 1.5, r.z + F.rz + 1.6);
@@ -402,6 +406,7 @@ function buildDcRides() {
       [[-0.5, 0.6], [0.5, 0.6], [-0.5, -0.6], [0.5, -0.6]].forEach(([dx, dz]) => { const wh = new THREE.Mesh(G.cyl(0.2, 0.2, 0.09, 10), pbr(0x2a2a30, 0.6)); wh.rotation.z = Math.PI / 2; wh.position.set(dx, 0.2, dz); co.add(wh); });
       co.position.z = -0.8 - i * 2.1; T.g.add(co); T.coaches.push(co);
     }
+    T.g.position.set(T.cx + T.rx, 0.1, T.cz);   // parked on the loop from frame one
     scene.add(T.g);
     // the station by the plaza
     _dcBox(4.4, 0.25, 2.4, pbr(0xc8b090, 0.9), -121, 0.12, -30);
