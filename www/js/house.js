@@ -283,6 +283,12 @@ function updateEnterPrompt() {
       : (state.zooShift || (typeof zooPassValid === 'function' && zooPassValid())) ? '🎫 Open the gate (pass)'
       : '🎫 Buy a ticket · 10 🪙';
   }
+  else if (typeof DC !== 'undefined' && Math.hypot(cp.x - DC.gateX, cp.z - DC.gateZ) < 4.4) {
+    target = 'dreamcity';
+    label = (typeof _dcGateOpen !== 'undefined' && _dcGateOpen) ? '🚪 Close the gate'
+      : (typeof dcPassValid === 'function' && dcPassValid()) ? '🎢 Open the gate (pass)'
+      : '🎢 Day pass · ' + (typeof DC_PASS !== 'undefined' ? DC_PASS : 15) + ' 🪙';
+  }
   else {
     for (const p of PROPERTIES) {
       if (p.type === 'home' && state.owned.homes.includes(p.id) && Math.hypot(cp.x - p.x, cp.z - (p.z + 2.6)) < 3.2) {
@@ -387,6 +393,7 @@ function toggleHouse() {
   else if (state.nearBuilding === 'workplace' && typeof enterWorkplace === 'function') enterWorkplace(state.nearWorkId);
   else if (state.nearBuilding === 'gray' && typeof tryEnterGrayHouse === 'function') tryEnterGrayHouse();
   else if (state.nearBuilding === 'zoo' && typeof zooGateAction === 'function') zooGateAction();
+  else if (state.nearBuilding === 'dreamcity' && typeof dcGateAction === 'function') dcGateAction();
 }
 
 // ── Enter / leave the shop and the cat shelter ──

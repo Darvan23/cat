@@ -54,6 +54,7 @@ function plantWildTree(kind, x, z) {
 function buildFrontier() {
   buildGrandPark();
   buildZoo();
+  if (typeof buildDreamCity === 'function') buildDreamCity();   // 🎢 the amusement park
   const IN = (x, z, r) => x > r.x0 - 6 && x < r.x1 + 6 && z > r.z0 - 6 && z < r.z1 + 6;
   const zones = [
     { x0: -155, x1: -100, z0: -135, z1: 50, n: 26 },
@@ -66,6 +67,7 @@ function buildFrontier() {
       const x = zn.x0 + Math.random() * (zn.x1 - zn.x0);
       const z = zn.z0 + Math.random() * (zn.z1 - zn.z0);
       if (IN(x, z, GRAND_PARK) || IN(x, z, ZOO)) continue;
+      if (typeof DC !== 'undefined' && IN(x, z, DC)) continue;   // Dream City owns the far west
       plantWildTree(WILD_KINDS[Math.floor(Math.random() * WILD_KINDS.length)], +x.toFixed(1), +z.toFixed(1));
     }
   });
@@ -988,6 +990,7 @@ function balloonGiveTarget(cp) {
   scan(state.peds, 'a passer-by');
   scan(state.commuters, 'a passer-by');
   scan(state.zooCrowd, 'a zoo visitor');
+  scan(state.dcGuests, 'a park visitor');
   return best;
 }
 function giveBalloonTo(t) {

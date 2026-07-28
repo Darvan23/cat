@@ -888,6 +888,7 @@ function closeMinigame() {
     showNotif(`+${coins} 🪙  (${state.coins} total)`);
     if (typeof addGoodwill === 'function') addGoodwill(2, 'Honest work');   // earning honestly helps win the Millers back
   }
+  if (job.carnival && job.prizeAt && mg.caught >= job.prizeAt && typeof dcAwardPrize === 'function') dcAwardPrize(job);   // 🏆 ace a stall, win a plush
   if (npc) {
     showDialogue(npc.name, coins > 0 ? job.doneLine(coins) : job.failLine, 4200);
     setTimeout(() => {   // the job returns after a cooldown
@@ -898,7 +899,7 @@ function closeMinigame() {
   }
   // Once the deadline is running, every job worked is another winter day gone
   // (the rent is only *paid* by giving money to the family — see giveCoins)
-  if (state.rentActive) {
+  if (state.rentActive && !job.carnival) {   // carnival games are play, not a day's work
     state.daysLeft = Math.max(0, state.daysLeft - 1);
     updateRentHUD();
     if (state.houseFund >= RENT.goal) winDeadline();

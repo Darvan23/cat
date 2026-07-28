@@ -30,7 +30,10 @@ const state = {
   townCode: null,     // your shareable town code (PAWS-XXXXX), minted on first use
   countryFlag: 0,     // the national flag the President chose for the Gray House
   inGray: false,      // inside the presidential mansion
-  zooPassDay: -1,     // the day your zoo ticket is valid for (a day pass)
+  zooPassDay: -1,
+  dcPassDay: -1,     // 🎢 Dream City day pass
+  dcTickets: 0,      // 🎟️ ride tickets in your paw
+  dcBandDay: -1,     // ⌚ all-rides wristband day     // the day your zoo ticket is valid for (a day pass)
   zooShift: false,    // working the zoo ticket booth right now
   neighbors: [],      // friends' towns you can visit from above [{code, name}]
   uiOpen: false,      // a give/rescue overlay is open

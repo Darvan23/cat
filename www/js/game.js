@@ -339,7 +339,7 @@ function saveGame() {
       rubble: state.rubble, homelessCount: state.homelessCount,
       bizTill: state.bizTill, bizOpen: state.bizOpen, millerHome: state.millerHome,
       civics: state.civics, townGrowth: state.townGrowth,
-      townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay,
+      townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay, dcPassDay: state.dcPassDay, dcTickets: state.dcTickets, dcBandDay: state.dcBandDay,
     }));
   } catch (e) {}
 }
@@ -429,6 +429,9 @@ function applySave(s) {
   state.townCode = s.townCode || null; state.neighbors = Array.isArray(s.neighbors) ? s.neighbors : [];
   state.countryFlag = s.countryFlag || 0; if (typeof applyCountryFlag === 'function') applyCountryFlag();
   state.zooPassDay = (s.zooPassDay != null) ? s.zooPassDay : -1;
+  state.dcPassDay = (s.dcPassDay != null) ? s.dcPassDay : -1;
+  state.dcTickets = s.dcTickets || 0;
+  state.dcBandDay = (s.dcBandDay != null) ? s.dcBandDay : -1;
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets
@@ -936,6 +939,11 @@ function updateContextButton() {
       const bt = balloonGiveTarget(cp);
       if (bt) { state.context = 'giveballoon'; state._balloonTo = bt; btn.textContent = '🎈 Give balloon to ' + bt.name; btn.classList.add('show'); return; }
     }
+    // 🎢 Dream City: rides, stalls, food, Dreamy — one hook handles the whole park
+    if (typeof dcContext === 'function') {
+      const dcc = dcContext(cp);
+      if (dcc) { state.context = dcc.id; state._dcCtx = dcc; btn.textContent = dcc.label; btn.classList.add('show'); return; }
+    }
     const rub = (typeof nearestRubble === 'function') ? nearestRubble(cp, 3.2) : null;
     const giver = (!isNight() && state.nearNPC && state.nearNPC.hasJob) ? state.nearNPC : null;
     const miller = nearestMiller(cp, 2.2);
@@ -990,6 +998,7 @@ function doContextAction() {
   else if (state.context === 'zooboard') { if (typeof openZooBoard === 'function') openZooBoard(state._boardPen); }
   else if (state.context === 'giveballoon') { if (typeof giveBalloonTo === 'function') giveBalloonTo(state._balloonTo); }
   else if (state.context === 'flyballoon') { if (typeof releaseBalloon === 'function') releaseBalloon(); }
+  else if (state.context && state.context.indexOf('dc:') === 0) { if (typeof dcAction === 'function' && state._dcCtx) dcAction(state._dcCtx); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
@@ -2170,6 +2179,7 @@ function mapMarks() {
   if (typeof SCHOOL_SPOT !== 'undefined') marks.push({ x: SCHOOL_SPOT.x, z: SCHOOL_SPOT.z - 3, e: '🏫', label: 'Town School', c: '#e0b0a0' });
   if (typeof GRAY_SPOT !== 'undefined') marks.push({ x: GRAY_SPOT.x, z: GRAY_SPOT.z - 3, e: '🏛️', label: 'Gray House', c: '#c8ccd4' });
   if (typeof ZOO !== 'undefined') marks.push({ x: ZOO.gateX, z: ZOO.gateZ, e: '🦁', label: 'Town Zoo', c: '#e0c088' });
+  if (typeof DC !== 'undefined') marks.push({ x: DC.gateX + 4, z: DC.gateZ, e: '🎢', label: 'Dream City', c: '#e0b8e8' });
   if (typeof GRAND_PARK !== 'undefined') marks.push({ x: 0, z: GRAND_PARK.z1 + 3, e: '🌳', label: 'Grand Park', c: '#a0d888' });
   state.family.forEach(f => {   // a kid who wants the park shows up on the big map too
     if (f.wantsPark && f.group && f.group.visible) marks.push({ x: f.group.position.x, z: f.group.position.z, e: '🧒', label: f.name + ' → park 🌳', c: '#a0e0a0' });
@@ -2180,7 +2190,7 @@ function drawFullMap() {
   const cv = document.getElementById('map-canvas'); if (!cv) return;
   const D = 1040; cv.width = D; cv.height = D;
   const g = cv.getContext('2d');
-  const SPAN = 444, S = D / SPAN, C = D / 2;   // the frontier keeps growing — safari-scale zoo east
+  const SPAN = 520, S = D / SPAN, C = D / 2;   // the frontier keeps growing — zoo east, Dream City west
   const WX = x => C + x * S, WZ = z => C + z * S;
   const rr = (x, y, w, h, r) => { r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 
@@ -2293,6 +2303,7 @@ const mmCtx = mmCanvas.getContext('2d');
 function drawMinimap() {
   if (state.inGray && typeof drawGrayMinimap === 'function') { drawGrayMinimap(mmCtx, mmCanvas); return; }   // inside, the map IS the mansion
   if (typeof catInZoo === 'function' && catInZoo() && typeof drawZooMinimap === 'function') { drawZooMinimap(mmCtx, mmCanvas); return; }   // in the zoo, the map IS the zoo
+  if (typeof catInDc === 'function' && catInDc() && typeof drawDcMinimap === 'function') { drawDcMinimap(mmCtx, mmCanvas); return; }   // in the park, the map IS the park
   const g = mmCtx, D = 240, S = D / 444, C = D / 2, X = x => C + x * S, Z = z => C + z * S;
   g.fillStyle = '#b3dc93'; g.fillRect(0, 0, D, D);                                    // grass
   const road = (z, hw) => { const y = Z(z), h = hw * 2 * S; g.fillStyle = '#d9ccb4'; g.fillRect(0, y - h / 2 - 2, D, h + 4); g.fillStyle = '#f5f0e6'; g.fillRect(0, y - h / 2, D, h); };
@@ -2367,6 +2378,7 @@ function animate(now) {
   updateCatLife();                                      // blink, ear flicks, tail wave
   if (typeof updateGrayGuards === 'function') updateGrayGuards(t);   // the mansion's security detail
   if (typeof updateZooLife === 'function' && state.zooAnimals) updateZooLife(t);   // 🦁 the zoo lives in the world now
+  if (typeof updateDreamCity === 'function') updateDreamCity(t);                   // 🎢 and so does Dream City
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it
@@ -2438,7 +2450,7 @@ function animate(now) {
     // Resolve collisions (walls / furniture / trees), then clamp to the area
     const hit = collide(catGroup.position.x, catGroup.position.z, activeColliders(), state.inHouse ? 0.16 : 0.24);
     catGroup.position.x = hit.x; catGroup.position.z = hit.z;
-    let bx = 216, bzMin = -138, bzMax = 64;   // the frontier: west wilds, Grand Park, and the safari-scale zoo
+    let bx = 216, bxMin = -240, bzMin = -138, bzMax = 64;   // the frontier: Dream City west, Grand Park south, safari zoo east
     if (state.inHouse) { bx = 3.2; bzMin = -2.6; bzMax = 2.6; }
     else if (state.inShop) { bx = 6.4; bzMin = -4.6; bzMax = 4.4; }   // incl. behind Dad's counter
     else if (state.inShelter) { bx = 11.4; bzMin = -7.4; bzMax = 7.4; }
@@ -2447,7 +2459,8 @@ function animate(now) {
     else if (state.inWork) { bx = 6.6; bzMin = -4.6; bzMax = 4.4; }   // your workplace shop floor (incl. behind the counter)
     else if (state.inGray) { bx = 16.4; bzMin = -11.4; bzMax = 11.4; }   // the Gray House is HUGE
     else if (state.inJail) { bx = 3.1; bzMin = -2.5; bzMax = 2.6; }   // locked in the cell
-    catGroup.position.x = Math.max(-bx, Math.min(bx, catGroup.position.x));
+    if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inJail) bxMin = -bx;
+    catGroup.position.x = Math.max(bxMin, Math.min(bx, catGroup.position.x));
     catGroup.position.z = Math.max(bzMin, Math.min(bzMax, catGroup.position.z));
   }
 
