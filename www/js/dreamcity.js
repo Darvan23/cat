@@ -643,8 +643,8 @@ function updateDreamCity(t) {
       car.rotation.y = Math.atan2(u.vx, u.vz);
     });
     // ghosts drift & moan — and when YOU step inside, they come to play
-    const m0 = DC_MANOR, inManor = Math.abs(catGroup.position.x - m0.x) < 5.6 && Math.abs(catGroup.position.z - m0.z) < 4.2;
-    DC_R.ghosts.forEach((gh, gi) => {
+    const m0 = DC_MANOR, inManor = false;   // once the interior exists, the ghosts live THERE
+    if (!_manorBuilt) DC_R.ghosts.forEach((gh, gi) => {
       gh.flipT = Math.max(0, gh.flipT - dt2);
       if (inManor) {                                                       // swirl around the cat, begging for high-fives
         const tx = catGroup.position.x + Math.cos(t * 0.9 + gi * 2.1) * 1.5;
@@ -872,21 +872,9 @@ function dcContext(cp) {
   for (const s of DC_FOOD) { if (near(s.x, s.z, 2.2)) return { id: 'dc:food', food: s, label: s.e + ' ' + s.name + ' · ' + s.cost + ' 🪙' }; }
   if (near(DC_GIFT.x, DC_GIFT.z - 1.6, 2.6)) return { id: 'dc:gift', label: '🧸 Dreamy plush · 15 🪙' };
   if (near(DC_WELL.x, DC_WELL.z, 2.0)) return { id: 'dc:well', label: '🪙 Make a wish · 1 🪙' };
-  if (DC_R.ghosts && Math.abs(cp.x - DC_MANOR.x) < 5.6 && Math.abs(cp.z - DC_MANOR.z) < 4.2) {
-    const got = (state._dcSpook && state._dcSpook.day === (state.dayCount || 0)) ? state._dcSpook.got : {};
-    let gi = -1, bd = 1.8, giAny = -1, bdAny = 1.8;
-    DC_R.ghosts.forEach((gh, i) => {
-      if (gh.flipT > 0) return;
-      const d = Math.hypot(cp.x - gh.g.position.x, cp.z - gh.g.position.z);
-      if (d < bdAny) { bdAny = d; giAny = i; }
-      if (!got[i] && d < bd) { bd = d; gi = i; }               // an un-fived ghost gets first dibs
-    });
-    if (gi < 0) gi = giAny;
-    if (gi >= 0) return { id: 'dc:ghost', gi, label: '🖐️ High-five the ghost!' };
-  }
   if (state.dcBalloonSeller && near(state.dcBalloonSeller.group.position.x, state.dcBalloonSeller.group.position.z, 2.6) && !state.catBalloon) return { id: 'dc:balloon', label: '🎈 Balloon · 5 🪙' };
   if (state.dcDreamy && near(state.dcDreamy.group.position.x, state.dcDreamy.group.position.z, 2.4)) return { id: 'dc:hug', label: '🤗 Hug Dreamy' };
-  if (state.dcManorDay !== (state.dayCount || 0) && near(DC_MANOR.x, DC_MANOR.z + 4.5, 2.6)) return { id: 'dc:manor', label: '👻 Enter the Haunted Manor · 1 🎟️' };
+  if (near(DC_MANOR.x, DC_MANOR.z + 4.5, 2.8)) return { id: 'dc:manor', label: state.dcManorDay === (state.dayCount || 0) ? '👻 Enter the Haunted Manor' : '👻 Enter the Haunted Manor · 1 🎟️' };
   if (state.dcFunDay !== (state.dayCount || 0) && near(DC_FUN.x, DC_FUN.z + 3, 2.4)) return { id: 'dc:funhouse', label: '🪞 Enter the Fun House · 1 🎟️' };
   if (near(DC_STAGE.x + 4.8, DC_STAGE.z, 2.6)) return { id: 'dc:mascot', label: state.dcMascot ? '🎭 Hang up the Dreamy suit' : '🎭 Wear the Dreamy suit (job)' };
   if (state.dcMascot) { const gst = (state.dcGuests || []).find(v => v._waved !== (state.dayCount || 0) && Math.hypot(cp.x - v.group.position.x, cp.z - v.group.position.z) < 2.2); if (gst) { return { id: 'dc:wave', guest: gst, label: '👋 Wave to the visitors! (+2 🪙)' }; } }
@@ -968,11 +956,35 @@ function dcAction(ctx) {
     } else showNotif('🤗 Another Dreamy hug! They never get old.');
   }
   else if (ctx.id === 'dc:manor') {
-    if (!spendDcTicket(1, '👻 Haunted Manor')) return;
-    state.dcManorDay = state.dayCount || 0;
-    const i = worldColliders.indexOf(_dcManorColl); if (i >= 0) worldColliders.splice(i, 1);
-    if (typeof sfx === 'function') sfx('door');
-    showNotif('👻 The manor door creaks open… the ghosts are FRIENDLY. Probably.');
+    if (state.dcManorDay !== (state.dayCount || 0)) {
+      if (!spendDcTicket(1, '👻 Haunted Manor')) return;
+      state.dcManorDay = state.dayCount || 0;
+    }
+    enterManor();
+  }
+  else if (ctx.id === 'dc:cauldron') {
+    const M = DC_R.manor;
+    const brews = [[0x50d080, 0x28a050, '🥄 The brew turns GREEN and burps politely.'], [0xd05080, 0xa02850, '🥄 Pink! It smells of strawberries and old socks.'], [0x5080d0, 0x2850a0, '🥄 Deep blue — a tiny lightning bolt crackles out!'], [0xd0a850, 0xa07828, '🥄 GOLD! Wait — two real coins float up! +2 🪙'], [0x9050d0, 0x6828a0, '🥄 Purple. Somewhere, Dreamy sneezes.']];
+    const pick = brews[Math.floor(Math.random() * brews.length)];
+    M.brew.material.color.setHex(pick[0]); M.brew.material.emissive.setHex(pick[1]);
+    M.bubbles.forEach(bu => { bu.material.color.setHex(pick[0]); bu.material.emissive.setHex(pick[1]); });
+    if (pick[0] === 0xd0a850) { state.coins += 2; document.getElementById('coin-count').textContent = state.coins; if (typeof sfx === 'function') sfx('coin'); }
+    else if (typeof sfx === 'function') sfx('eat');
+    showNotif(pick[2]);
+  }
+  else if (ctx.id === 'dc:organ') {
+    if (typeof sfx === 'function') { sfx('sad'); setTimeout(() => sfx('door'), 350); setTimeout(() => sfx('mail'), 750); }
+    DC_R.ghosts.forEach(gh => gh.flipT = 0.9);                 // the ghosts DANCE
+    _catHappyT = 1.8;
+    showNotif('🎹 DUN dun DUNNN… the ghosts spin with delight!');
+  }
+  else if (ctx.id === 'dc:chest') {
+    const day = state.dayCount || 0;
+    if (state._dcChestDay === day) { showNotif('🪙 Just moths and one very cross spider. Try tomorrow.'); return; }
+    state._dcChestDay = day;
+    state.coins += 3; document.getElementById('coin-count').textContent = state.coins;
+    if (typeof sfx === 'function') sfx('coin');
+    showNotif('🪙 CREEEAK… three dusty coins glitter inside! The chest sighs.');
   }
   else if (ctx.id === 'dc:funhouse') {
     if (!spendDcTicket(1, '🪞 Fun House')) return;
@@ -1300,4 +1312,200 @@ function drawDcMinimap(g, canvas) {
   g.fillStyle = '#e05a4a'; g.beginPath(); g.arc(X(p.x), Z(p.z), 4, 0, 7); g.fill();
   g.fillStyle = '#4a2a5a'; g.font = 'bold 11px sans-serif'; g.textAlign = 'left';
   g.fillText('🎢 DREAM CITY', 8, 14);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  👻 THE HAUNTED MANOR INTERIOR — step through the door into its OWN world
+// ═══════════════════════════════════════════════════════════════════════════
+let manorScene = null, _manorBuilt = false;
+const manorColliders = [];
+const MANOR_W = 6.5, MANOR_D = 4.3;                   // half-sizes of the great hall
+
+function buildManorInterior() {
+  if (_manorBuilt) return;
+  _manorBuilt = true;
+  manorScene = new THREE.Scene();
+  manorScene.background = new THREE.Color(0x14101e);
+  const S = manorScene;
+  S.add(new THREE.AmbientLight(0x8a7ab8, 0.55));
+  const moon = new THREE.DirectionalLight(0x9ab0e0, 0.5); moon.position.set(4, 8, 6); S.add(moon);
+  const M = DC_R.manor = { flames: [], cups: [], bats: [], eyes: [] };
+  const add = m => { m.castShadow = true; m.receiveShadow = true; S.add(m); return m; };
+  const B = (w, h, d, mat, x, y, z, ry) => { const me = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)); me.position.set(x, y, z); if (ry) me.rotation.y = ry; return me; };
+  const CY = (r0, r1, h, mat, x, y, z, seg) => { const me = add(new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, seg || 10), mat)); me.position.set(x, y, z); return me; };
+  const SP = (r, mat, x, y, z) => { const me = add(new THREE.Mesh(G.sph(r, 12, 10), mat)); me.position.set(x, y, z); return me; };
+  const wallM = pbr(0x3a2f4a, 0.9), woodM = pbr(0x2e2138, 0.8), floorM = pbr(0x241a30, 0.85);
+  const trim = pbr(0x6a5a8a, 0.6), gold = pbr(0xc8a850, 0.4, 0.4);
+
+  // the great hall: floor, worn carpet, walls, beams
+  const fl = add(new THREE.Mesh(new THREE.PlaneGeometry(MANOR_W * 2 + 1, MANOR_D * 2 + 1), floorM)); fl.rotation.x = -Math.PI / 2;
+  const carpet = add(new THREE.Mesh(new THREE.PlaneGeometry(8, 2.6), pbr(0x5a2438, 0.95))); carpet.rotation.x = -Math.PI / 2; carpet.position.y = 0.01;
+  B(MANOR_W * 2 + 1, 4.4, 0.3, wallM, 0, 2.2, -MANOR_D - 0.4);
+  B(MANOR_W * 2 + 1, 4.4, 0.3, wallM, 0, 2.2, MANOR_D + 0.4);
+  B(0.3, 4.4, MANOR_D * 2 + 1, wallM, -MANOR_W - 0.4, 2.2, 0);
+  B(0.3, 4.4, MANOR_D * 2 + 1, wallM, MANOR_W + 0.4, 2.2, 0);
+  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(MANOR_W * 2 + 1, MANOR_D * 2 + 1), pbr(0x1c1428, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.y = 4.4;
+  [-4, 0, 4].forEach(x => B(0.3, 0.25, MANOR_D * 2 + 1, woodM, x, 4.25, 0));
+  manorColliders.push(
+    { type: 'box', x0: -MANOR_W - 0.8, x1: -MANOR_W - 0.2, z0: -MANOR_D - 1, z1: MANOR_D + 1 },
+    { type: 'box', x0: MANOR_W + 0.2, x1: MANOR_W + 0.8, z0: -MANOR_D - 1, z1: MANOR_D + 1 },
+    { type: 'box', x0: -MANOR_W - 1, x1: MANOR_W + 1, z0: -MANOR_D - 0.8, z1: -MANOR_D - 0.2 },
+    { type: 'box', x0: -MANOR_W - 1, x1: MANOR_W + 1, z0: MANOR_D + 0.2, z1: MANOR_D + 0.8 });
+
+  // the door you came in by (south wall), moonlit arched windows
+  B(1.8, 3.0, 0.12, pbr(0x4a3020, 0.8), 0, 1.5, MANOR_D + 0.32);
+  const paneM = new THREE.MeshStandardMaterial({ color: 0x2a3a6a, emissive: 0x4a6ab0, emissiveIntensity: 0.5, roughness: 0.4 });
+  [[-4.5, -MANOR_D - 0.22], [4.5, -MANOR_D - 0.22]].forEach(([wx, wz]) => { const win = add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.2, 0.1), paneM)); win.position.set(wx, 2.3, wz); [-0.4, 0.4].forEach(d => B(0.08, 2.2, 0.14, woodM, wx + d, 2.3, wz)); B(1.5, 0.08, 0.14, woodM, wx, 2.3, wz); });
+
+  // 🕯️ the swinging chandelier
+  const chand = M.chand = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.07, 8, 20), gold); ring.rotation.x = Math.PI / 2; chand.add(ring);
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3;
+    const cnd = new THREE.Mesh(G.cyl(0.05, 0.06, 0.35, 6), pbr(0xe8e0d0, 0.8)); cnd.position.set(Math.cos(a) * 0.9, 0.22, Math.sin(a) * 0.9); chand.add(cnd);
+    const fm = new THREE.Mesh(G.cone(0.06, 0.18, 6), new THREE.MeshStandardMaterial({ color: 0xffc860, emissive: 0xff9830, emissiveIntensity: 1.6 }));
+    fm.position.set(Math.cos(a) * 0.9, 0.5, Math.sin(a) * 0.9); chand.add(fm); M.flames.push(fm);
+  }
+  const chain = new THREE.Mesh(G.cyl(0.03, 0.03, 1.2, 5), gold); chain.position.y = 0.9; chand.add(chain);
+  chand.position.set(0, 3.1, 0); S.add(chand);
+
+  // 🫖 the ghost tea party — a long table where the china floats
+  B(4.2, 0.16, 1.4, woodM, 0, 0.85, -2.6); [[-1.9, -3.1], [1.9, -3.1], [-1.9, -2.1], [1.9, -2.1]].forEach(([lx, lz]) => B(0.12, 0.85, 0.12, woodM, lx, 0.42, lz));
+  const china = pbr(0xe8e4f0, 0.4);
+  const pot = add(new THREE.Mesh(G.sph(0.22, 12, 10), china)); pot.position.set(0, 1.35, -2.6); pot.scale.y = 0.8; M.cups.push(pot);
+  const spout = add(new THREE.Mesh(G.cone(0.06, 0.25, 8), china)); spout.rotation.z = -1.2; spout.position.set(0.28, 1.4, -2.6); M.cups.push(spout);
+  [[-1.2, -2.4], [0.9, -2.9], [-0.5, -2.9], [1.4, -2.3]].forEach(([cx2, cz2], i) => { const cup = add(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.12, 10), china)); cup.position.set(cx2, 1.2 + i * 0.06, cz2); cup.userData.ph = i * 1.7; M.cups.push(cup); });
+  manorColliders.push({ type: 'box', x0: -2.2, x1: 2.2, z0: -3.4, z1: -1.8 });
+
+  // 🔥 the spectral fireplace (it burns GREEN)
+  B(2.2, 2.2, 0.5, pbr(0x4a4054, 0.9), -5.9, 1.1, 0); B(2.6, 0.25, 0.6, trim, -5.9, 2.3, 0);
+  const hearth = add(new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 0.3), new THREE.MeshStandardMaterial({ color: 0x0a0a12 }))); hearth.position.set(-5.83, 0.7, 0);
+  const fire = M.fire = add(new THREE.Mesh(G.cone(0.4, 0.9, 8), new THREE.MeshStandardMaterial({ color: 0x60ff90, emissive: 0x30e068, emissiveIntensity: 1.8, transparent: true, opacity: 0.9 })));
+  fire.position.set(-5.78, 0.75, 0);
+  manorColliders.push({ type: 'box', x0: -6.6, x1: -5.5, z0: -1.2, z1: 1.2 });
+
+  // 🖼️ portraits whose eyes follow… something
+  [[-3.2, -MANOR_D - 0.2, 0], [3.2, -MANOR_D - 0.2, 0], [MANOR_W + 0.2, -1.6, 1], [MANOR_W + 0.2, 1.6, 1]].forEach(([px2, pz2, side], i) => {
+    const fr = B(side ? 0.1 : 1.1, 1.4, side ? 1.1 : 0.1, gold, px2, 2.4, pz2);
+    const cv = B(side ? 0.06 : 0.9, 1.2, side ? 0.9 : 0.06, pbr([0x3a4a5a, 0x4a3a52, 0x35424a, 0x483848][i], 0.8), px2 + (side ? -0.04 : 0), 2.4, pz2 + (side ? 0 : 0.04));
+    if (i === 1) cv.rotation.z = 0.08;                                    // one hangs crooked, of course
+    [-0.12, 0.12].forEach(d => { const eye = add(new THREE.Mesh(G.sph(0.035, 8, 6), new THREE.MeshStandardMaterial({ color: 0xffe090, emissive: 0xffc040, emissiveIntensity: 1.2 }))); eye.position.set(px2 + (side ? -0.1 : d), 2.55, pz2 + (side ? d : 0.1)); M.eyes.push(eye); });
+  });
+
+  // 🧪 the bubbling cauldron
+  const caul = add(new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), pbr(0x1e1e28, 0.6))); caul.position.set(-4.5, 0.55, 2.6); caul.rotation.x = Math.PI;
+  [[-0.4, 0.3], [0.4, 0.3], [0, -0.45]].forEach(([lx, lz]) => B(0.1, 0.5, 0.1, woodM, -4.5 + lx, 0.25, 2.6 + lz));
+  const brew = M.brew = add(new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.1, 14), new THREE.MeshStandardMaterial({ color: 0x50d080, emissive: 0x28a050, emissiveIntensity: 1.0 })));
+  brew.position.set(-4.5, 0.86, 2.6);
+  M.bubbles = []; for (let i = 0; i < 4; i++) { const bu = add(new THREE.Mesh(G.sph(0.05, 8, 6), new THREE.MeshStandardMaterial({ color: 0x80ffb0, emissive: 0x40c070, emissiveIntensity: 0.8 }))); bu.position.set(-4.5 + (i % 2 ? 0.2 : -0.15), 0.9, 2.6 + (i > 1 ? 0.15 : -0.1)); bu.userData.ph = i * 1.6; M.bubbles.push(bu); }
+  manorColliders.push({ type: 'circle', x: -4.5, z: 2.6, r: 0.75 });
+
+  // 🎹 the pipe organ
+  B(1.8, 1.1, 0.7, woodM, 4.8, 0.55, 3.6); B(1.9, 0.1, 0.8, trim, 4.8, 1.12, 3.6);
+  for (let i = 0; i < 7; i++) CY(0.09, 0.11, 1.2 + Math.abs(3 - i) * 0.35, pbr(0x8a8098, 0.4, 0.5), 4.15 + i * 0.22, 1.85 + Math.abs(3 - i) * 0.17, 3.85, 8);
+  B(1.4, 0.06, 0.3, pbr(0xe8e4da, 0.5), 4.8, 1.02, 3.2);
+  manorColliders.push({ type: 'box', x0: 3.8, x1: 5.8, z0: 3.1, z1: 4.1 });
+
+  // 🪙 the creaky treasure chest
+  const chest = B(1.0, 0.55, 0.65, pbr(0x5a3a22, 0.8), 5.4, 0.28, -3.4);
+  B(1.0, 0.12, 0.65, gold, 5.4, 0.6, -3.4); B(0.12, 0.4, 0.05, gold, 5.4, 0.42, -3.06);
+  manorColliders.push({ type: 'box', x0: 4.8, x1: 6.0, z0: -3.8, z1: -3.0 });
+
+  // 🦇 bats round the rafters, 🕷️ a spider on her thread
+  for (let i = 0; i < 4; i++) {
+    const bat = new THREE.Group();
+    const body = new THREE.Mesh(G.sph(0.09, 8, 6), pbr(0x241a2e, 0.8)); bat.add(body);
+    [-1, 1].forEach(d => { const wing = new THREE.Mesh(G.sph(0.09, 8, 6), pbr(0x30243c, 0.8)); wing.scale.set(1.6, 0.25, 0.7); wing.position.set(d * 0.2, 0.03, 0); wing.userData.d = d; bat.add(wing); (bat.userData.wings = bat.userData.wings || []).push(wing); });
+    [-1, 1].forEach(d => { const ear = new THREE.Mesh(G.cone(0.025, 0.07, 5), pbr(0x241a2e, 0.8)); ear.position.set(d * 0.05, 0.11, 0); bat.add(ear); });
+    bat.position.set(-2 + i * 1.5, 3.6, -1 + (i % 2) * 2); bat.userData.ph = i * 1.9;
+    S.add(bat); M.bats.push(bat);
+  }
+  const thread = add(new THREE.Mesh(G.cyl(0.008, 0.008, 1.6, 4), pbr(0xd8d8e0, 0.6))); thread.position.set(2.6, 3.6, 1.8);
+  const spider = M.spider = new THREE.Group();
+  const sb = new THREE.Mesh(G.sph(0.12, 10, 8), pbr(0x1c1424, 0.7)); spider.add(sb);
+  for (let i = 0; i < 4; i++) [-1, 1].forEach(d => { const leg = new THREE.Mesh(G.cyl(0.012, 0.012, 0.3, 4), pbr(0x1c1424, 0.7)); leg.position.set(d * 0.14, 0, -0.09 + i * 0.06); leg.rotation.z = d * 1.1; spider.add(leg); });
+  [-1, 1].forEach(d => { const eye = new THREE.Mesh(G.sph(0.02, 6, 5), new THREE.MeshStandardMaterial({ color: 0xff6060, emissive: 0xd04040, emissiveIntensity: 1 })); eye.position.set(d * 0.04, 0.05, 0.1); spider.add(eye); });
+  spider.position.set(2.6, 2.9, 1.8); spider.userData.thread = thread; S.add(spider);
+
+  // pumpkins & cobwebs & candles about the room
+  [[-5.6, -3.4], [-2.8, 3.6], [2.2, -3.6]].forEach(([px2, pz2], i) => { const pk = SP(0.3 - i * 0.05, pbr(0xe08a30, 0.8), px2, 0.3 - i * 0.05, pz2); pk.scale.y = 0.8; const st = CY(0.03, 0.04, 0.12, pbr(0x4a6a30, 0.8), px2, 0.55 - i * 0.08, pz2, 6); });
+  const webM = new THREE.MeshStandardMaterial({ color: 0xd8d8e0, roughness: 0.9, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+  [[-MANOR_W - 0.1, -MANOR_D - 0.1, Math.PI / 4], [MANOR_W + 0.1, -MANOR_D - 0.1, -Math.PI / 4]].forEach(([wx, wz, ry]) => { const web = add(new THREE.Mesh(new THREE.CircleGeometry(0.9, 8), webM)); web.position.set(wx * 0.94, 3.9, wz * 0.94); web.rotation.y = ry; });
+  [[-1.5, 3.8], [1.5, 3.8]].forEach(([cx2, cz2]) => { CY(0.06, 0.07, 0.5, pbr(0xe8e0d0, 0.8), cx2, 0.25, cz2, 6); const fm = add(new THREE.Mesh(G.cone(0.07, 0.2, 6), new THREE.MeshStandardMaterial({ color: 0xffc860, emissive: 0xff9830, emissiveIntensity: 1.5 }))); fm.position.set(cx2, 0.6, cz2); M.flames.push(fm); });
+
+  // the ghosts move IN (reparent from the world into their manor)
+  DC_R.ghosts.forEach((gh, i) => {
+    S.add(gh.g);
+    gh.hx = -3 + i * 3; gh.hz = -0.5 + (i % 2) * 1.5;
+    gh.g.position.set(gh.hx, 1.3, gh.hz);
+  });
+}
+
+function enterManor() {
+  buildManorInterior();
+  state.inManor = true;
+  manorScene.add(catGroup);
+  catGroup.position.set(0, 0, MANOR_D - 0.9); catGroup.rotation.y = Math.PI;
+  state.camYaw = 0; state.camHeight = 3.6; state.camDist = 4.6;
+  camera.position.set(0, state.camHeight, MANOR_D - 0.9 + state.camDist);
+  if (typeof sfx === 'function') sfx('door');
+  showNotif('👻 The door creaks shut behind you… welcome to the manor.');
+  if (typeof sfx === 'function') setTimeout(() => sfx('meow'), 900);
+}
+function exitManor() {
+  state.inManor = false;
+  scene.add(catGroup);
+  catGroup.position.set(DC_MANOR.x, 0, DC_MANOR.z + 5.6); catGroup.rotation.y = 0;
+  if (typeof sfx === 'function') sfx('door');
+}
+
+// per-frame interior life (called from the render loop while inside)
+function updateManorFrame(t) {
+  const M = DC_R.manor; if (!M) return;
+  M.chand.rotation.z = Math.sin(t * 0.7) * 0.06; M.chand.rotation.x = Math.cos(t * 0.55) * 0.05;
+  M.flames.forEach((fm, i) => { fm.scale.y = 1 + Math.sin(t * 9 + i * 2.3) * 0.25; fm.material.emissiveIntensity = 1.3 + Math.sin(t * 13 + i) * 0.4; });
+  M.cups.forEach((cup, i) => { if (cup.userData.ph !== undefined) cup.position.y = 1.15 + Math.sin(t * 1.3 + cup.userData.ph) * 0.12; });
+  M.fire.scale.set(1 + Math.sin(t * 8) * 0.15, 1 + Math.sin(t * 11) * 0.25, 1);
+  M.eyes.forEach((eye, i) => { eye.material.emissiveIntensity = 0.8 + Math.abs(Math.sin(t * 0.9 + i * 1.3)) * 0.8; });
+  M.bubbles.forEach(bu => { const c = (t * 0.6 + bu.userData.ph) % 1; bu.position.y = 0.88 + c * 0.3; bu.scale.setScalar(c < 0.9 ? 1 : (1 - c) * 10); });
+  M.bats.forEach(bat => {
+    const ph = bat.userData.ph, a = t * 0.8 + ph;
+    bat.position.set(Math.cos(a) * (2.5 + Math.sin(ph) * 1.5), 3.4 + Math.sin(t * 2 + ph) * 0.4, Math.sin(a) * 2.2);
+    bat.rotation.y = -a + Math.PI / 2;
+    (bat.userData.wings || []).forEach(w => { w.rotation.z = w.userData.d * Math.sin(t * 14 + ph) * 0.6; });
+  });
+  const sp = M.spider, drop = (Math.sin(t * 0.35) + 1) / 2;
+  sp.position.y = 1.6 + drop * 1.5;
+  sp.userData.thread.position.y = sp.position.y + 0.85; sp.userData.thread.scale.y = (4.2 - sp.position.y) / 1.6;
+  // the ghosts swirl to whoever's inside
+  DC_R.ghosts.forEach((gh, gi) => {
+    gh.flipT = Math.max(0, gh.flipT - 0.02);
+    const tx = catGroup.position.x + Math.cos(t * 0.9 + gi * 2.1) * 1.5;
+    const tz = catGroup.position.z + Math.sin(t * 0.9 + gi * 2.1) * 1.1;
+    gh.g.position.x += (Math.max(-MANOR_W + 0.8, Math.min(MANOR_W - 0.8, tx)) - gh.g.position.x) * 0.03;
+    gh.g.position.z += (Math.max(-MANOR_D + 0.8, Math.min(MANOR_D - 0.8, tz)) - gh.g.position.z) * 0.03;
+    gh.g.position.y = 1.1 + Math.sin(t * 2.6 + gh.ph) * 0.35;
+    gh.g.lookAt(catGroup.position.x, 1.2, catGroup.position.z);
+    if (Math.random() < 0.0015 && typeof sfx === 'function') sfx('meow');
+    if (gh.flipT > 0) { gh.g.rotation.z = Math.sin((0.9 - gh.flipT) / 0.9 * Math.PI * 2) * 1.2; const s2 = 1 + Math.sin((0.9 - gh.flipT) / 0.9 * Math.PI) * 0.3; gh.g.scale.setScalar(s2); }
+    else { gh.g.rotation.z = 0; gh.g.scale.setScalar(1); }
+  });
+}
+
+// context menu inside the manor: ghosts, cauldron, organ, chest
+function dcManorContext(cp) {
+  const got = (state._dcSpook && state._dcSpook.day === (state.dayCount || 0)) ? state._dcSpook.got : {};
+  let gi = -1, bd = 1.8, giAny = -1, bdAny = 1.8;
+  DC_R.ghosts.forEach((gh, i) => {
+    if (gh.flipT > 0) return;
+    const d = Math.hypot(cp.x - gh.g.position.x, cp.z - gh.g.position.z);
+    if (d < bdAny) { bdAny = d; giAny = i; }
+    if (!got[i] && d < bd) { bd = d; gi = i; }
+  });
+  if (gi < 0) gi = giAny;
+  if (gi >= 0) return { id: 'dc:ghost', gi, label: '🖐️ High-five the ghost!' };
+  if (Math.hypot(cp.x - (-4.5), cp.z - 2.6) < 1.7) return { id: 'dc:cauldron', label: '🥄 Stir the cauldron' };
+  if (Math.hypot(cp.x - 4.8, cp.z - 3.0) < 1.8) return { id: 'dc:organ', label: '🎹 Play the spooky organ' };
+  if (Math.hypot(cp.x - 5.4, cp.z - (-3.2)) < 1.8) return { id: 'dc:chest', label: '🪙 Open the creaky chest' };
+  return null;
 }

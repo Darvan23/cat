@@ -223,6 +223,7 @@ let groundGroup = null, upstairsGroup = null, upstairs = null, poorHouse = null;
 const worldColliders = [], groundColliders = [], upstairsColliders = [], shopColliders = [], shelterColliders = [], boughtHomeColliders = [], bizColliders = [], jailColliders = [];
 function activeColliders() {
   if (state.inGray) return grayColliders;   // the Gray House interior (grayhouse.js)
+  if (state.inManor) return (typeof manorColliders !== 'undefined') ? manorColliders : worldColliders;   // 👻 the Haunted Manor (dreamcity.js)
   if (state.inHouse) return state.floor === 'upper' ? upstairsColliders : groundColliders;
   if (state.inShop) return shopColliders;
   if (state.inShelter) return shelterColliders;
