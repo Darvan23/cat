@@ -156,6 +156,7 @@ function renderBusiness() {
   h += `<div>🐱 Cats freed<br><b>${catsFreedCount()}</b></div>`;
   h += `<div>🏠 Homes built<br><b>${housesBuiltCount()}</b></div>`;
   h += `<div>❤️ Good deeds<br><b>${state.goodDeeds || 0}</b></div>`;
+  h += `<div>✨🐦 Golden birds<br><b>${state.goldBirdsCaught || 0}/24</b></div>`;
   h += `<div>🏚️ Homeless<br><b>${state.homelessCount || 0}</b></div>`;
   h += `</div>`;
   if ((state.homelessCount || 0) > 0) h += `<div class="biz-note">🏚️ ${state.homelessCount} townsfolk are homeless after demolitions. Build homes (🏗️ planner) to take them in — the town won't grow again until everyone's housed.</div>`;

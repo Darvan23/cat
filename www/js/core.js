@@ -38,7 +38,8 @@ const state = {
   activeCar: null,   // the one parked in the world
   carPos: null,      // where it's parked {x,z,h}
   carTrunk: [],      // the shopping riding in the back
-  driving: false,     // the day your zoo ticket is valid for (a day pass)
+  driving: false,
+  goldBirdsCaught: 0, // ✨🐦 the Golden Flock: 24 roost on rooftops, sneak-only     // the day your zoo ticket is valid for (a day pass)
   zooShift: false,    // working the zoo ticket booth right now
   neighbors: [],      // friends' towns you can visit from above [{code, name}]
   uiOpen: false,      // a give/rescue overlay is open

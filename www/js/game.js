@@ -359,7 +359,7 @@ function saveGame() {
       bizTill: state.bizTill, bizOpen: state.bizOpen, millerHome: state.millerHome,
       civics: state.civics, townGrowth: state.townGrowth,
       townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay, dcPassDay: state.dcPassDay, dcTickets: state.dcTickets, dcBandDay: state.dcBandDay,
-      myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk,
+      myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk, goldBirdsCaught: state.goldBirdsCaught,
     }));
   } catch (e) {}
 }
@@ -456,6 +456,7 @@ function applySave(s) {
   state.activeCar = s.activeCar || null;
   state.carPos = s.carPos || null;
   state.carTrunk = s.carTrunk || [];
+  state.goldBirdsCaught = s.goldBirdsCaught || 0;
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets
@@ -2147,6 +2148,101 @@ function sleepAtHome() {
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
+// ─── ✨ THE GOLDEN FLOCK: 24 legendary birds that roost on the town's rooftops ───
+//     They spook if you walk up — stalk them SNEAKING, then pounce.
+const GOLD_TOTAL = 24;
+let _gbSpawnT = 22;
+function buildGoldBird() {
+  const g2 = new THREE.Group();
+  const gold = new THREE.MeshStandardMaterial({ color: 0xe8b830, roughness: 0.35, metalness: 0.4, emissive: 0xa07010, emissiveIntensity: 0.5 });
+  const bright = new THREE.MeshStandardMaterial({ color: 0xffe080, roughness: 0.3, emissive: 0xc09020, emissiveIntensity: 0.7 });
+  const add = (geo, m, x, y, z, sx = 1, sy = 1, sz = 1) => { const me = new THREE.Mesh(geo, m); me.position.set(x, y, z); me.scale.set(sx, sy, sz); me.castShadow = true; g2.add(me); return me; };
+  add(new THREE.SphereGeometry(0.13, 10, 8), gold, 0, 0.15, 0, 1, 1, 1.35);
+  add(new THREE.SphereGeometry(0.1, 10, 8), bright, 0, 0.15, 0.12, 1, 1, 0.9);
+  add(new THREE.SphereGeometry(0.09, 10, 8), gold, 0, 0.27, 0.1);
+  add(new THREE.ConeGeometry(0.03, 0.1, 6), bright, 0, 0.27, 0.2).rotation.x = Math.PI / 2;
+  add(new THREE.ConeGeometry(0.035, 0.12, 6), bright, 0, 0.37, 0.07).rotation.x = -0.5;      // a proud little crest
+  add(new THREE.BoxGeometry(0.1, 0.03, 0.26), gold, 0, 0.16, -0.2).rotation.x = 0.35;         // long tail plume
+  g2.userData.wings = [];
+  [-1, 1].forEach(s => { const w = add(new THREE.BoxGeometry(0.05, 0.02, 0.22), bright, s * 0.13, 0.18, 0); w.userData.s = s; g2.userData.wings.push(w); });
+  g2.userData.glow = [gold, bright];
+  g2.scale.setScalar(0.8);
+  return g2;
+}
+function _gbRoost(not) {
+  const hs = (typeof HOUSES !== 'undefined') ? HOUSES.filter(h => !not || Math.hypot(h.x - not.x, h.z - not.z) > 4) : [];
+  const h = hs[Math.floor(Math.random() * hs.length)] || { x: 22, z: 8 };
+  return { x: h.x + (Math.random() - 0.5) * 1.2, y: 5.5 - Math.abs((Math.random() - 0.5) * 1.2) * 0.76, z: h.z + (Math.random() - 0.5) * 1.2 };
+}
+function spawnGoldBird() {
+  const r = _gbRoost();
+  const grp = buildGoldBird();
+  const a = Math.random() * Math.PI * 2;
+  const b = { group: grp, x: r.x + Math.cos(a) * 34, y: 17, z: r.z + Math.sin(a) * 34, tx: r.x, ty: r.y, tz: r.z, mode: 'fly', sitT: 0 };
+  grp.position.set(b.x, b.y, b.z);
+  scene.add(grp);
+  state.goldBird = b;
+}
+function fleeGoldBird(msg) {
+  const b = state.goldBird; if (!b || b.mode === 'flee') return;
+  b.mode = 'flee';
+  const a = Math.random() * Math.PI * 2;
+  b.fvx = Math.cos(a) * 0.09; b.fvz = Math.sin(a) * 0.09;
+  if (msg) showNotif(msg);
+  if (typeof sfx === 'function') sfx('sad');
+}
+function tryGoldCatch() {
+  const b = state.goldBird;
+  if (!b || b.mode === 'flee') return false;
+  const cp = catGroup.position;
+  const d3 = Math.sqrt((b.x - cp.x) ** 2 + (b.y - cp.y) ** 2 + (b.z - cp.z) ** 2);
+  if (d3 > 2.6) return false;
+  scene.remove(b.group); state.goldBird = null;
+  const n = state.goldBirdsCaught = (state.goldBirdsCaught || 0) + 1;
+  state.coins += 5; document.getElementById('coin-count').textContent = state.coins;
+  _catHappyT = 2.0; if (typeof spawnHeart === 'function') spawnHeart();
+  sfx('catch'); setTimeout(() => sfx('coin'), 200);
+  if (n >= GOLD_TOTAL) {
+    state.coins += 100; document.getElementById('coin-count').textContent = state.coins;
+    setTimeout(() => sfx('upgrade'), 450);
+    showNotif('✨🐦 THE GOLDEN FLOCK IS COMPLETE — all 24! A shower of 100 bonus coins!');
+  } else showNotif('✨🐦 A GOLDEN BIRD! ' + n + '/' + GOLD_TOTAL + ' collected (+5 🪙)');
+  _gbSpawnT = 45 + Math.random() * 45;
+  if (typeof saveGame === 'function') saveGame();
+  return true;
+}
+function updateGoldBird(t) {
+  if ((state.goldBirdsCaught || 0) >= GOLD_TOTAL) return;
+  const b = state.goldBird;
+  if (!b) { _gbSpawnT -= 0.016; if (_gbSpawnT <= 0 && !playerIndoors()) spawnGoldBird(); return; }
+  const grp = b.group, cp = catGroup.position;
+  (grp.userData.wings || []).forEach(w => { w.rotation.z = w.userData.s * (b.mode === 'perch' ? 0.12 : 0.2 + Math.sin(t * 26) * 0.85); });
+  grp.userData.glow.forEach((m, i) => { m.emissiveIntensity = 0.45 + Math.sin(t * 3 + i * 1.5) * 0.25; });
+  const d3 = Math.sqrt((b.x - cp.x) ** 2 + (b.y - cp.y) ** 2 + (b.z - cp.z) ** 2);
+  if (b.mode === 'perch') {
+    grp.position.set(b.x, b.y + Math.abs(Math.sin(t * 2.4)) * 0.05, b.z);
+    grp.rotation.y += 0.004;
+    b.sitT -= 0.016;
+    if (d3 < 5.5 && !state.sneaking) { fleeGoldBird('👀 The golden bird spots you and bolts — SNEAK up next time!'); return; }
+    if (b.sitT <= 0) { const r = _gbRoost(b); b.tx = r.x; b.ty = r.y; b.tz = r.z; b.mode = 'fly'; }
+  } else if (b.mode === 'fly') {
+    const dx = b.tx - b.x, dz = b.tz - b.z, dh = Math.hypot(dx, dz);
+    if (dh < 0.35) { b.x = b.tx; b.y = b.ty; b.z = b.tz; b.mode = 'perch'; b.sitT = 22 + Math.random() * 20; grp.rotation.y = Math.random() * 6.28; }
+    else {
+      const sp = 0.11;
+      b.x += dx / dh * sp; b.z += dz / dh * sp;
+      b.y += (b.ty + Math.min(5, dh * 0.3) - b.y) * 0.04;
+      grp.rotation.y = Math.atan2(dx, dz);
+      grp.position.set(b.x, b.y, b.z);
+    }
+  } else if (b.mode === 'flee') {
+    b.y += 0.09; b.x += b.fvx; b.z += b.fvz;
+    grp.position.set(b.x, b.y, b.z);
+    grp.rotation.y = Math.atan2(b.fvx, b.fvz);
+    if (b.y > 26) { scene.remove(grp); state.goldBird = null; _gbSpawnT = 35 + Math.random() * 45; }
+  }
+}
+
 // roof-aware collisions: once you're above a house's walls, its footprint stops blocking you
 function catColliders() {
   const list = activeColliders();
@@ -2162,7 +2258,8 @@ function doAttack() {
   state.attackT = 0.3;
   let got = false;
   if (!playerIndoors()) {
-    const c = nearestCritter(catGroup.position, 2.2); if (c) { catchCritter(c); got = true; }
+    if (tryGoldCatch()) got = true;
+    const c = nearestCritter(catGroup.position, 2.2); if (!got && c) { catchCritter(c); got = true; }
     const m = state.strayMouse;
     if (!got && m && !state.carryingMouse && Math.hypot(m.x - catGroup.position.x, m.z - catGroup.position.z) < 2.2) {
       scene.remove(m.group); state.strayMouse = null; state.carryingMouse = true;
@@ -2187,6 +2284,7 @@ function doJump(power) {
   state.jumpVx = inside ? 0 : fx * lunge; state.jumpVz = inside ? 0 : fz * lunge;
   if (typeof sfx === 'function') sfx('jump');
   if (!state.inHouse) {
+    tryGoldCatch();                                                              // a leap can nab the golden bird too
     const c = nearestCritter(catGroup.position, 1.7); if (c) catchCritter(c);   // pounce on park critters
     const m = state.strayMouse;                                                  // …or the stray town mouse
     if (m && !state.carryingMouse && Math.hypot(m.x - catGroup.position.x, m.z - catGroup.position.z) < 1.7) {
@@ -2453,6 +2551,10 @@ function drawMinimap() {
   state.family.forEach(f => {   // a kid hoping for a park trip pings on the minimap
     if (f.wantsPark && f.group && f.group.visible) g.fillText('🌳', X(f.group.position.x), Z(f.group.position.z));
   });
+  if (state.goldBird && state.goldBird.mode === 'perch') {   // ✨ a golden bird is roosting — go stalk it!
+    g.fillStyle = '#ffd040'; g.beginPath(); g.arc(X(state.goldBird.x), Z(state.goldBird.z), 4.2, 0, 7); g.fill();
+    g.strokeStyle = '#7a5a10'; g.lineWidth = 1.5; g.stroke();
+  }
   const cp = catGroup.position, ca = state.catAngle || 0, cx = X(cp.x), cz = Z(cp.z);  // you (with facing)
   g.fillStyle = 'rgba(240,190,60,0.4)'; g.beginPath(); g.arc(cx, cz, 13, 0, 7); g.fill();
   const fx = Math.sin(ca), fz = Math.cos(ca), px = -fz, pz = fx;
@@ -2504,6 +2606,7 @@ function animate(now) {
   if (typeof updateZooLife === 'function' && state.zooAnimals) updateZooLife(t);   // 🦁 the zoo lives in the world now
   if (typeof updateDreamCity === 'function') updateDreamCity(t);                   // 🎢 and so does Dream City
   if (typeof updateDriving === 'function') updateDriving(t);                       // 🚗 the cat car rolls with you
+  updateGoldBird(t);                                                               // ✨🐦 the Golden Flock
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it
@@ -2694,12 +2797,29 @@ function animate(now) {
     const jb = document.getElementById('btn-jump');
     if (jb) jb.style.transform = 'scale(' + (1 + state.jumpCharge * 0.22) + ')';
   }
-  // 🤫 sneaking: low and slow
+  // 🤫 the STALK: belly to the ground, tail flat, every step deliberate
   if (state.sneaking && !state.isJumping && !state.driving) {
-    catGroup.scale.y = catGroup.scale.x * 0.8;
-    if (moving) catGroup.position.y = (state.catBaseY || 0) + Math.abs(Math.sin(t * 6)) * 0.015;   // careful little steps
+    catGroup.scale.y = catGroup.scale.x * 0.62;                                  // properly LOW
+    const gy = state.catBaseY || 0;
+    if (moving) {
+      catGroup.position.y = gy + Math.abs(Math.sin(t * 3)) * 0.012;              // slow-motion creep
+      catGroup.rotation.x = 0.06;                                                // nose leading the hunt
+      tail.rotation.x = 0.4;                                                     // tail held low and flat behind
+      tail.rotation.z = Math.sin(t * 1.6) * 0.45;                                // …swishing side to side
+    } else {
+      // coiled and ready: stillness… then the little hunt-wiggle before the spring
+      state._wiggleT = (state._wiggleT || 0) + 0.016;
+      const w = state._wiggleT % 3.4;
+      if (w > 2.6) {
+        catGroup.rotation.z = Math.sin(t * 15) * 0.05;                           // the famous butt wiggle
+        catGroup.position.y = gy + Math.abs(Math.sin(t * 15)) * 0.025;
+      } else { catGroup.rotation.z *= 0.85; catGroup.position.y = gy; }
+      catGroup.rotation.x = 0.03;
+      tail.rotation.z = Math.sin(t * 2.4) * 0.55;                                // tail-tip flicking with intent
+    }
   } else if (!state.driving) {
     catGroup.scale.y = catGroup.scale.x;
+    if (!state.isJumping && (state.attackT || 0) <= 0 && !state.catSitting) catGroup.rotation.x *= 0.85;
   }
   // 🐾 the pounce swipe
   state._attackCd = Math.max(0, (state._attackCd || 0) - 0.016);
