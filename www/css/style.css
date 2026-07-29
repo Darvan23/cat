@@ -841,9 +841,11 @@
 #drive-ui { display: none; }
 body.driving #drive-ui { display: block; }
 body.driving #joystick, body.driving #btn-stack { display: none !important; }
-body.driving #minimap {   /* tuck the map up top so it never sits under your thumb */
+body.driving #minimap {   /* bottom-centre while driving: clear of panels, pedals and thumbs */
   width: 88px; height: 88px;
-  top: calc(10px + env(safe-area-inset-top)); right: calc(232px + env(safe-area-inset-right));
+  top: auto; right: auto; left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
   border-width: 2px;
 }
 #wheel-zone { position: fixed; left: calc(12px + env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); width: 148px; height: 148px; z-index: 40; touch-action: none; }
@@ -890,7 +892,7 @@ body.driving #minimap {   /* tuck the map up top so it never sits under your thu
   #pedal-gas { width: 86px; height: 66px; font-size: 1.35rem; }
   #pedal-brake { width: 86px; height: 54px; font-size: 1.15rem; }
   #park-btn, #horn-btn { width: 86px; height: 36px; }
-  body.driving #minimap { right: calc(200px + env(safe-area-inset-right)); }
+
 }
 
 /* ── 🦘🤫🐾 the action stack: joystick LEFT thumb, these under the RIGHT thumb ── */
@@ -900,6 +902,7 @@ body.driving #minimap {   /* tuck the map up top so it never sits under your thu
 }
 #btn-stack .action-btn { margin-bottom: 0; }
 #btn-jump.charging { background: rgba(232,192,64,0.45); border-color: #ffd040; transition: none; }
+body.indoors #btn-sneak, body.indoors #btn-attack { display: none; }   /* inside, only Jump — clears the 🛠️ decorate button */
 #btn-sneak.on { background: rgba(106,90,170,0.55); border-color: #b8a8f0; color: #e8e0ff; }
 @media (orientation: landscape) and (max-height: 560px), (orientation: portrait) and (max-width: 560px) {
   #btn-stack { gap: 7px; }

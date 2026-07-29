@@ -1361,10 +1361,10 @@ function buildManorInterior() {
   const fl = add(new THREE.Mesh(new THREE.PlaneGeometry(MANOR_W * 2 + 1, MANOR_D * 2 + 1), floorM)); fl.rotation.x = -Math.PI / 2;
   const carpet = add(new THREE.Mesh(new THREE.PlaneGeometry(8, 2.6), pbr(0x5a2438, 0.95))); carpet.rotation.x = -Math.PI / 2; carpet.position.y = 0.01;
   B(MANOR_W * 2 + 1, 4.4, 0.3, wallM, 0, 2.2, -MANOR_D - 0.4);
-  B(MANOR_W * 2 + 1, 4.4, 0.3, wallM, 0, 2.2, MANOR_D + 0.4);
+  // south side stays OPEN (dollhouse view — you see the room the moment you step in)
   B(0.3, 4.4, MANOR_D * 2 + 1, wallM, -MANOR_W - 0.4, 2.2, 0);
   B(0.3, 4.4, MANOR_D * 2 + 1, wallM, MANOR_W + 0.4, 2.2, 0);
-  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(MANOR_W * 2 + 1, MANOR_D * 2 + 1), pbr(0x1c1428, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.y = 4.4;
+  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(MANOR_W * 2 + 1, MANOR_D + 0.7), pbr(0x1c1428, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4.4, -(MANOR_D + 0.7) / 2 + 0.4);   // half-roof keeps the gloom over the back
   [-4, 0, 4].forEach(x => B(0.3, 0.25, MANOR_D * 2 + 1, woodM, x, 4.25, 0));
   manorColliders.push(
     { type: 'box', x0: -MANOR_W - 0.8, x1: -MANOR_W - 0.2, z0: -MANOR_D - 1, z1: MANOR_D + 1 },
@@ -1372,8 +1372,8 @@ function buildManorInterior() {
     { type: 'box', x0: -MANOR_W - 1, x1: MANOR_W + 1, z0: -MANOR_D - 0.8, z1: -MANOR_D - 0.2 },
     { type: 'box', x0: -MANOR_W - 1, x1: MANOR_W + 1, z0: MANOR_D + 0.2, z1: MANOR_D + 0.8 });
 
-  // the door you came in by (south wall), moonlit arched windows
-  B(1.8, 3.0, 0.12, pbr(0x4a3020, 0.8), 0, 1.5, MANOR_D + 0.32);
+  // a worn doormat marks the way out (no door plank blocking the view)
+  B(1.8, 0.05, 0.9, pbr(0x4a3020, 0.9), 0, 0.03, MANOR_D - 0.1);
   const paneM = new THREE.MeshStandardMaterial({ color: 0x2a3a6a, emissive: 0x4a6ab0, emissiveIntensity: 0.5, roughness: 0.4 });
   [[-4.5, -MANOR_D - 0.22], [4.5, -MANOR_D - 0.22]].forEach(([wx, wz]) => { const win = add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.2, 0.1), paneM)); win.position.set(wx, 2.3, wz); [-0.4, 0.4].forEach(d => B(0.08, 2.2, 0.14, woodM, wx + d, 2.3, wz)); B(1.5, 0.08, 0.14, woodM, wx, 2.3, wz); });
 
@@ -1559,17 +1559,17 @@ function buildFunInterior() {
     if ((ix * 7 + iz * 3) % 11 === 0) { tile.userData.ph = ix + iz; F.wobbles.push(tile); }
   }
   // candy-striped walls + ceiling
-  for (let i = 0; i < 8; i++) { B(1.55, 3.6, 0.25, pbr(RAINBOW[i % 6], 0.85), -FUN_W + 0.85 + i * 1.58, 1.8, -FUN_D - 0.35); if (i < 6) B(1.55, 3.6, 0.25, pbr(RAINBOW[(i + 3) % 6], 0.85), -FUN_W + 0.85 + i * 1.58, 1.8, FUN_D + 0.35); }
-  B(1.6, 3.6, 0.25, pbr(RAINBOW[3], 0.85), -FUN_W + 0.85 + 6 * 1.58, 1.8, FUN_D + 0.35);
+  for (let i = 0; i < 8; i++) B(1.55, 3.6, 0.25, pbr(RAINBOW[i % 6], 0.85), -FUN_W + 0.85 + i * 1.58, 1.8, -FUN_D - 0.35);
+  // south side stays OPEN — walk in and the whole rainbow room is right there
   for (let i = 0; i < 6; i++) [-1, 1].forEach(sd => B(0.25, 3.6, 1.35, pbr(RAINBOW[(i + (sd > 0 ? 2 : 4)) % 6], 0.85), sd * (FUN_W + 0.35), 1.8, -FUN_D + 0.75 + i * 1.38));
-  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(FUN_W * 2 + 1, FUN_D * 2 + 1), pbr(0xe8d8f4, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.y = 3.6;
+  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(FUN_W * 2 + 1, FUN_D + 0.6), pbr(0xe8d8f4, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 3.6, -(FUN_D + 0.6) / 2 + 0.35);
   funColliders.push(
     { type: 'box', x0: -FUN_W - 0.7, x1: -FUN_W - 0.1, z0: -FUN_D - 1, z1: FUN_D + 1 },
     { type: 'box', x0: FUN_W + 0.1, x1: FUN_W + 0.7, z0: -FUN_D - 1, z1: FUN_D + 1 },
     { type: 'box', x0: -FUN_W - 1, x1: FUN_W + 1, z0: -FUN_D - 0.7, z1: -FUN_D - 0.1 },
     { type: 'box', x0: -FUN_W - 1, x1: FUN_W + 1, z0: FUN_D + 0.1, z1: FUN_D + 0.7 });
-  // the door you came in by + a rainbow arch over the room
-  B(1.8, 2.8, 0.12, pbr(0x8a4ab0, 0.7), 0, 1.4, FUN_D + 0.22);
+  // a rainbow doormat marks the way out + an arch over the room
+  B(1.8, 0.05, 0.9, pbr(0x8a4ab0, 0.8), 0, 0.03, FUN_D - 0.1);
   RAINBOW.forEach((col, i) => { const arc = add(new THREE.Mesh(new THREE.TorusGeometry(2.6 - i * 0.16, 0.09, 8, 24, Math.PI), pbr(col, 0.7))); arc.position.set(0, 1.4, 0); });
   // the spinning disco ball
   const disco = F.disco = add(new THREE.Mesh(G.sph(0.45, 16, 14), new THREE.MeshStandardMaterial({ color: 0xd8e0f0, metalness: 0.95, roughness: 0.15 })));

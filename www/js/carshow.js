@@ -124,16 +124,16 @@ function buildShowInterior() {
   const fl = add(new THREE.Mesh(new THREE.PlaneGeometry(SHOW_W * 2 + 1, SHOW_D * 2 + 1), pbr(0xdfe2e8, 0.25, 0.1))); fl.rotation.x = -Math.PI / 2;
   const wallM = pbr(0xf0f0f4, 0.9);
   B(SHOW_W * 2 + 1, 3.6, 0.25, wallM, 0, 1.8, -SHOW_D - 0.35);
-  B(SHOW_W * 2 + 1, 3.6, 0.25, wallM, 0, 1.8, SHOW_D + 0.35);
+  // south side stays OPEN — the showroom greets you, not a wall
   B(0.25, 3.6, SHOW_D * 2 + 1, wallM, -SHOW_W - 0.35, 1.8, 0);
   B(0.25, 3.6, SHOW_D * 2 + 1, wallM, SHOW_W + 0.35, 1.8, 0);
-  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(SHOW_W * 2 + 1, SHOW_D * 2 + 1), pbr(0xe8e8ee, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.y = 3.6;
+  const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(SHOW_W * 2 + 1, SHOW_D + 0.6), pbr(0xe8e8ee, 0.95))); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 3.6, -(SHOW_D + 0.6) / 2 + 0.35);
   showColliders.push(
     { type: 'box', x0: -SHOW_W - 0.7, x1: -SHOW_W - 0.1, z0: -SHOW_D - 1, z1: SHOW_D + 1 },
     { type: 'box', x0: SHOW_W + 0.1, x1: SHOW_W + 0.7, z0: -SHOW_D - 1, z1: SHOW_D + 1 },
     { type: 'box', x0: -SHOW_W - 1, x1: SHOW_W + 1, z0: -SHOW_D - 0.7, z1: -SHOW_D - 0.1 },
     { type: 'box', x0: -SHOW_W - 1, x1: SHOW_W + 1, z0: SHOW_D + 0.1, z1: SHOW_D + 0.7 });
-  B(1.8, 2.8, 0.12, pbr(0xc84a6a, 0.6), 0, 1.4, SHOW_D + 0.22);   // the door you came in by
+  B(1.8, 0.05, 0.9, pbr(0xc84a6a, 0.7), 0, 0.03, SHOW_D - 0.1);   // a showroom mat marks the way out
   // the five stars of the show
   state._showCars = [];
   const spots = [[-5.4, -2.2], [-2.7, -2.6], [0, -2.8], [2.7, -2.6], [5.4, -2.2]];

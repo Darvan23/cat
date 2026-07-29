@@ -267,6 +267,7 @@ function applyHouseLevel(level) {
 }
 
 function updateEnterPrompt() {
+  document.body.classList.toggle('indoors', typeof playerIndoors === 'function' && playerIndoors());   // interiors trim the button stack
   const btn = document.getElementById('enter-btn');
   if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inManor || state.inFun || state.inShow) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
   if (state.driving) { state.nearBuilding = null; btn.classList.remove('show'); return; }   // park before you go indoors
