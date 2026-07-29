@@ -837,49 +837,72 @@
     #decor-tools .hint { display: none; }
   }
 
-/* ── 🚗 driving controls: wheel left, pedals right ── */
+/* ── 🚗 driving controls: wheel left, pedals right — dressed like the rest of the game ── */
 #drive-ui { display: none; }
 body.driving #drive-ui { display: block; }
 body.driving #joystick, body.driving #btn-stack { display: none !important; }
-#wheel-zone { position: fixed; left: 14px; bottom: 14px; width: 140px; height: 140px; z-index: 40; touch-action: none; }
+body.driving #minimap {   /* tuck the map up top so it never sits under your thumb */
+  width: 88px; height: 88px;
+  top: calc(10px + env(safe-area-inset-top)); right: calc(232px + env(safe-area-inset-right));
+  border-width: 2px;
+}
+#wheel-zone { position: fixed; left: calc(12px + env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); width: 148px; height: 148px; z-index: 40; touch-action: none; }
 #wheel {
-  width: 118px; height: 118px; margin: 11px; border-radius: 50%;
-  border: 11px solid #4a3a52; background: radial-gradient(circle at 50% 42%, #2e2436, #1c1622);
-  box-shadow: 0 4px 14px rgba(0,0,0,.4), inset 0 2px 6px rgba(255,255,255,.08);
+  width: 124px; height: 124px; margin: 12px; border-radius: 50%;
+  border: 12px solid #2e2438;
+  background: radial-gradient(circle at 50% 36%, #4a3c58, #241c30 72%);
+  box-shadow: 0 6px 18px rgba(0,0,0,.55), 0 0 0 2px rgba(200,146,42,.55), inset 0 2px 8px rgba(255,255,255,.10);
   position: relative; will-change: transform;
 }
-.wheel-spoke { position: absolute; left: 50%; top: 50%; width: 10px; height: 96px; margin: -48px 0 0 -5px; background: #4a3a52; border-radius: 5px; }
+.wheel-ring { position: absolute; inset: 6px; border-radius: 50%; border: 3px solid rgba(200,146,42,.35); pointer-events: none; }
+.wheel-spoke { position: absolute; left: 50%; top: 50%; width: 9px; height: 100px; margin: -50px 0 0 -4.5px; background: linear-gradient(#463a56, #302640); border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
 .wheel-spoke.s2 { transform: rotate(90deg); }
-.wheel-hub { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: #6a5a7a; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
-#pedals { position: fixed; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 40; align-items: flex-end; }
-#pedals button {
-  border: none; border-radius: 14px; font-family: inherit; font-weight: 700; color: #ffe9c0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  box-shadow: 0 4px 10px rgba(0,0,0,.35); touch-action: none; -webkit-user-select: none; user-select: none;
+.wheel-spoke.s3 { transform: rotate(45deg); }
+.wheel-spoke.s4 { transform: rotate(135deg); }
+.wheel-hub {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 42% 32%, #e8c060, #a06818);
+  border: 2px solid #7a5210;
+  display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.45), inset 0 1px 2px rgba(255,255,255,.35);
 }
-#pedal-gas { width: 92px; height: 76px; font-size: 1.5rem; background: linear-gradient(#3f7226, #2c5216); }
-#pedal-brake { width: 92px; height: 62px; font-size: 1.25rem; background: linear-gradient(#a03028, #701c18); }
-#pedals button small { font-size: .58rem; letter-spacing: .08em; }
-#park-btn { width: 92px; height: 40px; font-size: .85rem; background: linear-gradient(#4a5a8a, #32406a); flex-direction: row !important; }
-#horn-btn { width: 92px; height: 40px; font-size: 1.1rem; background: linear-gradient(#b8862a, #8a6018); }
-#pedal-gas:active, #pedal-brake:active, #park-btn:active, #horn-btn:active { transform: scale(.94); filter: brightness(1.15); }
-@media (orientation: landscape) and (max-height: 560px) {
-  #wheel-zone { width: 120px; height: 120px; }
-  #wheel { width: 100px; height: 100px; margin: 10px; border-width: 9px; }
-  .wheel-spoke { height: 82px; margin-top: -41px; }
-  #pedals button { border-radius: 12px; }
-  #pedal-gas { width: 84px; height: 64px; }
-  #pedal-brake { width: 84px; height: 52px; }
-  #park-btn, #horn-btn { width: 84px; height: 34px; }
+#pedals { position: fixed; right: calc(12px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 9px; z-index: 40; align-items: flex-end; }
+#pedals button {
+  border-radius: 16px; font-family: Georgia, serif; font-weight: 700;
+  background: linear-gradient(rgba(44,30,16,0.92), rgba(26,17,8,0.94));
+  border: 2px solid #c8922a; color: #f0d080;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.14);
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+#pedals button small { font-size: .6rem; letter-spacing: .14em; opacity: .9; }
+#pedal-gas { width: 94px; height: 78px; font-size: 1.6rem; border-color: #6ac06a; color: #c8f0b0; }
+#pedal-brake { width: 94px; height: 64px; font-size: 1.3rem; border-color: #d0584a; color: #f0b8a8; }
+#park-btn { width: 94px; height: 42px; font-size: .85rem; flex-direction: row !important; gap: 5px; border-color: #7aa8d8; color: #c8e0f8; }
+#horn-btn { width: 94px; height: 42px; font-size: 1.15rem; border-color: #e8c040; }
+#pedal-gas:active, #pedal-brake:active, #park-btn:active, #horn-btn:active { transform: scale(.94); filter: brightness(1.3); }
+@media (orientation: landscape) and (max-height: 560px), (orientation: portrait) and (max-width: 560px) {
+  #wheel-zone { width: 128px; height: 128px; }
+  #wheel { width: 104px; height: 104px; margin: 12px; border-width: 10px; }
+  .wheel-spoke { height: 84px; margin-top: -42px; }
+  .wheel-hub { width: 40px; height: 40px; font-size: 1.05rem; }
+  #pedal-gas { width: 86px; height: 66px; font-size: 1.35rem; }
+  #pedal-brake { width: 86px; height: 54px; font-size: 1.15rem; }
+  #park-btn, #horn-btn { width: 86px; height: 36px; }
+  body.driving #minimap { right: calc(200px + env(safe-area-inset-right)); }
 }
 
-/* ── 🦘🤫🐾 the left-paw button stack: move with one thumb, act with the other ── */
-#btn-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+/* ── 🦘🤫🐾 the action stack: joystick LEFT thumb, these under the RIGHT thumb ── */
+#btn-stack {
+  position: fixed; right: calc(14px + env(safe-area-inset-right)); bottom: calc(14px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column-reverse; gap: 10px; z-index: 30;
+}
 #btn-stack .action-btn { margin-bottom: 0; }
 #btn-jump.charging { background: rgba(232,192,64,0.45); border-color: #ffd040; transition: none; }
 #btn-sneak.on { background: rgba(106,90,170,0.55); border-color: #b8a8f0; color: #e8e0ff; }
 @media (orientation: landscape) and (max-height: 560px), (orientation: portrait) and (max-width: 560px) {
   #btn-stack { gap: 7px; }
-  #btn-stack .action-btn { width: 48px; height: 48px; font-size: 0.6rem; }
+  #btn-stack .action-btn { width: 50px; height: 50px; font-size: 0.6rem; }
   #btn-stack .action-btn .btn-icon { font-size: 1.15rem; }
 }

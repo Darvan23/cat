@@ -303,7 +303,7 @@ function initDriveUI() {
   const ui = document.createElement('div');
   ui.id = 'drive-ui';
   ui.innerHTML =
-    '<div id="wheel-zone"><div id="wheel"><div class="wheel-spoke s1"></div><div class="wheel-spoke s2"></div><div class="wheel-hub">🐾</div></div></div>' +
+    '<div id="wheel-zone"><div id="wheel"><div class="wheel-spoke s1"></div><div class="wheel-spoke s2"></div><div class="wheel-spoke s3"></div><div class="wheel-spoke s4"></div><div class="wheel-ring"></div><div class="wheel-hub">🐾</div></div></div>' +
     '<div id="pedals">' +
       '<button id="park-btn">🅿️ Park</button>' +
       '<button id="horn-btn">📣</button>' +
@@ -313,7 +313,7 @@ function initDriveUI() {
   document.body.appendChild(ui);
   const wz = ui.querySelector('#wheel-zone');
   let wheelId = null, wheelX0 = 0;
-  const wPos = e => (typeof gameRelPoint === 'function') ? gameRelPoint(e.clientX, e.clientY).x : e.clientX;
+  const wPos = e => (typeof gamePoint === 'function') ? gamePoint(e.clientX, e.clientY).x : e.clientX;   // rotation-aware: game-x even on a sideways phone
   wz.addEventListener('touchstart', e => { e.preventDefault(); const tch = e.changedTouches[0]; wheelId = tch.identifier; wheelX0 = wPos(tch) - drive.steerTarget * 70; }, { passive: false });
   wz.addEventListener('touchmove', e => { e.preventDefault(); for (const tch of e.changedTouches) if (tch.identifier === wheelId) drive.steerTarget = Math.max(-1, Math.min(1, (wPos(tch) - wheelX0) / 70)); }, { passive: false });
   const wEnd = e => { for (const tch of e.changedTouches) if (tch.identifier === wheelId) { wheelId = null; drive.steerTarget = 0; } };
