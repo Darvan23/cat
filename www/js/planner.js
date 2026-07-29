@@ -148,6 +148,16 @@ function placedVisual(type) {
     B(6, 0.06, 4, mat.road, 0, 0.03, 0);
     const dash = new THREE.MeshStandardMaterial({ color: 0xf0e0a0, roughness: 0.8 });
     for (let dx = -2; dx <= 2; dx += 1.3) B(0.8, 0.07, 0.25, dash, dx, 0.05, 0);
+  } else if (type === 'roadturn') {   // 🛣️ a smooth quarter-turn: laid automatically when your road bends
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1, 5, 20, 1, -Math.PI / 2, Math.PI / 2), mat.road);
+    ring.rotation.x = -Math.PI / 2; ring.position.set(-3, 0.03, -3); ring.receiveShadow = true; g.add(ring);
+    const dash = new THREE.MeshStandardMaterial({ color: 0xf0e0a0, roughness: 0.8 });
+    [-1.35, -1.05, -0.78, -0.52, -0.22].forEach(a => {
+      const d = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.07, 0.25), dash);
+      d.position.set(-3 + Math.cos(a) * 3, 0.05, -3 - Math.sin(a) * 3);
+      d.rotation.y = Math.atan2(Math.cos(a), -Math.sin(a));
+      g.add(d);
+    });
   } else if (type === 'fountain') {
     CY(2.0, 2.2, 0.6, 20, matStone, 0, 0.3, 0);    // basin wall
     CY(1.75, 1.75, 0.22, 20, matWater, 0, 0.52, 0); // water
@@ -189,7 +199,7 @@ function buildPlacedMesh(type, x, z, rot, rec) {
   if (typeof addProp === 'function') {
     const useAs = (type === 'bench') ? 'bench' : (type === 'tree' || type === 'pine' || type === 'blossom') ? 'tree' : null;   // NPCs sit/rest at these
     entry.prop = addProp({
-      kind: type, group, x, z, rotY: rot || 0, coll: collRef, movable: type !== 'road',   // EVERYTHING you place can be re-moved (roads stay snapped)
+      kind: type, group, x, z, rotY: rot || 0, coll: collRef, movable: type !== 'road' && type !== 'roadturn',   // EVERYTHING you place can be re-moved (roads stay snapped)
       hw: coll && !coll.circle ? coll.hw : undefined, hd: coll && !coll.circle ? coll.hd : undefined,
       use: useAs, destroyable: !!HOME_CAPACITY[type], placed: true, rec, meshEntry: entry,
       onMove: (nx, nz) => {
@@ -297,15 +307,17 @@ function updatePlannerFrame() {
     if (fp) moveProp(_grabbed, fp.x, fp.z, _grabbed.rotY);
     _grabbed.group.position.y = _grabBaseY + 0.6 + bob;
   } else if (_ghost && _ghost.visible) {            // the new-piece preview follows the crosshair
-    if (fp) _ghost.position.set(fp.x, bob, fp.z);
-    _ghost.rotation.y = state.plannerRot || 0;
+    if (fp) {
+      if (state.plannerSel === 'road') { const s = snapRoadToGrid(fp.x, fp.z); _ghost.position.set(s.x, bob, s.z); _ghost.rotation.y = s.rot || 0; }   // preview the snap
+      else { _ghost.position.set(fp.x, bob, fp.z); _ghost.rotation.y = state.plannerRot || 0; }
+    } else _ghost.rotation.y = state.plannerRot || 0;
   }
   renderer.render(scene, camera);
 }
 
 // ── Move existing structures: grab the one under the crosshair, pan it, drop it ──
 let _grabbed = null, _grabBaseY = 0;
-const PROP_LABEL = { house: 'building', tree: 'tree', pine: 'pine tree', blossom: 'blossom tree', flowers: 'flower bed', bin: 'trash bin', bench: 'bench', lamp: 'lamp', fence: 'fence', fountain: 'fountain', pond: 'pond', lake: 'lake', school: 'school', picnic: 'picnic blanket',
+const PROP_LABEL = { house: 'building', tree: 'tree', pine: 'pine tree', blossom: 'blossom tree', flowers: 'flower bed', roadturn: 'road curve', bin: 'trash bin', bench: 'bench', lamp: 'lamp', fence: 'fence', fountain: 'fountain', pond: 'pond', lake: 'lake', school: 'school', picnic: 'picnic blanket',
   biz_cafe: 'café', biz_bakery: 'bakery', biz_market: 'market', biz_factory: 'factory', work_cafe: 'café', work_bakery: 'bakery', work_market: 'market', work_store: 'general store' };
 function planToggleMove() {
   state.planMove = !state.planMove;
@@ -389,20 +401,20 @@ function planPlaceCenter() {
   if (state.planDemolish) { planDemolishCenter(); return; }
   if (state.planMove) { _grabbed ? planDrop() : planGrabNearest(); return; }
   if (!_ghost) return;
-  if (state.plannerSel === 'road') { const s = snapRoadToGrid(_ghost.position.x, _ghost.position.z); doPlace('road', s.x, s.z, s.rot); return; }   // roads snap flush to neighbours
+  if (state.plannerSel === 'road') { const s = snapRoadToGrid(_ghost.position.x, _ghost.position.z); doPlace(s.type || 'road', s.x, s.z, s.rot); return; }   // roads snap flush — and BEND into curves
   plannerPlace(_ghost.position.x, _ghost.position.z);
 }
 function plannerPlace(x, z) { doPlace(state.plannerSel, x, z, state.plannerRot || 0); }
 let _lastRoad = null;
 function doPlace(type, x, z, rot) {
-  const item = PLANNER_ITEMS.find(i => i.type === type); if (!item) return false;
+  const item = PLANNER_ITEMS.find(i => i.type === type) || (type === 'roadturn' ? { type: 'roadturn', icon: '🛣️', name: 'Road curve', cost: 300 } : null); if (!item) return false;
   if (Math.abs(x) > 206 || z > 62 || z < -134) { showNotif('That\'s outside the town'); return false; }
   const cost = Math.round(item.cost * ((typeof schoolHas === 'function' && schoolHas('planning')) ? 0.9 : 1));   // 🏗️ Town Planning degree: 10% off
   if (!plannerPay(cost)) { showNotif('Not enough ' + (planPaySrc() === 'tax' ? 'tax money' : 'coins') + ' for a ' + item.name + (planPaySrc() === 'tax' ? ' — switch to 🪙 Coins?' : '')); return false; }
   const rec = { type, x: +x.toFixed(1), z: +z.toFixed(1), rot: rot || 0 };
   (state.placed = state.placed || []).push(rec);
   plannerMeshes.push(buildPlacedMesh(rec.type, rec.x, rec.z, rec.rot, rec));
-  if (type === 'road') _lastRoad = { x: rec.x, z: rec.z, rot: rec.rot };   // remember it, to extend from
+  if (type === 'road' || type === 'roadturn') _lastRoad = { x: rec.x, z: rec.z, rot: rec.rot };   // remember it, to extend from
   if (HOME_CAPACITY[type]) addPlacedResidents(HOME_CAPACITY[type]);        // a new home brings newcomers — bigger homes bring MORE
   if (typeof schoolEvent === 'function') {                                 // 🏫 planning-course tasks watch the planner
     schoolEvent(type === 'road' ? 'road' : 'place');
@@ -430,16 +442,34 @@ function addPlacedResidents(cap) {
 // The road tile nearest a point (so extending/snapping works on ANY road, any session)
 function nearestPlacedRoad(x, z) {
   let best = null, bd = Infinity;
-  (state.placed || []).forEach(r => { if (r.type !== 'road') return; const d = (r.x - x) ** 2 + (r.z - z) ** 2; if (d < bd) { bd = d; best = r; } });
+  (state.placed || []).forEach(r => { if (r.type !== 'road' && r.type !== 'roadturn') return; const d = (r.x - x) ** 2 + (r.z - z) ** 2; if (d < bd) { bd = d; best = r; } });
   return best;
 }
 // When you drop a road near an existing one, snap it flush onto the 6-unit road grid
+// which two edges a curve connects, by its rotation: W=(-1,0) N=(0,-1) E=(1,0) S=(0,1)
+function turnEdges(rot) {
+  const q = Math.round((rot || 0) / (Math.PI / 2)) % 4;
+  return [[{ dx: -1, dz: 0 }, { dx: 0, dz: -1 }], [{ dx: 0, dz: 1 }, { dx: -1, dz: 0 }], [{ dx: 1, dz: 0 }, { dx: 0, dz: 1 }], [{ dx: 0, dz: -1 }, { dx: 1, dz: 0 }]][q];
+}
 function snapRoadToGrid(x, z) {
   const near = nearestPlacedRoad(x, z);
   if (!near || (near.x - x) ** 2 + (near.z - z) ** 2 > 100) return { x: +x.toFixed(1), z: +z.toFixed(1), rot: state.plannerRot || 0 };  // no road within 10 → free placement
   const dx = x - near.x, dz = z - near.z;
-  if (Math.abs(dx) >= Math.abs(dz)) return { x: +(near.x + (dx >= 0 ? 6 : -6)).toFixed(1), z: near.z, rot: 0 };            // extend E/W, flush
-  return { x: near.x, z: +(near.z + (dz >= 0 ? 6 : -6)).toFixed(1), rot: Math.PI / 2 };                                    // extend N/S, flush
+  if (near.type === 'roadturn') {                    // continue out of the bend, whichever arm you point at
+    const dirs = turnEdges(near.rot), pick = (dirs[0].dx * dx + dirs[0].dz * dz >= dirs[1].dx * dx + dirs[1].dz * dz) ? dirs[0] : dirs[1];
+    return { x: +(near.x + pick.dx * 6).toFixed(1), z: +(near.z + pick.dz * 6).toFixed(1), rot: pick.dx ? 0 : Math.PI / 2 };
+  }
+  const horizA = Math.abs((near.rot || 0) % Math.PI) < 0.4;
+  const sx = dx >= 0 ? 1 : -1, sz = dz >= 0 ? 1 : -1;
+  if (horizA) {
+    if (Math.abs(dx) >= Math.abs(dz)) return { x: +(near.x + sx * 6).toFixed(1), z: near.z, rot: 0 };   // straight on
+    // turning off a horizontal run → drop a smooth curve at the end of it
+    const rotY = sx > 0 ? (sz < 0 ? 0 : Math.PI / 2) : (sz > 0 ? Math.PI : Math.PI * 1.5);
+    return { type: 'roadturn', x: +(near.x + sx * 6).toFixed(1), z: near.z, rot: rotY };
+  }
+  if (Math.abs(dz) >= Math.abs(dx)) return { x: near.x, z: +(near.z + sz * 6).toFixed(1), rot: Math.PI / 2 };   // straight on
+  const rotY = sz > 0 ? (sx < 0 ? 0 : Math.PI * 1.5) : (sx > 0 ? Math.PI : Math.PI / 2);
+  return { type: 'roadturn', x: near.x, z: +(near.z + sz * 6).toFixed(1), rot: rotY };
 }
 // Lay the next road tile flush against the nearest road, in the tapped direction
 function planExtendRoad(dir) {

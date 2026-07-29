@@ -966,7 +966,7 @@ function openZooBoard(P) {
   state.uiOpen = true;
   let h = `<div class="zoo-want">${f.e}</div>`;
   h += `<div class="modal-sub" style="font-size:.95rem"><b>${f.n}</b> · ${P.kinds.length} living here</div>`;
-  h += `<div style="text-align:left;font-size:.86rem;line-height:1.45;margin:.5rem 0">`;
+  h += `<div style="text-align:left;font-size:.86rem;line-height:1.45;margin:.5rem 0;color:#f2e4c8">`;
   h += `<div>🏡 <b>Home:</b> ${f.home}</div>`;
   h += `<div>🍽️ <b>They eat:</b> ${f.eat}</div>`;
   h += `<div style="margin-top:.45rem"><b>✨ Fun facts</b></div>`;
