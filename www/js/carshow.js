@@ -281,7 +281,7 @@ function updateDriving(t) {
   const hit = collide(nx, nz, worldColliders, 0.6);
   if (Math.hypot(hit.x - nx, hit.z - nz) > 0.01) { drive.v *= 0.4; if (Math.abs(drive.v) > 0.1 && typeof sfx === 'function') sfx('door'); }   // bonk
   nx = hit.x; nz = hit.z;
-  nx = Math.max(-240, Math.min(216, nx)); nz = Math.max(-138, Math.min(64, nz));
+  nx = Math.max(-258, Math.min(234, nx)); nz = Math.max(-156, Math.min(84, nz));   // the ring highway is yours too
   _carMesh.position.set(nx, 0, nz);
   _carMesh.rotation.y = drive.heading;
   _carMesh.rotation.z = -drive.steer * Math.abs(drive.v) * 0.5;                      // lean into the corner

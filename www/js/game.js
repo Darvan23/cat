@@ -1581,10 +1581,24 @@ function applyFamilyPresence() {
 }
 
 function updateCars(dt) {
+  if (typeof HWY_LEN === 'undefined' || !HWY_LEN || !state.cars.length) return;
+  // each lane keeps its order: find the car ahead and keep a civilised distance
+  [1, -1].forEach(lane => {
+    const cars = state.cars.filter(c => c.lane === lane).sort((a, b) => a.s - b.s);
+    cars.forEach((c, i) => {
+      const ahead = lane === 1 ? cars[(i + 1) % cars.length] : cars[(i - 1 + cars.length) % cars.length];
+      let gap = lane === 1 ? ahead.s - c.s : c.s - ahead.s;
+      gap = ((gap % HWY_LEN) + HWY_LEN) % HWY_LEN;
+      const want = gap < 5 ? 0 : gap < 12 ? Math.min(c.cruise, ahead.v) : c.cruise;   // brake, follow, or cruise
+      c.v += (want - c.v) * (want < c.v ? 0.25 : 0.04);                                // brakes bite faster than throttle
+      c.s += lane * c.v * dt;
+    });
+  });
   state.cars.forEach(c => {
-    c.group.position.x += c.dir * c.speed * dt;
-    if (c.dir > 0 && c.group.position.x > 112) c.group.position.x = -112;
-    else if (c.dir < 0 && c.group.position.x < -112) c.group.position.x = 112;
+    const p = hwyPos(c.s, c.lane * 3.2);
+    c.group.position.set(p.x, 0, p.z);
+    c.group.rotation.y = p.heading + (c.lane === 1 ? 0 : Math.PI);
+    c.coll.x = p.x; c.coll.z = p.z;                                                    // the collider rides along — no walking through traffic
   });
 }
 
@@ -2428,6 +2442,13 @@ function drawFullMap() {
     g.fillStyle = '#d8c9a0'; rr(WX(ZOO.x0), WZ(ZOO.z0), (ZOO.x1 - ZOO.x0) * S, (ZOO.z1 - ZOO.z0) * S, 12); g.fill();
     g.strokeStyle = '#8a6a4a'; g.lineWidth = 3; g.stroke();
   }
+  if (typeof HWY !== 'undefined') {   // 🛣️ the ring highway circles everything
+    g.strokeStyle = '#8a8f98'; g.lineWidth = Math.max(4, HWY.w * S);
+    rr(WX(HWY.x0), WZ(HWY.z0), (HWY.x1 - HWY.x0) * S, (HWY.z1 - HWY.z0) * S, HWY.r * S); g.stroke();
+    g.strokeStyle = '#f0e0a0'; g.lineWidth = 1.2; g.setLineDash([5, 6]);
+    rr(WX(HWY.x0), WZ(HWY.z0), (HWY.x1 - HWY.x0) * S, (HWY.z1 - HWY.z0) * S, HWY.r * S); g.stroke();
+    g.setLineDash([]);
+  }
   if (typeof DC !== 'undefined') {   // 🎢 Dream City, drawn properly: grounds, walls and its landmarks
     g.fillStyle = '#ecd8f0'; rr(WX(DC.x0), WZ(DC.z0), (DC.x1 - DC.x0) * S, (DC.z1 - DC.z0) * S, 12); g.fill();
     g.strokeStyle = '#a878b8'; g.lineWidth = 3; g.stroke();
@@ -2614,7 +2635,11 @@ function drawMinimap() {
   g.fillStyle = '#b3dc93'; g.fillRect(0, 0, D, D);                                    // grass
   const road = (z, hw) => { const y = Z(z), h = hw * 2 * S; g.fillStyle = '#d9ccb4'; g.fillRect(0, y - h / 2 - 2, D, h + 4); g.fillStyle = '#f5f0e6'; g.fillRect(0, y - h / 2, D, h); };
   road(-26, 3); road(0, 3.5); road(38, 3.5);
-  g.fillStyle = '#9aa0aa'; g.fillRect(0, Z(66) - 5, D, 10);                           // highway
+  if (typeof HWY !== 'undefined') {   // the ring highway's edges
+    g.fillStyle = '#9aa0aa';
+    g.fillRect(0, Z(HWY.z1) - 5, D, 10); g.fillRect(0, Z(HWY.z0) - 5, D, 10);
+    g.fillRect(X(HWY.x0) - 5, 0, 10, D); g.fillRect(X(HWY.x1) - 5, 0, 10, D);
+  }
   g.fillStyle = '#93d16f'; g.fillRect(X(PARK.x0), Z(PARK.z0), (PARK.x1 - PARK.x0) * S, (PARK.z1 - PARK.z0) * S);   // park
   if (typeof GRAND_PARK !== 'undefined') { g.fillStyle = '#8ccc68'; g.fillRect(X(GRAND_PARK.x0), Z(GRAND_PARK.z0), (GRAND_PARK.x1 - GRAND_PARK.x0) * S, (GRAND_PARK.z1 - GRAND_PARK.z0) * S); }
   if (typeof ZOO !== 'undefined') { g.fillStyle = '#d8c9a0'; g.fillRect(X(ZOO.x0), Z(ZOO.z0), (ZOO.x1 - ZOO.x0) * S, (ZOO.z1 - ZOO.z0) * S); }
@@ -2766,7 +2791,7 @@ function animate(now) {
     // Resolve collisions (walls / furniture / trees), then clamp to the area
     const hit = collide(catGroup.position.x, catGroup.position.z, catColliders(), state.inHouse ? 0.16 : 0.24);
     catGroup.position.x = hit.x; catGroup.position.z = hit.z;
-    let bx = 216, bxMin = -240, bzMin = -138, bzMax = 64;   // the frontier: Dream City west, Grand Park south, safari zoo east
+    let bx = 234, bxMin = -258, bzMin = -156, bzMax = 84;   // the frontier: Dream City west, safari zoo east — and the RING HIGHWAY all around
     if (state.inHouse) { bx = 3.2; bzMin = -2.6; bzMax = 2.6; }
     else if (state.inShop) { bx = 6.4; bzMin = -4.6; bzMax = 4.4; }   // incl. behind Dad's counter
     else if (state.inShelter) { bx = 11.4; bzMin = -7.4; bzMax = 7.4; }

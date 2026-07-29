@@ -384,20 +384,80 @@ function buildCatShelter(x, z) {
   worldColliders.push({ type: 'box', x0: x - 6.5, x1: x + 6.5, z0: z - 4, z1: z + 4 });
 }
 
-// A distant highway with looping traffic, fenced off behind a crash barrier
+// ═══ 🛣️ THE RING HIGHWAY — a great open loop around the WHOLE map ═══
+//     No more crash barrier: walk on it, drive your cat car on it.
+const HWY = { x0: -248, x1: 224, z0: -146, z1: 74, w: 12, r: 14 };
+let _hwySegs = null, HWY_LEN = 0;
+function _hwyBuildPath() {
+  const { x0, x1, z0, z1, r } = HWY;
+  const segs = [];
+  const add = (type, a) => segs.push(Object.assign({ type }, a));
+  add('s', { ax: x0 + r, az: z0, bx: x1 - r, bz: z0 });
+  add('a', { cx: x1 - r, cz: z0 + r, a0: -Math.PI / 2, a1: 0 });
+  add('s', { ax: x1, az: z0 + r, bx: x1, bz: z1 - r });
+  add('a', { cx: x1 - r, cz: z1 - r, a0: 0, a1: Math.PI / 2 });
+  add('s', { ax: x1 - r, az: z1, bx: x0 + r, bz: z1 });
+  add('a', { cx: x0 + r, cz: z1 - r, a0: Math.PI / 2, a1: Math.PI });
+  add('s', { ax: x0, az: z1 - r, bx: x0, bz: z0 + r });
+  add('a', { cx: x0 + r, cz: z0 + r, a0: Math.PI, a1: Math.PI * 1.5 });
+  let acc = 0;
+  segs.forEach(sg => { sg.len = sg.type === 's' ? Math.hypot(sg.bx - sg.ax, sg.bz - sg.az) : r * Math.PI / 2; sg.s0 = acc; acc += sg.len; });
+  _hwySegs = segs; HWY_LEN = acc;
+}
+function hwyPos(s, off) {   // distance along the loop (+ lane offset) → {x, z, heading}
+  s = ((s % HWY_LEN) + HWY_LEN) % HWY_LEN;
+  let sg = _hwySegs[_hwySegs.length - 1];
+  for (const g2 of _hwySegs) { if (s < g2.s0 + g2.len) { sg = g2; break; } }
+  const t = s - sg.s0;
+  let x, z, hx, hz;
+  if (sg.type === 's') {
+    x = sg.ax + (sg.bx - sg.ax) * t / sg.len; z = sg.az + (sg.bz - sg.az) * t / sg.len;
+    hx = (sg.bx - sg.ax) / sg.len; hz = (sg.bz - sg.az) / sg.len;
+  } else {
+    const a = sg.a0 + (Math.PI / 2) * (t / sg.len);
+    x = sg.cx + Math.cos(a) * HWY.r; z = sg.cz + Math.sin(a) * HWY.r;
+    hx = -Math.sin(a); hz = Math.cos(a);
+  }
+  return { x: x + hz * (off || 0), z: z - hx * (off || 0), heading: Math.atan2(hx, hz) };
+}
 function buildHighway() {
-  const z = 66;
-  box(220, 0.05, 12, mat.road, 0, 0.02, z);                                  // tarmac
+  _hwyBuildPath();
+  const { x0, x1, z0, z1, w: rw, r } = HWY;
+  // tarmac: four straights + four smooth corner arcs
+  box(x1 - x0 - 2 * r, 0.05, rw, mat.road, (x0 + x1) / 2, 0.02, z0);
+  box(x1 - x0 - 2 * r, 0.05, rw, mat.road, (x0 + x1) / 2, 0.02, z1);
+  box(rw, 0.05, z1 - z0 - 2 * r, mat.road, x0, 0.02, (z0 + z1) / 2);
+  box(rw, 0.05, z1 - z0 - 2 * r, mat.road, x1, 0.02, (z0 + z1) / 2);
+  [[x1 - r, z0 + r, -Math.PI / 2], [x1 - r, z1 - r, 0], [x0 + r, z1 - r, Math.PI / 2], [x0 + r, z0 + r, Math.PI]].forEach(([cx, cz, a0]) => {
+    // rotation.x -90 mirrors angles in z, so the flat ring wants -(a0+π/2) as its start
+    const arc = new THREE.Mesh(new THREE.RingGeometry(r - rw / 2, r + rw / 2, 18, 1, -(a0 + Math.PI / 2), Math.PI / 2), mat.road);
+    arc.rotation.x = -Math.PI / 2;
+    arc.position.set(cx, 0.02, cz); arc.receiveShadow = true; scene.add(arc);
+  });
+  // centre dashes chase the loop all the way round
   const dashMat = new THREE.MeshStandardMaterial({ color: 0xf0e0a0, roughness: 0.8 });
-  for (let x = -104; x <= 104; x += 6) box(2, 0.06, 0.4, dashMat, x, 0.05, z);   // centre dashes
-  // crash barrier between the town and the highway
-  const railMat = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, roughness: 0.4, metalness: 0.4 });
-  box(220, 0.25, 0.2, railMat, 0, 0.9, 58);
-  for (let x = -104; x <= 104; x += 5) box(0.18, 0.9, 0.18, matLampPole, x, 0.45, 58);
-  // traffic (two directions, looping)
+  for (let s = 0; s < HWY_LEN; s += 10) {
+    const p = hwyPos(s, 0);
+    const d = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.06, 2.2), dashMat);
+    d.position.set(p.x, 0.06, p.z); d.rotation.y = p.heading; scene.add(d);
+  }
+  // 🌳 trees line the verges (skipping wherever the parks & compounds sit)
+  const inRect = (x, z, R) => R && x > R.x0 - 7 && x < R.x1 + 7 && z > R.z0 - 7 && z < R.z1 + 7;
+  const treeKinds = ['tree', 'pine', 'oak', 'blossom', 'autumn'];
+  for (let s = 4; s < HWY_LEN; s += 20) {                                     // outer verge
+    const p = hwyPos(s + Math.random() * 6, rw / 2 + 5 + Math.random() * 3);
+    if (typeof plantWildTree === 'function') plantWildTree(treeKinds[(Math.random() * 5) | 0], +p.x.toFixed(1), +p.z.toFixed(1));
+  }
+  for (let s = 12; s < HWY_LEN; s += 28) {                                    // inner verge
+    const p = hwyPos(s + Math.random() * 6, -(rw / 2 + 5 + Math.random() * 3));
+    if (inRect(p.x, p.z, typeof DC !== 'undefined' ? DC : null)) continue;
+    if (inRect(p.x, p.z, typeof ZOO !== 'undefined' ? ZOO : null)) continue;
+    if (typeof plantWildTree === 'function') plantWildTree(treeKinds[(Math.random() * 5) | 0], +p.x.toFixed(1), +p.z.toFixed(1));
+  }
+  // 🚗 traffic: two lanes, evenly spread, each car with its own rolling collider
   const carColors = [0xc0392b, 0x2a6acc, 0xf0c020, 0x40a060, 0xe6e6ea, 0x9a3a8a, 0xe07a2a, 0x2aa0a0];
   state.cars = [];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 18; i++) {
     const c = new THREE.Group();
     const cm = new THREE.MeshStandardMaterial({ color: carColors[i % carColors.length], roughness: 0.4, metalness: 0.3 });
     const body = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.0, 1.7), cm); body.position.y = 0.6; body.castShadow = true; c.add(body);
@@ -406,13 +466,15 @@ function buildHighway() {
     win.position.set(-0.2, 1.3, 0); c.add(win);
     const wheelM = new THREE.MeshStandardMaterial({ color: 0x111114, roughness: 0.6 });
     [[-1.1, 0.85], [1.1, 0.85], [-1.1, -0.85], [1.1, -0.85]].forEach(([wx, wz]) => {
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.3, 10), wheelM); w.rotation.x = Math.PI / 2; w.position.set(wx, 0.36, wz); c.add(w);
+      const wl = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.3, 10), wheelM); wl.rotation.x = Math.PI / 2; wl.position.set(wx, 0.36, wz); c.add(wl);
     });
-    const dir = i % 2 === 0 ? 1 : -1;
-    c.position.set(-110 + Math.random() * 220, 0, dir > 0 ? z - 3 : z + 3);
-    c.rotation.y = dir > 0 ? 0 : Math.PI;
-    scene.add(c);
-    state.cars.push({ group: c, dir, speed: 16 + Math.random() * 14 });
+    c.rotation.y = Math.PI / 2;   // body is modelled along x; heading math points z — parent group turns it
+    const holder = new THREE.Group(); holder.add(c);
+    scene.add(holder);
+    const lane = i % 2 === 0 ? 1 : -1;                                        // 1: s increases · -1: s decreases (opposite side)
+    const coll = { type: 'circle', x: 0, z: 0, r: 1.5 };                       // you can NOT walk through traffic
+    worldColliders.push(coll);
+    state.cars.push({ group: holder, lane, s: (Math.floor(i / 2) / 9) * HWY_LEN + Math.random() * 20, v: 0, cruise: 13 + Math.random() * 7, coll });
   }
 }
 
