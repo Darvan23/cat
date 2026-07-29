@@ -84,8 +84,14 @@
 <div id="map" class="modal">
   <div class="modal-card wide">
     <div class="modal-title">🗺️ Town Map</div>
-    <div class="modal-sub">Everything in town — you're the 🐱. Tap Close to head back.</div>
-    <div id="map-wrap"><canvas id="map-canvas"></canvas></div>
+    <div class="modal-sub">Everything in town — you're the 🐱. Pinch or drag to zoom around!</div>
+    <div id="map-wrap"><canvas id="map-canvas"></canvas>
+      <div id="map-zoom">
+        <button onclick="mapZoomBtn(1.45)" title="Zoom in">➕</button>
+        <button onclick="mapZoomBtn(1/1.45)" title="Zoom out">➖</button>
+        <button onclick="mapZoomCat()" title="Find me">🐱</button>
+      </div>
+    </div>
     <button class="modal-close" onclick="closeMap()">Close</button>
   </div>
 </div>

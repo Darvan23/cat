@@ -909,3 +909,14 @@ body.indoors #btn-sneak, body.indoors #btn-attack { display: none; }   /* inside
   #btn-stack .action-btn { width: 50px; height: 50px; font-size: 0.6rem; }
   #btn-stack .action-btn .btn-icon { font-size: 1.15rem; }
 }
+
+/* ── 🔍 map zoom controls ── */
+#map-wrap { position: relative; }
+#map-canvas { touch-action: none; }
+#map-zoom { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+#map-zoom button {
+  width: 42px; height: 42px; border-radius: 10px; font-size: 1.1rem; cursor: pointer;
+  background: rgba(20,12,5,0.82); border: 2px solid #c8922a; color: #f0d080;
+  display: flex; align-items: center; justify-content: center;
+}
+#map-zoom button:active { background: rgba(200,146,42,0.5); }

@@ -2368,12 +2368,33 @@ function mapMarks() {
   });
   return marks;
 }
+// ── 🔍 map view: pinch, drag and buttons to zoom around town ──
+let _mapZoom = 1, _mapCX = 0, _mapCZ = 0;
+function _mapClampView() {
+  const half = 260 / _mapZoom;                        // SPAN/2 in world units at this zoom
+  _mapCX = Math.max(-(260 - half), Math.min(260 - half, _mapCX));
+  _mapCZ = Math.max(-(260 - half), Math.min(260 - half, _mapCZ));
+}
+function mapZoomAt(cx, cy, f) {                       // zoom keeping the point under your finger fixed
+  const D = 1040, C = D / 2, S0 = (D / 520) * _mapZoom;
+  const wx = (cx - C) / S0 + _mapCX, wz = (cy - C) / S0 + _mapCZ;
+  _mapZoom = Math.max(1, Math.min(4.5, _mapZoom * f));
+  const S1 = (D / 520) * _mapZoom;
+  _mapCX = wx - (cx - C) / S1; _mapCZ = wz - (cy - C) / S1;
+  _mapClampView(); drawFullMap();
+}
+function mapZoomBtn(f) { mapZoomAt(520, 520, f); if (typeof sfx === 'function') sfx('ui'); }
+function mapZoomCat() {                               // 🐱 jump straight to where you are
+  _mapZoom = 2.4; _mapCX = catGroup.position.x; _mapCZ = catGroup.position.z;
+  _mapClampView(); drawFullMap();
+  if (typeof sfx === 'function') sfx('ui');
+}
 function drawFullMap() {
   const cv = document.getElementById('map-canvas'); if (!cv) return;
   const D = 1040; cv.width = D; cv.height = D;
   const g = cv.getContext('2d');
-  const SPAN = 520, S = D / SPAN, C = D / 2;   // the frontier keeps growing — zoo east, Dream City west
-  const WX = x => C + x * S, WZ = z => C + z * S;
+  const SPAN = 520, S = (D / SPAN) * _mapZoom, C = D / 2;   // the frontier keeps growing — zoo east, Dream City west
+  const WX = x => C + (x - _mapCX) * S, WZ = z => C + (z - _mapCZ) * S;
   const rr = (x, y, w, h, r) => { r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 
   // ── grass + soft grid ──
@@ -2485,8 +2506,60 @@ function drawFullMap() {
 function openMap() {
   if (typeof sfx === 'function') sfx('ui');
   if (!state.gameStarted) return;
+  _mapZoom = 1; _mapCX = 0; _mapCZ = 0;               // fresh look at the whole town
   state.uiOpen = true; drawFullMap();
   document.getElementById('map').classList.add('show');
+  initMapGestures();
+}
+let _mapGesturesReady = false;
+function initMapGestures() {
+  if (_mapGesturesReady) return;
+  _mapGesturesReady = true;
+  const cv = document.getElementById('map-canvas'); if (!cv) return;
+  const pt = (clientX, clientY) => {                  // client → canvas px, rotation-aware
+    const r = cv.getBoundingClientRect();
+    const p = (typeof gameRelPoint === 'function') ? gameRelPoint(cv, clientX, clientY) : { x: clientX - r.left, y: clientY - r.top };
+    const dispW = (typeof gameRotated === 'function' && gameRotated()) ? r.height : r.width;
+    const k = cv.width / dispW;
+    return { x: p.x * k, y: p.y * k };
+  };
+  let drag = null, pinch = null;
+  cv.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const a = pt(e.touches[0].clientX, e.touches[0].clientY), b = pt(e.touches[1].clientX, e.touches[1].clientY);
+      pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; drag = null;
+    } else if (e.touches.length === 1) {
+      drag = pt(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+  cv.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (pinch && e.touches.length === 2) {
+      const a = pt(e.touches[0].clientX, e.touches[0].clientY), b = pt(e.touches[1].clientX, e.touches[1].clientY);
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch.d > 8) mapZoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / pinch.d);
+      pinch = { d, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+    } else if (drag && e.touches.length === 1) {
+      const p = pt(e.touches[0].clientX, e.touches[0].clientY);
+      const S = (1040 / 520) * _mapZoom;
+      _mapCX -= (p.x - drag.x) / S; _mapCZ -= (p.y - drag.y) / S;
+      _mapClampView(); drawFullMap();
+      drag = p;
+    }
+  }, { passive: false });
+  cv.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; if (e.touches.length === 0) drag = null; });
+  cv.addEventListener('mousedown', e => { drag = pt(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => {
+    if (!drag || !document.getElementById('map').classList.contains('show')) return;
+    const p = pt(e.clientX, e.clientY);
+    const S = (1040 / 520) * _mapZoom;
+    _mapCX -= (p.x - drag.x) / S; _mapCZ -= (p.y - drag.y) / S;
+    _mapClampView(); drawFullMap();
+    drag = p;
+  });
+  window.addEventListener('mouseup', () => { drag = null; });
+  cv.addEventListener('wheel', e => { e.preventDefault(); const p = pt(e.clientX, e.clientY); mapZoomAt(p.x, p.y, e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
 }
 function closeMap() { state.uiOpen = false; document.getElementById('map').classList.remove('show'); }
 
