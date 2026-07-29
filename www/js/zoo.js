@@ -484,6 +484,10 @@ function buildZoo() {
     bs.position.set(-1.16, 2.35, 0); booth.add(bs);
   }
   booth.position.set(ZOO.gateX + 1.6, 0, -6.4);
+  if (typeof makeTextSign === 'function') {   // 💼 the zoo is hiring too
+    const hs = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.55, 0.1), new THREE.MeshStandardMaterial({ map: makeTextSign('💼 WE\'RE HIRING!', '#2a5a2a', '#d8ffd8', 240, 56), roughness: 0.5 }));
+    hs.position.set(ZOO.gateX + 0.4, 0.9, -5.1); hs.rotation.y = Math.PI / 2; scene.add(hs);
+  }
   booth.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
   scene.add(booth);
   worldColliders.push({ type: 'box', x0: ZOO.gateX + 0.4, x1: ZOO.gateX + 2.8, z0: -7.6, z1: -5.2 });

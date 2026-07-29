@@ -2361,6 +2361,7 @@ function mapMarks() {
   if (typeof GRAY_SPOT !== 'undefined') marks.push({ x: GRAY_SPOT.x, z: GRAY_SPOT.z - 3, e: '🏛️', label: 'Gray House', c: '#c8ccd4' });
   if (typeof ZOO !== 'undefined') marks.push({ x: ZOO.gateX, z: ZOO.gateZ, e: '🦁', label: 'Town Zoo', c: '#e0c088' });
   if (typeof DC !== 'undefined') marks.push({ x: DC.gateX + 4, z: DC.gateZ, e: '🎢', label: 'Dream City', c: '#e0b8e8' });
+  if (state.activeCar && typeof _carMesh !== 'undefined' && _carMesh) marks.push({ x: _carMesh.position.x, z: _carMesh.position.z, e: '🚗', label: 'Your car', c: '#f8d0dc' });   // live — wherever you left it
   if (typeof GRAND_PARK !== 'undefined') marks.push({ x: 0, z: GRAND_PARK.z1 + 3, e: '🌳', label: 'Grand Park', c: '#a0d888' });
   state.family.forEach(f => {   // a kid who wants the park shows up on the big map too
     if (f.wantsPark && f.group && f.group.visible) marks.push({ x: f.group.position.x, z: f.group.position.z, e: '🧒', label: f.name + ' → park 🌳', c: '#a0e0a0' });
@@ -2405,6 +2406,16 @@ function drawFullMap() {
   if (typeof ZOO !== 'undefined') {   // the zoo compound
     g.fillStyle = '#d8c9a0'; rr(WX(ZOO.x0), WZ(ZOO.z0), (ZOO.x1 - ZOO.x0) * S, (ZOO.z1 - ZOO.z0) * S, 12); g.fill();
     g.strokeStyle = '#8a6a4a'; g.lineWidth = 3; g.stroke();
+  }
+  if (typeof DC !== 'undefined') {   // 🎢 Dream City, drawn properly: grounds, walls and its landmarks
+    g.fillStyle = '#ecd8f0'; rr(WX(DC.x0), WZ(DC.z0), (DC.x1 - DC.x0) * S, (DC.z1 - DC.z0) * S, 12); g.fill();
+    g.strokeStyle = '#a878b8'; g.lineWidth = 3; g.stroke();
+    g.fillStyle = '#f6ecdc';   // the main avenue + cross avenue
+    g.fillRect(WX(-184), WZ(-3) , 76 * S, 6 * S);
+    g.fillRect(WX(-137), WZ(-74), 6 * S, 128 * S);
+    g.font = Math.max(9, 11 * (D / 640)) + 'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (typeof DC_RIDES !== 'undefined') ['ferris', 'coaster', 'carousel', 'drop', 'teacups', 'train', 'dodgem', 'slide'].forEach(k => { const r = DC_RIDES[k]; g.fillText(r.e, WX(r.x), WZ(r.z)); });
+    if (typeof DC_MANOR !== 'undefined') { g.fillText('👻', WX(DC_MANOR.x), WZ(DC_MANOR.z)); g.fillText('🪞', WX(DC_FUN.x), WZ(DC_FUN.z)); g.fillText('🎶', WX(DC_STAGE.x), WZ(DC_STAGE.z)); g.fillText('⛲', WX(-122), WZ(0)); }
   }
 
   // ── water (fountains, pond, lakes — all drinkable water) ──
@@ -2551,6 +2562,10 @@ function drawMinimap() {
   state.family.forEach(f => {   // a kid hoping for a park trip pings on the minimap
     if (f.wantsPark && f.group && f.group.visible) g.fillText('🌳', X(f.group.position.x), Z(f.group.position.z));
   });
+  if (state.activeCar && typeof _carMesh !== 'undefined' && _carMesh && !state.driving) {   // 🚗 where you parked
+    g.font = '11px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('🚗', X(_carMesh.position.x), Z(_carMesh.position.z));
+  }
   if (state.goldBird && state.goldBird.mode === 'perch') {   // ✨ a golden bird is roosting — go stalk it!
     g.fillStyle = '#ffd040'; g.beginPath(); g.arc(X(state.goldBird.x), Z(state.goldBird.z), 4.2, 0, 7); g.fill();
     g.strokeStyle = '#7a5a10'; g.lineWidth = 1.5; g.stroke();

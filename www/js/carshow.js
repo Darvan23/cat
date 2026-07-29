@@ -101,6 +101,12 @@ function buildCarShow() {
   scene.add(disp);
   state._showSpinner = disp;
   worldColliders.push({ type: 'circle', x: cx + 5.4, z: cz + d / 2 + 2.6, r: 1.8 });
+  if (typeof makeTextSign === 'function') {   // 💼 WE'RE HIRING — mechanics wanted
+    const hs = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 0.1), new THREE.MeshStandardMaterial({ map: makeTextSign('💼 WE\'RE HIRING!', '#2a5a2a', '#d8ffd8', 260, 64), roughness: 0.5, emissive: 0x0a1c0a, emissiveIntensity: 0.4 }));
+    hs.position.set(cx - 5.6, 1.5, cz + d / 2 + 0.4); scene.add(hs);
+    const post = new THREE.Mesh(G.cyl(0.06, 0.08, 1.2, 6), pbr(0x5a4a3a, 0.85)); post.position.set(cx - 5.6, 0.6, cz + d / 2 + 0.35); scene.add(post);
+  }
+  buildGarages();
   // little flag bunting
   for (let i = 0; i < 6; i++) { const fl = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.4, 4), pbr([0xd0483a, 0xe8c040, 0x5a9ad0][i % 3], 0.7)); fl.position.set(cx - w / 2 + 1 + i * 2.5, 3.9, cz + d / 2 + 0.3); fl.rotation.x = Math.PI; scene.add(fl); }
   initDriveUI();
@@ -379,7 +385,10 @@ function carContext(cp) {
     if ((state.carTrunk || []).length && Math.abs(drive.v) < 0.03) return { id: 'car:trunk', label: '🧺 Open the trunk' };
     return null;
   }
+  if (Math.hypot(cp.x - (CARSHOW.x - 5.6), cp.z - (CARSHOW.z + CARSHOW.d / 2 + 0.6)) < 2.4) return { id: 'car:mech', label: '🔧 Work a mechanic shift' };
   if (Math.hypot(cp.x - CARSHOW.x, cp.z - (CARSHOW.z + CARSHOW.d / 2 + 0.6)) < 2.6) return { id: 'car:enter', label: '🚗 Enter Whisker Motors' };
+  const gr = state.activeCar ? nearestGarage(cp, 2.8) : null;
+  if (gr && (!_carMesh || Math.hypot(_carMesh.position.x - gr.x, _carMesh.position.z - gr.z) > 7)) return { id: 'car:call', gr, label: '📞 Call your car to this garage' };
   if (_carMesh && Math.hypot(cp.x - _carMesh.position.x, cp.z - _carMesh.position.z) < 2.4) {
     if (state.carryBag) return { id: 'car:stow', label: '🧺 Put the bag in the trunk' };
     return { id: 'car:hopin', label: '🚗 Hop in the ' + CAR_STYLES[state.activeCar].name };
@@ -393,5 +402,118 @@ function carAction(ctx) {
   else if (ctx.id === 'car:mine') { showNotif(CAR_STYLES[ctx.style].e + ' It purrs when you pat the bonnet. Your ride awaits out front!'); if (typeof sfx === 'function') sfx('purr'); }
   else if (ctx.id === 'car:hopin') enterCar();
   else if (ctx.id === 'car:stow') trunkPut();
+  else if (ctx.id === 'car:mech') startMinigame({ job: 'mech', hasJob: true, name: 'Sal', bubble: { material: { color: { setHex() {} }, emissive: { setHex() {} } } } });
+  else if (ctx.id === 'car:call') {
+    parkCarAt(ctx.gr.x, ctx.gr.z + 0.2, ctx.gr.ry);
+    if (typeof sfx === 'function') sfx('meow');
+    showNotif('📞 MEEP-MEOW! Your ' + CAR_STYLES[state.activeCar].name + ' pulls into the garage by ' + ctx.gr.label + '.');
+  }
   else if (ctx.id === 'car:trunk') openTrunk();
 }
+
+// ── 🏠 GARAGES: little carports attached to the town's key buildings ──
+//    Walk up to any of them and CALL your car over — it's always where you need it.
+const GARAGES = [];
+function buildGarage(x, z, ry, label) {
+  const gg = new THREE.Group();
+  const pad = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.12, 3.2), pbr(0x9a97a0, 0.9)); pad.position.y = 0.06; pad.receiveShadow = true; gg.add(pad);
+  [-1.6, 1.6].forEach(dx => { const post = new THREE.Mesh(G.cyl(0.09, 0.11, 2.2, 8), pbr(0x5a5a68, 0.8)); post.position.set(dx, 1.1, -1.3); post.castShadow = true; gg.add(post); });
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.14, 2.0), pbr(0xc84a6a, 0.75)); roof.position.set(0, 2.25, -0.7); roof.rotation.x = 0.1; roof.castShadow = true; gg.add(roof);
+  const sign = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.08), new THREE.MeshStandardMaterial({ color: 0x3a5a9a, roughness: 0.5, emissive: 0x101c30, emissiveIntensity: 0.5 }));
+  sign.position.set(1.6, 2.0, -1.32); gg.add(sign);
+  if (typeof makeTextSign === 'function') { const p = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.02), new THREE.MeshStandardMaterial({ map: makeTextSign('P', '#2a4a8a', '#ffffff', 64, 64), roughness: 0.5 })); p.position.set(1.6, 2.0, -1.27); gg.add(p); }
+  gg.position.set(x, 0, z); gg.rotation.y = ry || 0;
+  scene.add(gg);
+  GARAGES.push({ x, z, ry: ry || 0, label: label || 'garage', group: gg });
+  return gg;
+}
+function buildGarages() {
+  buildGarage(-10.5, -5.5, 0, "the Millers' house");                                     // home
+  if (typeof GRAY_SPOT !== 'undefined') buildGarage(GRAY_SPOT.x + 16, GRAY_SPOT.z - 8, 0, 'the Gray House');
+  if (typeof DC !== 'undefined') buildGarage(DC.gateX + 8, DC.gateZ + 13, 0, 'Dream City');
+  if (typeof ZOO !== 'undefined') buildGarage(ZOO.gateX - 6, 9, 0, 'the Town Zoo');
+  if (typeof BUSINESS_LOTS !== 'undefined') for (const id in BUSINESS_LOTS) {            // one per business, part of the lot
+    const lot = BUSINESS_LOTS[id];
+    buildGarage(lot.x + 7.5, lot.z + 2.5, 0, 'your ' + id);
+  }
+}
+function nearestGarage(cp, range) {
+  let best = null, bd = range || 2.8;
+  GARAGES.forEach(gr => { const d = Math.hypot(cp.x - gr.x, cp.z - gr.z); if (d < bd) { bd = d; best = gr; } });
+  return best;
+}
+
+// ── 🔧 THE MECHANIC'S BAY: cats bring in broken cat cars — find the fault, fix it ──
+const MECH_FAULTS = [
+  { id: 'wheel',  e: '🛞', line: '“It goes clonk-clonk and wobbles!”',   fixed: 'New wheel ON — smooth as cream!' },
+  { id: 'light',  e: '💡', line: '“I can\'t see a thing at night!”',     fixed: 'Headlight eyes shining bright!' },
+  { id: 'engine', e: '💨', line: '“Smoke! There\'s SMOKE everywhere!”',  fixed: 'Engine purring like a kitten!' },
+  { id: 'horn',   e: '📣', line: '“My meep-meow won\'t meep…”',          fixed: 'MEEP-MEOW fully restored!' },
+  { id: 'tail',   e: '〰️', line: '“The tail just droops. Tragic.”',     fixed: 'Tail wagging happily again!' },
+];
+const carJobMech = {
+  id: 'mech', title: '🔧 Whisker Motors Garage', hint: 'Listen to the cat — tap the BROKEN part!',
+  icon: '🔧', verb: 'fixed', noun: ['car', 'cars'], duration: 26, swipe: false,
+  failText: 'Not one car fixed…',
+  doneLine: c => `${c} ${c === 1 ? 'car' : 'cars'} fixed and purring! Sal is impressed — here's your pay. 🔧`,
+  failLine: 'Ah, tricky ones today. Come back for another shift!',
+  start(mg) { this.roll(mg); },
+  roll(mg) {
+    mg.car = {
+      col: ['#e888a8', '#e08a30', '#8ac0e8', '#a8d078', '#c8a8e0'][(Math.random() * 5) | 0],
+      catCol: ['#f0e0c8', '#8a8a92', '#e0a050', '#4a4a52'][(Math.random() * 4) | 0],
+      fault: MECH_FAULTS[(Math.random() * MECH_FAULTS.length) | 0],
+      fixedT: 0, wob: Math.random() * 6,
+    };
+  },
+  update(mg, dt) { if (mg.car.fixedT > 0) { mg.car.fixedT += dt; if (mg.car.fixedT > 0.7) this.roll(mg); } },
+  parts(mg) {
+    const cx = mg.w / 2, cy = mg.h * 0.58;
+    return {
+      wheel:  { x: cx - 70, y: cy + 46, r: 30 },
+      light:  { x: cx + 96, y: cy - 14, r: 26 },
+      engine: { x: cx + 40, y: cy - 40, r: 34 },
+      horn:   { x: cx - 10, y: cy - 46, r: 24 },
+      tail:   { x: cx - 116, y: cy - 30, r: 28 },
+    };
+  },
+  draw(mg) {
+    const c = mg.ctx, cx = mg.w / 2, cy = mg.h * 0.58, car = mg.car;
+    _dcSky(mg, '#4a4a58', '#2e2e3a');
+    c.fillStyle = '#3a3a46'; c.fillRect(0, cy + 60, mg.w, mg.h);                        // garage floor
+    c.fillStyle = '#c8922a'; c.fillRect(0, cy + 58, mg.w, 4);
+    const P = this.parts(mg), f = car.fault.id, done = car.fixedT > 0;
+    // the little car: body, ears, wheels, light, tail
+    c.fillStyle = car.col; c.beginPath(); c.ellipse(cx, cy, 110, 46, 0, 0, 7); c.fill();
+    c.beginPath(); c.ellipse(cx + 30, cy - 34, 52, 26, 0, 0, 7); c.fill();              // cab
+    [[-38], [38]].forEach(([ex]) => { c.beginPath(); c.moveTo(cx + ex - 12, cy - 48); c.lineTo(cx + ex, cy - 72); c.lineTo(cx + ex + 12, cy - 48); c.fill(); });   // ears
+    c.fillStyle = '#2a2a32';
+    c.beginPath(); c.arc(cx + 62, cy + 46, 26, 0, 7); c.fill();                          // good wheel
+    c.beginPath(); (f === 'wheel' && !done) ? c.ellipse(P.wheel.x, P.wheel.y + 10, 30, 16, 0, 0, 7) : c.arc(P.wheel.x, P.wheel.y, 26, 0, 7); c.fill();   // maybe FLAT
+    c.fillStyle = (f === 'light' && !done) ? '#4a4a52' : '#ffe9a0';
+    c.beginPath(); c.arc(P.light.x, P.light.y, 14, 0, 7); c.fill();                      // headlight eye
+    if (f === 'engine' && !done) { c.fillStyle = 'rgba(120,120,130,.75)'; for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(P.engine.x + Math.sin(mg.timeLeft * 3 + k) * 10, P.engine.y - 18 - k * 16, 10 + k * 3, 0, 7); c.fill(); } }
+    _dcEmoji(mg, '📣', P.horn.x, P.horn.y, 22, (f === 'horn' && !done) ? 0.6 : 0);       // the horn (crooked if broken)
+    c.strokeStyle = car.col; c.lineWidth = 9; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(cx - 104, cy - 10);
+    if (f === 'tail' && !done) c.quadraticCurveTo(P.tail.x, P.tail.y + 34, P.tail.x - 8, P.tail.y + 44);   // droopy
+    else c.quadraticCurveTo(P.tail.x, P.tail.y - 6, P.tail.x - 4, P.tail.y - 16);                          // proud
+    c.stroke();
+    // the worried cat customer + their complaint
+    _dcEmoji(mg, '🐱', mg.w * 0.14, mg.h * 0.22, 34);
+    c.fillStyle = '#f6ecd8'; c.font = 'bold 13px Georgia'; c.textAlign = 'left';
+    c.fillText(done ? car.fault.fixed : car.fault.line, mg.w * 0.14 + 26, mg.h * 0.22 + 4);
+    if (done) _dcEmoji(mg, '✨', cx, cy - 70, 30);
+  },
+  tap(mg, cx2, cy2) {
+    const car = mg.car; if (car.fixedT > 0) return false;
+    const P = this.parts(mg);
+    let hit = null;
+    for (const id in P) { if (Math.hypot(P[id].x - cx2, P[id].y - cy2) < P[id].r + 8) { hit = id; break; } }
+    if (!hit) return false;
+    if (hit === car.fault.id) { mg.caught++; car.fixedT = 0.01; if (typeof sfx === 'function') sfx('catch'); return true; }
+    mgLoseLife(cx2, cy2);                                    // wrong part — the cat yowls
+    return false;
+  },
+};
+if (typeof JOBS !== 'undefined') JOBS.mech = carJobMech;

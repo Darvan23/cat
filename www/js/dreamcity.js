@@ -104,6 +104,8 @@ function buildDreamCity() {
   });
   _dcBox(0.9, 1.6, 10.4, pbr(0xc878b0, 0.7), DC.gateX, 8.2, 0);
   _dcSign('🎢 DREAM CITY 🎡', '#4a2a6a', '#ffe9a0', 8.4, 1.2, DC.gateX - 0.5, 8.2, 0, Math.PI / 2);
+  _dcSign('💼 WE\'RE HIRING!', '#2a5a2a', '#d8ffd8', 2.6, 0.6, DC.gateX + 1.9, 2.4, 6.6, Math.PI / 2);
+  _dcBox(0.14, 1.0, 1.4, pbr(0x2a1c12, 0.4), DC.gateX + 1.7, 1.4, 6.6);   // the ticket window
   for (let i = 0; i < 9; i++) _dcBulb(DC.gateX - 0.52, 7.35, -4 + i);
   const doorM = pbr(0x8a4ab0, 0.6);
   [-1.75, 1.75].forEach(dz => {
@@ -730,6 +732,7 @@ function updateDreamCity(t) {
     if (fw.age > 1.5) { scene.remove(fw.pts); fw.pts.geometry.dispose(); fw.mat.dispose(); DC_FW.splice(i, 1); }
   }
 
+  updateDcBooth(t);                                           // 🎫 the gate window queue
   // a ride in progress drives the camera
   if (state.dcRide) updateDcRide(t, dt2);
 }
@@ -866,6 +869,11 @@ function updateDcRide(t, dt2) {
 function dcContext(cp) {
   if (cp.x > -95) return null;
   const near = (x, z, d) => Math.hypot(cp.x - x, cp.z - z) < d;
+  if (near(DC_BOOTH.x, DC_BOOTH.z, 3.2)) {   // 🎫 the gate window: your Dream City job
+    const front = dcFrontVisitor();
+    if (front) return { id: 'dc:serve', label: '🎫 Serve: ' + front.want.e + ' ' + front.want.name };
+    return { id: 'dc:shift', label: state.dcShift ? '🛑 Stop selling passes' : '🎫 Sell day passes (job)' };
+  }
   if (near(DC_KIOSK.x, DC_KIOSK.z, 2.6)) return { id: 'dc:kiosk', label: '🎟️ Buy ride tickets (' + (state.dcTickets || 0) + ' left)' };
   for (const k in DC_RIDES) { const r = DC_RIDES[k]; if (near(r.x, r.z, r.r + 2.4)) return { id: 'dc:ride', kind: k, label: r.e + ' Ride the ' + r.name + ' · ' + r.cost + ' 🎟️' }; }
   for (const s of DC_STALLS) { if (near(s.x, s.z + 1.4, 2.2)) return { id: 'dc:stall', stall: s, label: s.e + ' Play ' + s.name + ' · 1 🎟️' }; }
@@ -896,6 +904,8 @@ function dcAction(ctx) {
     document.getElementById('checkout').classList.add('show');
   }
   else if (ctx.id === 'dc:ride') startDcRide(ctx.kind);
+  else if (ctx.id === 'dc:shift') toggleDcShift();
+  else if (ctx.id === 'dc:serve') openDcServe();
   else if (ctx.id === 'dc:stall') {
     if (!spendDcTicket(1, ctx.stall.e + ' ' + ctx.stall.name)) return;
     startMinigame({ job: ctx.stall.game, hasJob: true, name: ctx.stall.name, bubble: { material: { color: { setHex() {} }, emissive: { setHex() {} } } } });
@@ -1746,4 +1756,90 @@ function dcFunContext(cp) {
   const F = DC_R.fun; if (!F) return null;
   if (Math.hypot(cp.x - F.cannon.x, cp.z - F.cannon.z) < 1.6) return { id: 'dc:confetti', label: '🎉 Fire the confetti cannon!' };
   return null;
+}
+
+// ── 🎫 WE'RE HIRING: sell Dream City day passes at the gate window ──
+const DC_PASS_TYPES = [
+  { id: 'adult',  e: '🧑',       name: 'Adult'  },
+  { id: 'child',  e: '🧒',       name: 'Child'  },
+  { id: 'family', e: '👨‍👩‍👧', name: 'Family' },
+];
+const DC_BOOTH = { x: DC.gateX + 2.2, z: 6.6 };
+function toggleDcShift() {
+  state.dcShift = !state.dcShift;
+  if (state.dcShift) {
+    state.dcVisitors = state.dcVisitors || [];
+    state._dcSpawnT = 1.5;
+    showNotif('🎫 On shift! Visitors want DAY PASSES — sell each one the RIGHT kind.');
+  } else {
+    (state.dcVisitors || []).forEach(v => { v.state = 'off'; });
+    showNotif('🎫 Shift over — nice work at the gate.');
+  }
+  if (typeof sfx === 'function') sfx('ui');
+}
+function spawnDcVisitor() {
+  const cfg = (typeof randomPersonCfg === 'function') ? randomPersonCfg() : { skin: 0xe2b48c, hair: 0x3a2a1c, shirt: 0x6a8ac0, pants: 0x3a3a4a };
+  const { group, parts } = buildHuman(cfg);
+  const want = DC_PASS_TYPES[Math.floor(Math.random() * DC_PASS_TYPES.length)];
+  group.position.set(DC.gateX + 16 + Math.random() * 6, 0, 6.6 + (Math.random() - 0.5) * 4);
+  scene.add(group);
+  const spr = (typeof makeThoughtSprite === 'function') ? makeThoughtSprite(want) : null;
+  if (spr) { spr.visible = false; group.add(spr); }
+  state.dcVisitors.push({ group, parts, want, spr, wx: group.position.x, wz: group.position.z, phase: Math.random() * 6, state: 'come' });
+}
+function dcQueueSpot(i) { return { x: DC.gateX + 3.6 + i * 1.3, z: 6.6 }; }
+function dcFrontVisitor() { return (state.dcVisitors || []).find(v => v.state === 'wait'); }
+function updateDcBooth(t) {
+  const V = state.dcVisitors || [];
+  if (state.dcShift) {
+    state._dcSpawnT = (state._dcSpawnT || 0) - 0.016;
+    const active = V.filter(v => v.state === 'come' || v.state === 'wait').length;
+    if (state._dcSpawnT <= 0 && active < 4) { spawnDcVisitor(); state._dcSpawnT = 5 + Math.random() * 5; }
+    if (Math.hypot(catGroup.position.x - DC_BOOTH.x, catGroup.position.z - DC_BOOTH.z) > 8) toggleDcShift();   // wandered off — shift ends
+  }
+  let qi = 0;
+  for (let i = V.length - 1; i >= 0; i--) {
+    const v = V[i];
+    if (v.state === 'come' || v.state === 'wait') {
+      const spot = dcQueueSpot(qi++);
+      const arrived = walkToward(v, spot.x, spot.z, 0.045);
+      if (arrived) { v.state = 'wait'; if (v.spr) v.spr.visible = qi === 1; }
+      else { v.state = 'come'; if (v.spr) v.spr.visible = false; }
+      if (v.spr && v.state === 'wait') v.spr.visible = (qi === 1);
+      idleHuman(v, t);
+    } else if (v.state === 'in') {                          // pass in paw — through the gate they go
+      if (walkToward(v, DC.gateX - 3, 0, 0.05)) { scene.remove(v.group); V.splice(i, 1); }
+    } else if (v.state === 'off') {                         // wrong ticket / closing time — off home
+      if (walkToward(v, DC.gateX + 26, 10, 0.055)) { scene.remove(v.group); V.splice(i, 1); }
+    }
+  }
+}
+function openDcServe() {
+  const v = dcFrontVisitor(); if (!v) return;
+  state.uiOpen = true; state._dcServing = v;
+  let h = `<div class="zoo-want">${v.want.e}</div>`;
+  h += `<div class="modal-sub" style="font-size:1rem">“One <b>${v.want.name}</b> day pass, please!”</div>`;
+  h += `<div class="co-grid" style="grid-template-columns:repeat(3,1fr)">`;
+  DC_PASS_TYPES.forEach(tk => { h += `<button onclick="sellDcPass('${tk.id}')">${tk.e}<small>${tk.name} 🎫</small></button>`; });
+  h += `</div><button class="modal-close" onclick="closeCheckout()">Not now</button>`;
+  document.getElementById('checkout-title').textContent = '🎫 Sell a day pass';
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+}
+function sellDcPass(id) {
+  const v = state._dcServing; closeCheckout();
+  if (!v || v.state !== 'wait') return;
+  if (v.spr) v.spr.visible = false;
+  if (id === v.want.id) {
+    v.state = 'in';
+    state.coins += 3; state.earned = (state.earned || 0) + 3;
+    document.getElementById('coin-count').textContent = state.coins;
+    if (typeof sfx === 'function') sfx('sell');
+    showNotif('🎫 Right pass, happy guest — +3 🪙! In they skip.');
+    if (typeof schoolEvent === 'function') schoolEvent('minigame');
+  } else {
+    v.state = 'off';
+    if (typeof sfx === 'function') sfx('sad');
+    showNotif('❌ Wrong pass! They storm off muttering about standards…');
+  }
 }
