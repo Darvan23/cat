@@ -101,9 +101,28 @@ const camTouchDone = e => {
 canvas.addEventListener('touchend', camTouchDone);
 canvas.addEventListener('touchcancel', camTouchDone);
 
-document.getElementById('btn-jump').addEventListener('click', doJump);
+// 🦘 hold to CHARGE the jump, release to fly — plus 🤫 sneak and 🐾 pounce
+const _jumpBtn = document.getElementById('btn-jump');
+function startJumpCharge() { if (mg.active || state.isJumping || state.uiOpen || state.driving) return; state._jumpHold = true; state.jumpCharge = 0; _jumpBtn.classList.add('charging'); }
+function releaseJump() { if (!state._jumpHold) return; state._jumpHold = false; _jumpBtn.classList.remove('charging'); _jumpBtn.style.transform = ''; doJump(state.jumpCharge || 0); state.jumpCharge = 0; }
+_jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); startJumpCharge(); }, { passive: false });
+_jumpBtn.addEventListener('touchend', e => { e.preventDefault(); releaseJump(); });
+_jumpBtn.addEventListener('touchcancel', releaseJump);
+_jumpBtn.addEventListener('mousedown', startJumpCharge);
+_jumpBtn.addEventListener('mouseup', releaseJump);
+_jumpBtn.addEventListener('mouseleave', releaseJump);
+const _sneakBtn = document.getElementById('btn-sneak');
+if (_sneakBtn) _sneakBtn.addEventListener('click', () => {
+  state.sneaking = !state.sneaking;
+  _sneakBtn.classList.toggle('on', state.sneaking);
+  if (typeof sfx === 'function') sfx('ui');
+  showNotif(state.sneaking ? '🤫 Paws like feathers… the mice suspect NOTHING.' : '🐾 Back to strolling.');
+});
+const _attackBtn = document.getElementById('btn-attack');
+if (_attackBtn) { _attackBtn.addEventListener('touchstart', e => { e.preventDefault(); doAttack(); }, { passive: false }); _attackBtn.addEventListener('mousedown', doAttack); }
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space') doJump();
+  if (e.code === 'Space' && !e.repeat) startJumpCharge();
+  if (e.code === 'KeyF') doAttack();
   if (e.code === 'KeyE') doAction();   // keyboard shortcut still works; the on-screen "Act" button is gone
 });
 
@@ -1573,7 +1592,7 @@ function updateCritters() {
   const dt = 0.016, cp = catGroup.position;
   state.parkCritters.forEach(c => {
     const dc = Math.hypot(c.x - cp.x, c.z - cp.z);
-    if (c.type === 'bird' && dc < 4) { c.dir = Math.atan2(c.z - cp.z, c.x - cp.x); c.speed = c.baseSpeed * 2.2; }  // birds flee
+    if (c.type === 'bird' && dc < 4 && !state.sneaking) { c.dir = Math.atan2(c.z - cp.z, c.x - cp.x); c.speed = c.baseSpeed * 2.2; }  // birds flee — unless you're sneaking
     else { c.turnT -= dt; if (c.turnT <= 0) { c.dir += (Math.random() - 0.5) * 1.5; c.turnT = 0.5 + Math.random() * 1.5; c.speed = c.baseSpeed; } }
     c.hop += dt * (c.type === 'bird' ? 10 : 6);
     const wx = Math.cos(c.dir), wz = Math.sin(c.dir);
@@ -2006,7 +2025,7 @@ function updateStrayMouse() {
   }
   const m = state.strayMouse, cp = catGroup.position;
   const dx = m.x - cp.x, dz = m.z - cp.z, d = Math.hypot(dx, dz);
-  if (d < 5) { m.dir = Math.atan2(dz, dx); m.speed = 0.06; }
+  if (d < 5 && !state.sneaking) { m.dir = Math.atan2(dz, dx); m.speed = 0.06; }
   else { m.turnT -= 0.016; if (m.turnT <= 0) { m.dir += (Math.random() - 0.5) * 1.5; m.turnT = 0.6 + Math.random() * 1.4; m.speed = 0.035; } }
   m.x += Math.cos(m.dir) * m.speed; m.z += Math.sin(m.dir) * m.speed;
   m.x = Math.max(-66, Math.min(48, m.x)); m.z = Math.max(-34, Math.min(50, m.z));   // stays out of the park
@@ -2128,15 +2147,44 @@ function sleepAtHome() {
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-function doJump() {
+// roof-aware collisions: once you're above a house's walls, its footprint stops blocking you
+function catColliders() {
+  const list = activeColliders();
+  const h = Math.max(state.catBaseY || 0, state.isJumping ? catGroup.position.y - 0.35 : 0);   // mid-leap height counts too
+  if (h < 0.6) return list;
+  return list.filter(c => !(c.top && h > c.top));
+}
+
+// 🐾 the pounce: a quick strike that nabs any mouse or bird in reach
+function doAttack() {
+  if (mg.active || state.uiOpen || state.driving || (state._attackCd || 0) > 0) return;
+  state._attackCd = 0.55;
+  state.attackT = 0.3;
+  let got = false;
+  if (!playerIndoors()) {
+    const c = nearestCritter(catGroup.position, 2.2); if (c) { catchCritter(c); got = true; }
+    const m = state.strayMouse;
+    if (!got && m && !state.carryingMouse && Math.hypot(m.x - catGroup.position.x, m.z - catGroup.position.z) < 2.2) {
+      scene.remove(m.group); state.strayMouse = null; state.carryingMouse = true;
+      _catHappyT = 1.0; sfx('catch'); showNotif('🐭 Got it! Now bring it home to the Millers…');
+      got = true;
+    }
+  }
+  if (!got && typeof sfx === 'function') sfx('ui');   // a swipe at thin air
+}
+
+function doJump(power) {
   if (mg.active || state.isJumping || state.uiOpen) return;
+  power = Math.max(0, Math.min(1, power || 0));
   state.isJumping = true;
   state.jumpT = 0;
+  state.jumpPeak = 1 + power * 1.7;        // a fully-charged leap reaches the eaves
   state.jumpBaseY = state.catBaseY || 0;   // hop starts from whatever tier you're standing on
   // a real cat leaps FORWARD in an arc — glide along the facing (outdoors; interiors stay vertical hops)
   const inside = state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail;
   const fx = Math.sin(catGroup.rotation.y), fz = Math.cos(catGroup.rotation.y);
-  state.jumpVx = inside ? 0 : fx * 0.05; state.jumpVz = inside ? 0 : fz * 0.05;
+  const lunge = 0.05 + power * 0.04;
+  state.jumpVx = inside ? 0 : fx * lunge; state.jumpVz = inside ? 0 : fz * lunge;
   if (typeof sfx === 'function') sfx('jump');
   if (!state.inHouse) {
     const c = nearestCritter(catGroup.position, 1.7); if (c) catchCritter(c);   // pounce on park critters
@@ -2499,7 +2547,7 @@ function animate(now) {
     if (R.cooldown && R.stamina >= R.max) R.cooldown = false;
   }
   updateStaminaUI(sprinting);
-  const speed = (sprinting ? 0.17 : 0.095) * moveMag * (tired ? 0.6 : 1) * (state.carryBag ? 0.55 : 1);   // sluggish when run-down; a careful plod with the shopping
+  const speed = (sprinting ? 0.17 : 0.095) * moveMag * (tired ? 0.6 : 1) * (state.carryBag ? 0.55 : 1) * (state.sneaking ? 0.45 : 1);   // sluggish when run-down; sneaking is slow and silent
   if (moving) {
     const fX = -Math.sin(state.camYaw), fZ = -Math.cos(state.camYaw);
     const rX =  Math.cos(state.camYaw), rZ = -Math.sin(state.camYaw);
@@ -2525,7 +2573,7 @@ function animate(now) {
     tail.rotation.x = -0.4 - bounce * 0.2;                                // tail carried up while trotting
     tail.rotation.z = Math.sin(t * gait * 0.5) * 0.22;
     // Resolve collisions (walls / furniture / trees), then clamp to the area
-    const hit = collide(catGroup.position.x, catGroup.position.z, activeColliders(), state.inHouse ? 0.16 : 0.24);
+    const hit = collide(catGroup.position.x, catGroup.position.z, catColliders(), state.inHouse ? 0.16 : 0.24);
     catGroup.position.x = hit.x; catGroup.position.z = hit.z;
     let bx = 216, bxMin = -240, bzMin = -138, bzMax = 64;   // the frontier: Dream City west, Grand Park south, safari zoo east
     if (state.inHouse) { bx = 3.2; bzMin = -2.6; bzMax = 2.6; }
@@ -2561,19 +2609,40 @@ function animate(now) {
       else state.catBaseY = Math.max(surf, base - 0.14);
     }
     if (!state.isJumping && (state._stairCd || 0) <= 0 && state.catBaseY >= 2.3) walkUpstairs();   // reached the top → upstairs
+  } else if (!playerIndoors() && typeof worldSurfaceY === 'function') {
+    // 🏠 outdoors: sills, awnings, eaves and roof slopes are real ground now
+    const surf = worldSurfaceY(catGroup.position.x, catGroup.position.z, state.catBaseY || 0);
+    const base = state.catBaseY || 0;
+    if (!state.isJumping) {
+      if (surf > base + 0.001) { if (surf - base <= 0.42) state.catBaseY = surf; }   // pad up a slope or small step
+      else state.catBaseY = Math.max(surf, base - 0.14);                             // ease down / drop off the edge
+    }
+    if (base < 0.5) state._roofNotified = false;
   } else if (!state.inHouse) { state.catBaseY = 0; }
 
   // Jump animation — a real cat leap: an ARC (nose up on the rise, nose down on the fall) with a forward glide
   if (state.isJumping) {
-    state.jumpT += 0.07;
+    state.jumpT += 0.07 / Math.sqrt(state.jumpPeak || 1);
     const jp = Math.min(1, state.jumpT), s = Math.sin(jp * Math.PI);
-    catGroup.position.y = (state.jumpBaseY || 0) + s * 1.0;
+    catGroup.position.y = (state.jumpBaseY || 0) + s * (state.jumpPeak || 1);
     catGroup.rotation.x = -Math.cos(jp * Math.PI) * 0.34;                 // pitch through the arc: nose up → level → nose down
     if (state.jumpVx || state.jumpVz) {                                    // forward lunge along the arc
       catGroup.position.x += state.jumpVx * (0.35 + s * 0.85);
       catGroup.position.z += state.jumpVz * (0.35 + s * 0.85);
-      const jh = collide(catGroup.position.x, catGroup.position.z, activeColliders(), 0.24);
+      const jh = collide(catGroup.position.x, catGroup.position.z, catColliders(), 0.24);
       catGroup.position.x = jh.x; catGroup.position.z = jh.z;
+    }
+    // touch down early on any ledge or roof you sail over
+    if (jp > 0.5 && !playerIndoors() && typeof worldSurfaceY === 'function') {
+      const surf = worldSurfaceY(catGroup.position.x, catGroup.position.z, catGroup.position.y);   // ledge assist: grab anything within reach
+      if (surf > 0.05 && Math.abs(catGroup.position.y - surf) <= 0.42) {
+        state.isJumping = false; state.landT = 0.22;
+        catBody.scale.x = catBody.scale.z = 1; catBody.scale.y = 1;
+        catGroup.rotation.x = 0;
+        state.catBaseY = surf; catGroup.position.y = surf;
+        if (surf > 3 && !state._roofNotified) { state._roofNotified = true; showNotif('🏠 You\'re on the ROOF! The whole town from up here…'); }
+        if (typeof sfx === 'function') sfx('catch');
+      }
     }
     const stretch = 1 + s * 0.16 - (jp < 0.14 || jp > 0.86 ? 0.14 : 0);   // squash on take-off/land, stretch mid-air
     catBody.scale.y = stretch; catBody.scale.x = catBody.scale.z = 1 - (stretch - 1) * 0.5;
@@ -2587,6 +2656,7 @@ function animate(now) {
       catGroup.rotation.x = 0;                    // level out on touchdown
       state.catBaseY = (state.inShelter && typeof shelterSurfaceY === 'function') ? shelterSurfaceY(catGroup.position.x, catGroup.position.z)
                      : (state.inHouse && state.floor === 'ground' && typeof houseStairY === 'function') ? houseStairY(catGroup.position.x, catGroup.position.z)
+                     : (!playerIndoors() && typeof worldSurfaceY === 'function') ? worldSurfaceY(catGroup.position.x, catGroup.position.z, catGroup.position.y)
                      : 0;
       catGroup.position.y = state.catBaseY;
     }
@@ -2614,6 +2684,35 @@ function animate(now) {
     catBody.scale.x = catBody.scale.z = 1 + q * 0.1;                // …spread out…
     tail.rotation.x = -0.15 - q * 0.55;                             // tail flicks up on impact
     if (state.landT <= 0) { catBody.scale.x = catBody.scale.z = 1; }   // …and spring back
+  }
+  // 🦘 charging a jump: the deeper the crouch, the higher the spring
+  if (state._jumpHold && !state.isJumping) {
+    state.jumpCharge = Math.min(1, (state.jumpCharge || 0) + 0.022);
+    catBody.scale.y = 1 - state.jumpCharge * 0.24;
+    catBody.scale.x = catBody.scale.z = 1 + state.jumpCharge * 0.08;
+    tail.rotation.z = Math.sin(t * 18) * state.jumpCharge * 0.35;                 // tail quivers with intent
+    const jb = document.getElementById('btn-jump');
+    if (jb) jb.style.transform = 'scale(' + (1 + state.jumpCharge * 0.22) + ')';
+  }
+  // 🤫 sneaking: low and slow
+  if (state.sneaking && !state.isJumping && !state.driving) {
+    catGroup.scale.y = catGroup.scale.x * 0.8;
+    if (moving) catGroup.position.y = (state.catBaseY || 0) + Math.abs(Math.sin(t * 6)) * 0.015;   // careful little steps
+  } else if (!state.driving) {
+    catGroup.scale.y = catGroup.scale.x;
+  }
+  // 🐾 the pounce swipe
+  state._attackCd = Math.max(0, (state._attackCd || 0) - 0.016);
+  if ((state.attackT || 0) > 0) {
+    state.attackT -= 0.016;
+    const ap = 1 - state.attackT / 0.3, sw = Math.sin(ap * Math.PI);
+    catGroup.position.x += Math.sin(catGroup.rotation.y) * sw * 0.05;
+    catGroup.position.z += Math.cos(catGroup.rotation.y) * sw * 0.05;
+    catGroup.rotation.x = sw * 0.22;                                             // nose dips into the strike
+    legs[0].rotation.x = -sw * 1.5; legs[1].rotation.x = -sw * 1.1;              // front paws lash out
+    const ah = collide(catGroup.position.x, catGroup.position.z, catColliders(), 0.24);
+    catGroup.position.x = ah.x; catGroup.position.z = ah.z;
+    if (state.attackT <= 0) { catGroup.rotation.x = 0; legs[0].rotation.x = 0; legs[1].rotation.x = 0; }
   }
   if (!moving) state._lean = (state._lean || 0) * 0.8;              // relax the turn-bank when standing
   // Happy bounce & tail-up right after being petted / playing

@@ -132,7 +132,7 @@ function buildWorld() {
     const built = buildHouse(h.x, 0, h.z, h.wall, h.roof, h.name, h.rotY || 0);
     const ew = Math.abs(Math.sin(h.rotY || 0)) > 0.5;       // rotated to face east/west?
     const hw = ew ? 2.0 : 2.5, hd = ew ? 2.5 : 2.0;
-    const coll = { type: 'box', x0: h.x - hw, x1: h.x + hw, z0: h.z - hd, z1: h.z + hd };
+    const coll = { type: 'box', x0: h.x - hw, x1: h.x + hw, z0: h.z - hd, z1: h.z + hd, top: 3.3 };   // a cat above the eaves walks right over
     worldColliders.push(coll);
     // A shop-front name board over the door, facing the street (south side)
     const sign = (h.name && SHOP_SIGNS[h.name]) ? buildNameSign(h.x, 3.05, h.z - 2.06, SHOP_SIGNS[h.name], true) : null;
@@ -181,6 +181,35 @@ function buildWorld() {
   [-50, -22, 6, 34, 56].forEach(lx => { regLamp(lx, 6.5); regLamp(lx, 31.5); regLamp(lx, -22.5); });
 }
 
+// ── 🐾 climbable surfaces: sills → awning → eaves → the roof itself ──
+const roofPlatforms = [];
+function worldSurfaceY(x, z, refY) {
+  // refY: only surfaces reachable from that height count (a roof overhang
+  // shouldn't swallow the window sill underneath it)
+  let best = 0;
+  for (const p of roofPlatforms) {
+    let y;
+    if (p.kind === 'roof') {
+      const dx = Math.abs(x - p.x), dz = Math.abs(z - p.z);
+      if (dx > p.hw || dz > p.hd) continue;
+      y = p.peakY - (p.peakY - p.eaveY) * Math.max(dx / p.hw, dz / p.hd);
+    } else {
+      if (x < p.x0 || x > p.x1 || z < p.z0 || z > p.z1) continue;
+      y = p.y;
+    }
+    if (refY !== undefined && y > refY + 0.45) continue;
+    if (y > best) best = y;
+  }
+  return best;
+}
+function regPlat(cx, cz, r, dx, dz, hw, hd, y) {   // rotation-aware flat ledge
+  const cs = Math.cos(r), sn = Math.sin(r);
+  const wx = cx + dx * cs + dz * sn, wz = cz - dx * sn + dz * cs;
+  const rot = Math.abs(sn) > 0.5;
+  const ax = rot ? hd : hw, az = rot ? hw : hd;
+  roofPlatforms.push({ x0: wx - ax, x1: wx + ax, z0: wz - az, z1: wz + az, y });
+}
+
 function buildHouse(x, y, z, wallMat, roofMat, npcName, rotY = 0) {
   const g = new THREE.Group();
   // Walls
@@ -216,9 +245,13 @@ function buildHouse(x, y, z, wallMat, roofMat, npcName, rotY = 0) {
       bloom.position.set(wx - 0.26 + fi * 0.26, -0.06, 2.12); g.add(bloom);
     }
   });
-  // A trim band under the roofline ties the walls together
-  const trim = new THREE.Mesh(new THREE.BoxGeometry(4.15, 0.16, 4.15), new THREE.MeshStandardMaterial({ color: 0xefe6d2, roughness: 0.85 }));
-  trim.position.set(0, 1.72, 0); g.add(trim);
+  // A WIDE eave band under the roofline — a proper ledge a cat can land on
+  const trim = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.2, 4.6), new THREE.MeshStandardMaterial({ color: 0xefe6d2, roughness: 0.85 }));
+  trim.position.set(0, 1.72, 0); trim.castShadow = true; trim.receiveShadow = true; g.add(trim);
+  // and a little porch awning over the door — the first big step up
+  const awn = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: 0xc8604a, roughness: 0.8 }));
+  awn.position.set(0, 0.62, 2.35); awn.rotation.x = 0.08; awn.castShadow = true; g.add(awn);
+  [-0.7, 0.7].forEach(px => { const strut = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.5), mat.door); strut.position.set(px, 0.5, 2.2); strut.rotation.x = 0.5; g.add(strut); });
   // Chimney (with a cap)
   const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.3, 0.5), mat.brick);
   chimney.position.set(1.3, 2.5, -0.5); chimney.castShadow = true; g.add(chimney);
@@ -227,6 +260,12 @@ function buildHouse(x, y, z, wallMat, roofMat, npcName, rotY = 0) {
   // a little paved path from the doorstep
   const path = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 1.1), mat.sidewalk);
   path.position.set(0, -1.78, 3.0); path.receiveShadow = true; g.add(path);
+  // climbing route: flower-box sills (1.6) → awning (2.4) → eaves (3.6) → up the roof (5.5) → chimney (4.9)
+  [-1.3, 1.3].forEach(wx => regPlat(x, z, rotY, wx, 2.12, 0.5, 0.2, y + 1.64));
+  regPlat(x, z, rotY, 0, 2.35, 0.85, 0.45, y + 2.44);
+  regPlat(x, z, rotY, 0, 0, 2.8, 2.3, y + 3.57);
+  roofPlatforms.push({ kind: 'roof', x, z, hw: 2.55, hd: 2.55, eaveY: y + 3.5, peakY: y + 5.45 });
+  regPlat(x, z, rotY, 1.3, -0.5, 0.32, 0.32, y + 4.9);
   g.position.set(x, y + 1.75, z);
   g.rotation.y = rotY;       // backdrop houses rotate to face their street
   scene.add(g);

@@ -840,7 +840,7 @@
 /* ── 🚗 driving controls: wheel left, pedals right ── */
 #drive-ui { display: none; }
 body.driving #drive-ui { display: block; }
-body.driving #joystick, body.driving #btn-jump { display: none !important; }
+body.driving #joystick, body.driving #btn-stack { display: none !important; }
 #wheel-zone { position: fixed; left: 14px; bottom: 14px; width: 140px; height: 140px; z-index: 40; touch-action: none; }
 #wheel {
   width: 118px; height: 118px; margin: 11px; border-radius: 50%;
@@ -871,4 +871,15 @@ body.driving #joystick, body.driving #btn-jump { display: none !important; }
   #pedal-gas { width: 84px; height: 64px; }
   #pedal-brake { width: 84px; height: 52px; }
   #park-btn, #horn-btn { width: 84px; height: 34px; }
+}
+
+/* ── 🦘🤫🐾 the left-paw button stack: move with one thumb, act with the other ── */
+#btn-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+#btn-stack .action-btn { margin-bottom: 0; }
+#btn-jump.charging { background: rgba(232,192,64,0.45); border-color: #ffd040; transition: none; }
+#btn-sneak.on { background: rgba(106,90,170,0.55); border-color: #b8a8f0; color: #e8e0ff; }
+@media (orientation: landscape) and (max-height: 560px), (orientation: portrait) and (max-width: 560px) {
+  #btn-stack { gap: 7px; }
+  #btn-stack .action-btn { width: 48px; height: 48px; font-size: 0.6rem; }
+  #btn-stack .action-btn .btn-icon { font-size: 1.15rem; }
 }

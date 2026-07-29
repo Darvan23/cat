@@ -89,4 +89,4 @@ How to make everything we've built so far **deeper, prettier, and more alive**. 
 
 ## things i want to improve
 
-we need to improve the planner and make it easier to use also the roads should curve when you put next to it like 
+we need to improve the planner and make it easier to use also the roads should curve when you put next to it like one straight and then one left or right it shoud make a nice curve
