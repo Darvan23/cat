@@ -115,7 +115,7 @@ function zooAnimal(type) {
   const M = (c, r = 0.85) => pbr(c, r);
   const E = (rad, sx, sy, sz, m, x, y, z) => { const me = new THREE.Mesh(G.sph(rad), m); me.scale.set(sx, sy, sz); me.position.set(x, y, z); me.castShadow = true; g.add(me); return me; };
   if (type === 'elephant') {
-    const gm = M(0x9aa0ac);
+    const gm = M(0x7e8492);
     E(0.7, 1.3, 1.05, 1.7, gm, 0, 0.95, 0);
     const head = E(0.48, 1, 1, 1, gm, 0, 1.35, 1.15);
     [-1, 1].forEach(d => E(0.34, 0.25, 1, 0.9, gm, d * 0.52, 1.45, 1.05));
@@ -124,7 +124,7 @@ function zooAnimal(type) {
     [[-0.42, 0.55], [0.42, 0.55], [-0.42, -0.5], [0.42, -0.5]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.19, 0.22, 0.9), gm); leg.position.set(lx, 0.45, lz); leg.castShadow = true; g.add(leg); });
     g.userData.head = head;
   } else if (type === 'lion') {
-    const tan = M(0xd8a860), mane = M(0x8a5a2a);
+    const tan = M(0xba8a3c), mane = M(0x6f451c);
     E(0.45, 1.2, 0.95, 1.55, tan, 0, 0.62, 0);
     E(0.42, 1, 1, 1, mane, 0, 0.95, 0.62);
     const head = E(0.3, 1, 0.95, 0.95, tan, 0, 0.98, 0.78);
@@ -133,7 +133,7 @@ function zooAnimal(type) {
     const tail = new THREE.Mesh(G.cyl(0.045, 0.045, 0.9), tan); tail.position.set(0, 0.75, -0.85); tail.rotation.x = 0.9; g.add(tail);
     g.userData.head = head;
   } else if (type === 'giraffe') {
-    const yel = M(0xe8c470);
+    const yel = M(0xc9a04a);
     E(0.5, 1.1, 1, 1.5, yel, 0, 1.35, 0);
     [[0.2, 1.5, 0.3], [-0.25, 1.3, -0.3], [0.1, 1.2, -0.55]].forEach(([px, py, pz]) => E(0.13, 1, 0.8, 1, M(0xb08a40), px, py, pz));
     const neck = new THREE.Mesh(G.cyl(0.16, 0.2, 1.8), yel); neck.position.set(0, 2.5, 0.5); neck.rotation.x = -0.18; neck.castShadow = true; g.add(neck);
@@ -177,7 +177,7 @@ function zooAnimal(type) {
     [[-0.28, 0.45], [0.28, 0.45], [-0.28, -0.45], [0.28, -0.45]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.08, 0.1, 0.85), wh); leg.position.set(lx, 0.42, lz); leg.castShadow = true; g.add(leg); });
     g.userData.head = head; g.userData.neck = neck;
   } else if (type === 'flamingo') {
-    const pk = M(0xf090a8);
+    const pk = M(0xe4738f);
     E(0.22, 1.2, 1, 1.3, pk, 0, 1.05, 0);
     const leg = new THREE.Mesh(G.cyl(0.025, 0.025, 1.0), M(0xd87088)); leg.position.set(0.05, 0.5, 0); leg.castShadow = true; g.add(leg);
     const neck = new THREE.Mesh(G.cyl(0.045, 0.055, 0.85), pk); neck.position.set(0, 1.6, 0.22); neck.rotation.x = -0.35; neck.castShadow = true; g.add(neck);
@@ -195,10 +195,10 @@ function zooAnimal(type) {
     [[-0.34, 0.5], [0.34, 0.5], [-0.34, -0.5], [0.34, -0.5]].forEach(([lx, lz]) => E(0.09, 1, 0.6, 1, gr, lx, 0.12, lz));
     g.userData.head = snout; g.userData.jaw = jaw; g.userData.tail = tail;
   } else if (type === 'hippo') {
-    const hp = M(0x8a7a8c);
+    const hp = M(0x6f6272);
     E(0.62, 1.3, 0.95, 1.6, hp, 0, 0.62, 0);
     const head = E(0.4, 1.1, 0.85, 1.1, hp, 0, 0.85, 0.95);
-    E(0.3, 1.2, 0.7, 1.0, M(0x9a8a9c), 0, 0.68, 1.3);                              // the great muzzle
+    E(0.3, 1.2, 0.7, 1.0, M(0x7e7080), 0, 0.68, 1.3);                              // the great muzzle
     [-1, 1].forEach(d => E(0.07, 1, 1, 0.7, hp, d * 0.28, 1.18, 0.8));             // little ears
     [-1, 1].forEach(d => E(0.05, 1, 1, 1, M(0x2a2c30, 0.4), d * 0.18, 1.05, 1.15));
     [[-0.4, 0.45], [0.4, 0.45], [-0.4, -0.45], [0.4, -0.45]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.15, 0.17, 0.5), hp); leg.position.set(lx, 0.25, lz); leg.castShadow = true; g.add(leg); });
@@ -214,7 +214,7 @@ function zooAnimal(type) {
     E(0.3, 1.1, 0.5, 0.7, bk, 0, 0.92, 0.1);                                        // the black shoulder band
     g.userData.head = head;
   } else if (type === 'kangaroo') {
-    const rd = M(0xb8845a);
+    const rd = M(0x9a6b42);
     const body = E(0.34, 1, 1.5, 1.05, rd, 0, 0.85, 0);                             // upright body
     const head = E(0.2, 1, 1.05, 1.2, rd, 0, 1.62, 0.18);
     [-1, 1].forEach(d => E(0.07, 1, 1.9, 0.6, rd, d * 0.12, 1.92, 0.05));           // tall ears
@@ -224,10 +224,10 @@ function zooAnimal(type) {
     const tail = E(0.13, 1, 0.7, 2.2, rd, 0, 0.3, -0.75);                            // thick tail
     g.userData.head = head; g.userData.tail = tail; g.userData.body = body;
   } else if (type === 'wolf') {
-    const gy = M(0x8a8f96);
+    const gy = M(0x71767e);
     E(0.34, 1.1, 0.9, 1.55, gy, 0, 0.62, 0);
     const head = E(0.22, 1, 0.9, 1.1, gy, 0, 0.98, 0.62);
-    E(0.1, 1, 0.7, 1.4, M(0xa8adb4), 0, 0.9, 0.85);                                 // snout
+    E(0.1, 1, 0.7, 1.4, M(0x8b9098), 0, 0.9, 0.85);                                 // snout
     [-1, 1].forEach(d => E(0.07, 0.7, 1.5, 0.6, gy, d * 0.14, 1.24, 0.52));         // pointy ears
     const tail = E(0.11, 0.8, 0.8, 1.9, M(0x7a7f86), 0, 0.55, -0.85);               // bushy tail
     [[-0.24, 0.42], [0.24, 0.42], [-0.24, -0.42], [0.24, -0.42]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.07, 0.08, 0.6), gy); leg.position.set(lx, 0.3, lz); leg.castShadow = true; g.add(leg); });
@@ -262,7 +262,7 @@ function zooAnimal(type) {
     [[-0.09, 0], [0.09, 0]].forEach(([lx]) => { const leg = new THREE.Mesh(G.cyl(0.022, 0.022, 0.5), M(0x8a7a4a)); leg.position.set(lx, 0.25, 0.05); g.add(leg); });
     g.userData.head = head; g.userData.fan = fan;
   } else if (type === 'fox') {
-    const or = M(0xd87838), wh = M(0xf0e8dc), bk = M(0x2a2c30);
+    const or = M(0xbb621f), wh = M(0xf0e8dc), bk = M(0x2a2c30);
     E(0.3, 1.1, 0.9, 1.5, or, 0, 0.52, 0);
     E(0.2, 1, 0.85, 0.9, wh, 0, 0.42, 0.4);                                        // white chest
     const head = E(0.2, 1, 0.9, 1.15, or, 0, 0.88, 0.55);
@@ -273,7 +273,7 @@ function zooAnimal(type) {
     [[-0.2, 0.36], [0.2, 0.36], [-0.2, -0.36], [0.2, -0.36]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.055, 0.065, 0.5), bk); leg.position.set(lx, 0.25, lz); leg.castShadow = true; g.add(leg); });
     g.userData.head = head; g.userData.tail = tail;
   } else if (type === 'deer') {
-    const tn = M(0xc09a6a);
+    const tn = M(0xa17e50);
     E(0.34, 1.05, 0.9, 1.45, tn, 0, 0.92, 0);
     [[0.15, 1.0, -0.2], [-0.18, 0.95, 0.15], [0.05, 1.05, 0.35]].forEach(([px, py, pz]) => E(0.05, 1, 1, 1, M(0xf0e8d8), px, py, pz));   // white dapples
     const neck = new THREE.Mesh(G.cyl(0.1, 0.13, 0.8), tn); neck.position.set(0, 1.45, 0.5); neck.rotation.x = -0.4; neck.castShadow = true; g.add(neck);
@@ -286,7 +286,7 @@ function zooAnimal(type) {
     [[-0.22, 0.42], [0.22, 0.42], [-0.22, -0.42], [0.22, -0.42]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.05, 0.06, 0.9), tn); leg.position.set(lx, 0.45, lz); leg.castShadow = true; g.add(leg); });
     g.userData.head = head; g.userData.neck = neck;
   } else if (type === 'camel') {
-    const cm = M(0xd8b070);
+    const cm = M(0xb99148);
     E(0.44, 1.15, 0.9, 1.6, cm, 0, 1.1, 0);
     E(0.24, 1, 1.2, 1, cm, 0, 1.6, -0.35);                                          // hump one
     E(0.24, 1, 1.2, 1, cm, 0, 1.6, 0.25);                                           // hump two
@@ -296,7 +296,7 @@ function zooAnimal(type) {
     [[-0.3, 0.5], [0.3, 0.5], [-0.3, -0.5], [0.3, -0.5]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(G.cyl(0.08, 0.1, 1.1), cm); leg.position.set(lx, 0.55, lz); leg.castShadow = true; g.add(leg); });
     g.userData.head = head; g.userData.neck = neck;
   } else if (type === 'seal') {
-    const sl = M(0x9aa4ae);
+    const sl = M(0x7c8792);
     const body = E(0.32, 1.05, 0.85, 1.9, sl, 0, 0.32, 0);                          // sleek sausage
     const head = E(0.2, 1, 0.9, 1, sl, 0, 0.55, 0.62);
     E(0.03, 1, 1, 1, M(0x2a2c30, 0.4), 0, 0.58, 0.82);                              // nose
@@ -326,7 +326,7 @@ function zooAnimal(type) {
     [-1, 1].forEach(d => { E(0.018, 1, 1.4, 1, M(0xe8c030, 0.3), 0.83, 0.19, d * 0.06); E(0.008, 1, 1.6, 0.4, M(0x1c1e24, 0.3), 0.835, 0.19, d * 0.06); });   // slit-pupil eyes
     g.userData.head = head;
   } else if (type === 'sloth') {
-    const st = M(0x9a8a6a);
+    const st = M(0x81724e);
     const bar = new THREE.Mesh(G.cyl(0.05, 0.05, 1.6), M(0x6a4a30)); bar.rotation.z = Math.PI / 2; bar.position.set(0, 1.7, 0); bar.castShadow = true; g.add(bar);
     [[-0.7], [0.7]].forEach(([px]) => { const post = new THREE.Mesh(G.cyl(0.07, 0.09, 1.7), M(0x6a4a30)); post.position.set(px, 0.85, 0); post.castShadow = true; g.add(post); });
     const body = E(0.26, 1, 1.35, 0.9, st, 0, 1.15, 0);                              // hanging body
@@ -366,10 +366,10 @@ function zooAnimal(type) {
   switch (type) {
     case 'elephant': eyes(1.5, 1.55, 0.24, 0.045);
       [-1, 1].forEach(d => { const tk = new THREE.Mesh(G.cone(0.05, 0.42, 8), ivory); tk.position.set(d * 0.24, 1.02, 1.5); tk.rotation.x = 2.6; tk.castShadow = true; g.add(tk); });   // tusks
-      { const tl = new THREE.Mesh(G.cyl(0.03, 0.02, 0.7), M(0x8a8f9a)); tl.position.set(0, 0.85, -1.2); tl.rotation.x = 0.5; g.add(tl); } break;
-    case 'lion': eyes(1.06, 1.0, 0.12, 0.032); E(0.045, 1, 0.7, 0.8, dark, 0, 0.92, 1.05); E(0.07, 1, 1, 1, M(0x8a5a2a), 0, 1.14, -1.22); break;   // nose + tail tuft
+      { const tl = new THREE.Mesh(G.cyl(0.03, 0.02, 0.7), M(0x6e7480)); tl.position.set(0, 0.85, -1.2); tl.rotation.x = 0.5; g.add(tl); } break;
+    case 'lion': eyes(1.06, 1.0, 0.12, 0.032); E(0.045, 1, 0.7, 0.8, dark, 0, 0.92, 1.05); E(0.07, 1, 1, 1, M(0x6f451c), 0, 1.14, -1.22); break;   // nose + tail tuft
     case 'giraffe': eyes(3.52, 0.94, 0.11, 0.028); E(0.05, 1, 0.6, 0.8, dark, 0, 3.38, 1.0);
-      { const tl = new THREE.Mesh(G.cyl(0.025, 0.018, 0.8), M(0xe8c470)); tl.position.set(0, 1.15, -0.82); tl.rotation.x = 0.4; g.add(tl); E(0.05, 1, 1.4, 1, M(0x5a4028), 0, 0.78, -0.98); } break;
+      { const tl = new THREE.Mesh(G.cyl(0.025, 0.018, 0.8), M(0xc9a04a)); tl.position.set(0, 1.15, -0.82); tl.rotation.x = 0.4; g.add(tl); E(0.05, 1, 1.4, 1, M(0x5a4028), 0, 0.78, -0.98); } break;
     case 'monkey': eyes(0.86, 0.29, 0.07, 0.024); E(0.03, 1, 0.7, 0.7, dark, 0, 0.76, 0.34); break;
     case 'penguin': eyes(0.87, 0.13, 0.06, 0.022); [-1, 1].forEach(d => E(0.06, 1.2, 0.35, 1.5, pink2, d * 0.1, 0.03, 0.1)); break;   // orange feet
     case 'bear': eyes(1.4, 0.9, 0.13, 0.032); E(0.045, 1, 0.8, 0.8, dark, 0, 1.24, 1.02); E(0.09, 1, 1, 1, M(0x6a4a30), 0, 0.95, -0.78); break;   // nose + stub tail
@@ -387,13 +387,151 @@ function zooAnimal(type) {
     case 'peacock': eyes(1.33, 0.32, 0.04, 0.015); break;
     case 'fox': eyes(0.95, 0.7, 0.09, 0.025); E(0.035, 1, 0.8, 0.8, dark, 0, 0.79, 0.94); break;
     case 'deer': eyes(1.9, 0.8, 0.08, 0.024); E(0.03, 1, 0.7, 0.8, dark, 0, 1.8, 0.9); break;
-    case 'camel': eyes(2.3, 1.03, 0.09, 0.025); { const tl = new THREE.Mesh(G.cyl(0.02, 0.015, 0.6), M(0xd8b070)); tl.position.set(0, 1.0, -0.85); tl.rotation.x = 0.45; g.add(tl); } break;
+    case 'camel': eyes(2.3, 1.03, 0.09, 0.025); { const tl = new THREE.Mesh(G.cyl(0.02, 0.015, 0.6), M(0xb99148)); tl.position.set(0, 1.0, -0.85); tl.rotation.x = 0.45; g.add(tl); } break;
     case 'seal': eyes(0.64, 0.76, 0.1, 0.028); break;
     case 'snake': { const tg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.012), M(0xd0483a, 0.5)); tg.position.set(0.5, 0.27, 0); g.add(tg); } break;   // the flicking tongue
     case 'sloth': [-1, 1].forEach(d => { const st2 = E(0.04, 1, 0.55, 0.4, M(0x5a4a34), d * 0.07, 0.81, 0.24); st2.rotation.z = d * 0.6; E(0.015, 1, 1, 1, dark, d * 0.07, 0.8, 0.27); });   // the iconic eye stripes
       [-1, 1].forEach(d => { const cl = new THREE.Mesh(G.cone(0.02, 0.1, 6), ivory); cl.position.set(d * 0.18, 1.78, 0.05); g.add(cl); }); break;   // hook claws on the bar
     case 'hedgehog': eyes(0.18, 0.33, 0.05, 0.015); break;
     case 'tortoise': eyes(0.38, 0.6, 0.05, 0.017); break;
+  }
+  // ── the REALISM pass: fur, markings, claws, whiskers — every species dressed to the whisker ──
+  const inner = M(0xdca8a8, 0.8), hoofM = M(0x3a3630, 0.6);
+  const whisker = (x, y, z, d, ry) => { const wk = new THREE.Mesh(G.cyl(0.006, 0.006, 0.22, 4), M(0xf0f0ec, 0.6)); wk.position.set(x, y, z); wk.rotation.z = Math.PI / 2 + d * 0.3; wk.rotation.y = ry || 0; g.add(wk); };
+  const clawset = (lx, y, lz, n, m2) => { for (let k = 0; k < n; k++) { const cl = new THREE.Mesh(G.cone(0.02, 0.07, 5), m2 || ivory); cl.position.set(lx - 0.05 + k * 0.05, y, lz + 0.02); cl.rotation.x = 1.9; g.add(cl); } };
+  switch (type) {
+    case 'elephant':
+      [-1, 1].forEach(d => E(0.24, 0.18, 0.8, 0.7, inner, d * 0.56, 1.45, 1.06));                              // soft ear-inners
+      [[-0.42, 0.55], [0.42, 0.55], [-0.42, -0.5], [0.42, -0.5]].forEach(([lx, lz]) => [-1, 1].forEach(d => E(0.045, 1, 0.7, 0.8, ivory, lx + d * 0.08, 0.06, lz + 0.17)));   // toenails
+      E(0.05, 1, 1.2, 1, M(0x6a7078), 0, 0.52, -1.5);                                                          // tail tuft
+      E(0.32, 1.05, 0.4, 1.3, M(0x6e7480), 0, 1.52, -0.15);                                                    // the ridged back line
+      break;
+    case 'lion':
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; const tuftM = new THREE.Mesh(G.cone(0.09, 0.26, 6), M(0x6a3f1e)); tuftM.position.set(Math.cos(a) * 0.42, 0.96 + Math.sin(a) * 0.4, 0.5); tuftM.rotation.z = -a - Math.PI / 2; tuftM.rotation.x = -0.25; tuftM.castShadow = true; g.add(tuftM); }   // the great shaggy mane fringe
+      E(0.13, 1, 0.72, 0.7, M(0xe8cba0), 0, 0.9, 0.95);                                                        // pale muzzle
+      [-1, 1].forEach(d => { whisker(d * 0.2, 0.9, 1.0, d, d * 0.5); whisker(d * 0.2, 0.86, 1.0, d, d * 0.3); });
+      E(0.4, 1.05, 0.55, 1.2, M(0xcaa468), 0, 0.42, 0.05);                                                     // lighter belly
+      [-1, 1].forEach(d => E(0.05, 1, 0.9, 0.6, inner, d * 0.2, 1.27, 0.74));                                  // ear inners
+      [[-0.3, 0.45], [0.3, 0.45]].forEach(([lx, lz]) => clawset(lx, 0.03, lz + 0.08, 3));
+      break;
+    case 'giraffe':
+      [-1, 1].forEach(d => { const os = new THREE.Mesh(G.cyl(0.025, 0.03, 0.16, 6), M(0xc8a050)); os.position.set(d * 0.08, 3.62, 0.6); g.add(os); E(0.035, 1, 1, 1, M(0x8a6a3a), d * 0.08, 3.71, 0.6); });   // ossicones
+      [[0.28, 1.45, 0.55], [-0.3, 1.5, 0.1], [0.18, 1.15, 0.62], [-0.2, 1.55, 0.55], [0.3, 1.25, -0.55], [-0.28, 1.1, -0.15]].forEach(([px, py, pz]) => E(0.1, 1, 0.75, 0.95, M(0xb08a40), px, py, pz));   // full patch coat
+      [[0.06, 2.2, 0.42], [-0.06, 2.7, 0.52], [0.05, 3.1, 0.62]].forEach(([px, py, pz]) => E(0.06, 1, 0.8, 1, M(0xb08a40), px, py, pz));                                       // neck patches
+      for (let i = 0; i < 6; i++) { const mn = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.1, 0.1), M(0x8a6032)); mn.position.set(0, 2.05 + i * 0.26, 0.42 + i * 0.055); mn.rotation.x = -0.2; g.add(mn); }   // mane ridge
+      E(0.42, 1, 0.5, 1.25, M(0xd8bc80), 0, 0.98, 0);                                                          // cream belly
+      break;
+    case 'monkey':
+      E(0.15, 1, 0.7, 0.85, M(0x6a4028), 0, 0.94, 0.02);                                                       // darker crown
+      [-1, 1].forEach(d => { E(0.045, 1, 0.8, 0.8, M(0x5a3a24), d * 0.3, 0.24, 0.12); });                      // little hands
+      [-1, 1].forEach(d => E(0.055, 1.3, 0.5, 1, M(0x5a3a24), d * 0.12, 0.06, 0.08));                          // feet
+      { const tip = E(0.045, 1, 1, 1, M(0x8a5a3a), 0, 0.16, -0.68); tip.position.set(0, 0.14, -0.7); }         // curled tail tip
+      { const ban = E(0.05, 1.6, 0.5, 0.8, M(0xe8d040, 0.6), 0.32, 0.28, 0.16); ban.rotation.z = 0.5; }        // a banana, obviously
+      break;
+    case 'penguin':
+      [-1, 1].forEach(d => E(0.045, 1, 1.1, 0.7, M(0xe8c050, 0.6), d * 0.12, 0.7, 0.1));                       // golden cheek patches
+      { const tl2 = E(0.06, 1, 0.5, 1.2, M(0x22262e), 0, 0.24, -0.22); tl2.rotation.x = -0.5; }                // stub tail
+      break;
+    case 'bear':
+      E(0.24, 1, 0.85, 1, M(0x5f402a), 0, 1.34, -0.2);                                                         // the shoulder hump
+      [-1, 1].forEach(d => E(0.05, 1, 0.8, 0.6, inner, d * 0.26, 1.6, 0.52));                                  // ear inners
+      [[-0.34, 0.42], [0.34, 0.42]].forEach(([lx, lz]) => clawset(lx, 0.04, lz + 0.1, 3));
+      E(0.34, 1.05, 0.5, 1.1, M(0x7d5a3c), 0, 0.52, 0.05);                                                     // lighter under-fur
+      break;
+    case 'zebra':
+      [[0.12, -0.35], [-0.12, 0.35]].forEach(([rot, dz]) => { const st = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 0.09), M(0x2a2c30)); st.position.set(0, 0.8, dz - 0.35); st.rotation.z = rot; st.castShadow = true; g.add(st); });   // angled hip stripes
+      for (let i = 0; i < 3; i++) { const ns = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.07, 0.16), M(0x2a2c30)); ns.position.set(0, 1.35 + i * 0.18, 0.5 + i * 0.09); ns.rotation.x = -0.5; g.add(ns); }   // neck stripes
+      [[-0.28, 0.45], [0.28, 0.45], [-0.28, -0.45], [0.28, -0.45]].forEach(([lx, lz]) => { const hoof = new THREE.Mesh(G.cyl(0.085, 0.095, 0.12), hoofM); hoof.position.set(lx, 0.06, lz); g.add(hoof); const ring = new THREE.Mesh(G.cyl(0.085, 0.09, 0.07), M(0x2a2c30)); ring.position.set(lx, 0.35, lz); g.add(ring); });   // hooves + leg stripes
+      break;
+    case 'flamingo':
+      E(0.035, 1, 1, 1, M(0xd87088), 0.05, 0.98, 0);                                                           // knee joint
+      { const tuck = new THREE.Mesh(G.cyl(0.025, 0.03, 0.4), M(0xd87088)); tuck.position.set(-0.08, 0.82, 0.05); tuck.rotation.x = 1.2; g.add(tuck); }   // the OTHER leg, tucked up
+      E(0.16, 1.1, 0.5, 1, M(0xee94aa), 0, 1.18, -0.1);                                                        // layered back feathers
+      E(0.04, 1, 0.9, 0.7, M(0xe4738f), 0, 1.99, 0.5);                                                         // pink beak base (black tip beyond)
+      { const ft = new THREE.Mesh(G.sph(0.05, 8, 6), M(0xd87088)); ft.scale.set(1.4, 0.3, 1.6); ft.position.set(0.05, 0.02, 0.04); g.add(ft); }         // webbed foot
+      break;
+    case 'croc':
+      for (let i = -2; i <= 2; i++) [-1, 1].forEach(d => E(0.04, 1, 1.2, 1, M(0x486a3c), d * 0.16, 0.48, i * 0.3));   // second scute rows
+      for (let i = 0; i < 3; i++) E(0.04, 1, 1.3, 1, M(0x486a3c), 0, 0.42 - i * 0.04, -1.35 - i * 0.25);       // tail ridges run to the tip
+      E(0.3, 1.25, 0.3, 2.0, M(0xc8c89a, 0.8), 0, 0.12, 0);                                                    // pale belly plates
+      [[-0.34, 0.5], [0.34, 0.5]].forEach(([lx, lz]) => clawset(lx, 0.02, lz + 0.12, 3));
+      break;
+    case 'hippo':
+      [-1, 1].forEach(d => E(0.04, 1, 0.8, 0.6, inner, d * 0.28, 1.2, 0.78));                                  // pink ear inners
+      [-1, 1].forEach(d => E(0.09, 1, 0.8, 0.9, M(0x7e7080), d * 0.3, 0.6, 1.28));                             // jowls
+      E(0.5, 1.1, 0.5, 1.3, M(0x857484), 0, 0.4, 0);                                                           // pink-grey belly
+      { const tl2 = new THREE.Mesh(G.cyl(0.03, 0.02, 0.35), M(0x6f6272)); tl2.position.set(0, 0.75, -1.0); tl2.rotation.x = 0.6; g.add(tl2); }
+      break;
+    case 'panda':
+      E(0.28, 1.1, 0.6, 1, M(0xf6f6f2), 0, 0.5, 0.1);                                                          // round white belly
+      E(0.07, 1, 1, 1, M(0xf0f0ec), 0, 0.75, -0.62);                                                           // stub tail
+      { const bam = new THREE.Mesh(G.cyl(0.025, 0.025, 0.6, 6), M(0x7ab048, 0.7)); bam.position.set(0.3, 0.75, 0.5); bam.rotation.z = 0.6; g.add(bam); const lf = E(0.06, 1, 0.5, 1.2, M(0x8ac858, 0.8), 0.48, 0.95, 0.5); }   // lunch in paw
+      [-1, 1].forEach(d => E(0.045, 1, 0.8, 0.5, inner, d * 0.24, 1.44, 0.42));
+      break;
+    case 'kangaroo':
+      E(0.19, 1, 1.05, 0.55, M(0xb88c62), 0, 0.68, 0.26);                                                      // the POUCH
+      { const jh = E(0.08, 1, 0.9, 1, M(0xc09468), 0, 0.86, 0.36); [-1, 1].forEach(d => E(0.03, 1, 1.7, 0.5, M(0xc09468), d * 0.05, 0.98, 0.32)); [-1, 1].forEach(d => E(0.012, 1, 1, 1, dark, d * 0.035, 0.88, 0.43)); }   // 🦘 a JOEY peeking out!
+      [-1, 1].forEach(d => E(0.04, 1, 1.4, 0.5, inner, d * 0.12, 1.94, 0.06));                                 // ear inners
+      [-1, 1].forEach(d => E(0.045, 1, 0.7, 0.8, M(0x9a6c44), d * 0.2, 0.98, 0.38));                           // paws
+      break;
+    case 'wolf':
+      E(0.19, 1, 0.95, 0.75, M(0xb8bdc4), 0, 0.52, 0.42);                                                      // pale chest ruff
+      E(0.3, 1, 0.55, 1.25, M(0x6f747c), 0, 0.85, -0.1);                                                       // dark saddle along the back
+      [-1, 1].forEach(d => E(0.04, 1, 1.2, 0.5, inner, d * 0.14, 1.26, 0.47));
+      E(0.07, 1, 1, 1, M(0x5f646c), 0, 0.52, -1.28);                                                           // dark tail tip
+      [-1, 1].forEach(d => whisker(d * 0.12, 0.88, 0.95, d, d * 0.4));
+      break;
+    case 'parrot':
+      [-1, 1].forEach(d => { E(0.06, 0.4, 0.8, 0.7, M(0xe8c040), d * 0.145, 0.82, -0.06); E(0.05, 0.4, 0.6, 0.6, M(0x3a9a5a), d * 0.15, 0.74, -0.12); });   // layered wing feathers
+      [[-0.03, 0x3a6ad0], [0, 0xd84a3a], [0.03, 0x3a9a5a]].forEach(([dx, col]) => { const tf = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.34, 0.06), M(col, 0.7)); tf.position.set(dx, 0.55, -0.2); tf.rotation.x = 0.45; g.add(tf); });   // fanned tail
+      [-1, 1].forEach(d => E(0.028, 1, 1, 1, M(0xf0f0ec, 0.5), d * 0.13, 1.22, 0.128));                        // white eye rings
+      [0, 0.05].forEach((dz, i) => { const cr = new THREE.Mesh(G.cone(0.025, 0.12, 5), M(i ? 0xe8c040 : 0xd84a3a, 0.7)); cr.position.set(0, 1.3, 0.02 - dz); cr.rotation.x = -0.4 - i * 0.3; g.add(cr); });   // head crest
+      break;
+    case 'fox':
+      [-1, 1].forEach(d => E(0.04, 0.7, 0.9, 0.5, M(0x2a2c30), d * 0.14, 1.25, 0.44));                         // black ear tips
+      [-1, 1].forEach(d => { whisker(d * 0.14, 0.8, 0.85, d, d * 0.4); whisker(d * 0.14, 0.77, 0.85, d, d * 0.2); });
+      E(0.24, 1, 0.7, 1, M(0xc4682e), 0, 0.62, -0.3);                                                          // deeper haunch tone
+      break;
+    case 'deer':
+      [-1, 1].forEach(d => { const a3 = new THREE.Mesh(G.cyl(0.012, 0.018, 0.26), M(0x8a6a4a)); a3.position.set(d * 0.3, 2.52, 0.66); a3.rotation.z = d * 0.7; g.add(a3); });   // third antler tines
+      E(0.1, 1, 0.9, 0.6, M(0xf0e8d8), 0, 0.95, -0.72);                                                        // white rump patch
+      E(0.06, 1, 0.6, 0.8, M(0xf0e8d8), 0, 1.72, 0.85);                                                        // white chin
+      [[-0.22, 0.42], [0.22, 0.42], [-0.22, -0.42], [0.22, -0.42]].forEach(([lx, lz]) => { const hoof = new THREE.Mesh(G.cyl(0.055, 0.06, 0.1), hoofM); hoof.position.set(lx, 0.05, lz); g.add(hoof); });
+      break;
+    case 'camel':
+      [0.25, -0.35].forEach(hz => E(0.15, 1, 0.55, 0.9, M(0xb08a4a), 0, 1.86, hz));                            // shaggy hump caps
+      E(0.16, 1, 1.1, 0.6, M(0xb08a4a), 0, 1.5, 0.85);                                                         // shaggy throat fringe
+      [[-0.3, 0.5], [0.3, 0.5], [-0.3, -0.5], [0.3, -0.5]].forEach(([lx, lz]) => { E(0.05, 1, 0.7, 1, M(0xb08a4a), lx, 0.62, lz + 0.05); const pad = new THREE.Mesh(G.cyl(0.09, 0.11, 0.1), M(0x8a6a44)); pad.position.set(lx, 0.05, lz); g.add(pad); });   // knee pads + broad feet
+      [-1, 1].forEach(d => E(0.035, 1, 0.6, 0.9, M(0xc09a5c), d * 0.06, 2.12, 1.12));                          // the split lip
+      break;
+    case 'seal':
+      [[0.12, 0.42, 0.35], [-0.15, 0.45, 0.1], [0.1, 0.4, -0.25], [-0.08, 0.42, -0.45], [0.05, 0.46, 0.05]].forEach(([px, py, pz]) => E(0.035, 1, 0.5, 1.2, M(0x7a848e), px, py, pz));   // dappled coat
+      [-1, 1].forEach(d => { whisker(d * 0.12, 0.55, 0.78, d, d * 0.5); whisker(d * 0.12, 0.52, 0.78, d, d * 0.25); whisker(d * 0.12, 0.49, 0.78, d, d * 0.35); });   // grand whiskers
+      E(0.09, 1.2, 0.25, 0.6, M(0x8a949e), 0, 0.2, -0.95);                                                     // split tail tip
+      break;
+    case 'snake':
+      (g.userData.segs || []).forEach((seg, i) => { if (i % 2 === 0 && i > 1 && i < 13) { const dm = new THREE.Mesh(G.sph(0.035, 8, 6), M(0x1e3a12, 0.55)); dm.scale.set(1.6, 0.4, 1); dm.position.set(0, seg.geometry ? 0.06 : 0.06, 0); seg.add(dm); } });   // diamond back pattern rides the slither
+      [-1, 1].forEach(d => E(0.008, 1, 1, 1, dark, 0.85, 0.155, d * 0.025));                                   // nostrils
+      break;
+    case 'sloth':
+      [[0.15, 1.0], [-0.18, 1.05], [0.05, 0.92], [-0.1, 1.2]].forEach(([px, py]) => { const shag = E(0.09, 1, 1.4, 0.5, M(0x8a7a58), px, py, -0.18); shag.rotation.x = 0.2; });   // shaggy hanging fur
+      E(0.12, 1, 1, 0.6, M(0x7a8a5a), 0.05, 1.25, -0.22);                                                      // the famous green algae patch
+      [-1, 1].forEach(d => { const cl = new THREE.Mesh(G.cone(0.018, 0.09, 5), ivory); cl.position.set(d * 0.24, 1.76, 0.05); cl.rotation.z = d * 0.5; g.add(cl); });   // extra hook claws
+      break;
+    case 'hedgehog':
+      for (let i = 0; i < 13; i++) { const sp = new THREE.Mesh(G.cone(0.04, 0.14, 6), M(i % 2 ? 0x8a7048 : 0x4a3826)); const a = (i / 13) * Math.PI * 2 + 0.3; sp.position.set(Math.cos(a) * 0.14, 0.2 + (i % 4) * 0.025, -0.04 + Math.sin(a) * 0.16); sp.rotation.x = -0.5 + Math.sin(a) * 0.5; sp.rotation.z = Math.cos(a) * 0.6; sp.castShadow = true; g.add(sp); g.userData.spikes.push(sp); }   // a proper two-tone spike coat
+      [[-0.08, 0.12], [0.08, 0.12], [-0.08, -0.08], [0.08, -0.08]].forEach(([lx, lz]) => E(0.03, 1, 0.6, 1, M(0x6a5038), lx, 0.03, lz));   // little feet
+      [-1, 1].forEach(d => E(0.025, 1, 0.8, 0.5, inner, d * 0.07, 0.24, 0.2));                                 // tiny ears
+      break;
+    case 'tortoise':
+      [[0, 0.66, 0], [0.16, 0.6, 0.18], [-0.16, 0.6, 0.18], [0.16, 0.6, -0.2], [-0.16, 0.6, -0.2], [0, 0.62, 0.32], [0, 0.62, -0.34]].forEach(([px, py, pz]) => E(0.09, 1, 0.35, 1, M(0x3c5a30, 0.8), px, py, pz));   // shell scutes
+      { const rim = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.045, 8, 18), M(0x8a9a58, 0.8)); rim.rotation.x = Math.PI / 2; rim.position.y = 0.3; g.add(rim); }   // shell rim
+      [[-0.26, 0.3], [0.26, 0.3]].forEach(([lx, lz]) => clawset(lx, 0.05, lz + 0.1, 3, M(0xd8d0b0, 0.6)));
+      break;
+    case 'peacock':
+      (g.userData.fan ? g.userData.fan.children : []).forEach((f, i) => { const eye = new THREE.Mesh(G.sph(0.05, 8, 6), M(0xe8c040, 0.5)); eye.scale.set(0.9, 0.35, 1); eye.position.set(0, 0.28, 0.08); f.add(eye); const eye2 = new THREE.Mesh(G.sph(0.028, 8, 6), M(0x1a3a8a, 0.5)); eye2.scale.set(0.9, 0.35, 1); eye2.position.set(0, 0.28, 0.12); f.add(eye2); });   // eye-spots on every fan feather
+      E(0.09, 0.5, 0.9, 0.9, M(0x6a4a30, 0.8), 0.14, 0.62, -0.05);                                             // folded brown wing
+      break;
   }
   return g;
 }
