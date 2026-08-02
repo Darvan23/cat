@@ -359,7 +359,7 @@ function saveGame() {
       bizTill: state.bizTill, bizOpen: state.bizOpen, millerHome: state.millerHome,
       civics: state.civics, townGrowth: state.townGrowth,
       townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay, dcPassDay: state.dcPassDay, dcTickets: state.dcTickets, dcBandDay: state.dcBandDay,
-      myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk, goldBirdsCaught: state.goldBirdsCaught,
+      myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk, goldBirdsCaught: state.goldBirdsCaught, settings: state.settings,
     }));
   } catch (e) {}
 }
@@ -457,6 +457,7 @@ function applySave(s) {
   state.carPos = s.carPos || null;
   state.carTrunk = s.carTrunk || [];
   state.goldBirdsCaught = s.goldBirdsCaught || 0;
+  state.settings = Object.assign({ chatter: true, hints: true }, s.settings || {});
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets
@@ -500,6 +501,10 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveG
 // ─── Dialogue ─────────────────────────────────────────────────────────────────
 let dialogueTimer = null;
 function showDialogue(speaker, text, dur = 3000) {
+  const st = state.settings || {};
+  const sp = String(speaker || '');
+  if (st.chatter === false && sp.includes('🐱')) return;       // ⚙️ cat subtitles off
+  if (st.hints === false && sp.includes('💡')) return;         // ⚙️ tip boxes off
   document.getElementById('dlg-speaker').textContent = speaker;
   document.getElementById('dlg-text').textContent = text;
   const el = document.getElementById('dialogue');
@@ -2583,6 +2588,32 @@ function initMapGestures() {
   cv.addEventListener('wheel', e => { e.preventDefault(); const p = pt(e.clientX, e.clientY); mapZoomAt(p.x, p.y, e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
 }
 function closeMap() { state.uiOpen = false; document.getElementById('map').classList.remove('show'); }
+
+// ── ⚙️ SETTINGS — comfort first ──
+function renderSettings() {
+  const body = document.getElementById('settings-body'); if (!body) return;
+  const st = state.settings || (state.settings = { chatter: true, hints: true });
+  const row = (icon, label, sub, on, fn) =>
+    `<div class="set-row"><div class="set-info"><span class="set-icon">${icon}</span><div><b>${label}</b><small>${sub}</small></div></div><button class="set-pill ${on ? 'on' : ''}" onclick="${fn}">${on ? 'ON' : 'OFF'}</button></div>`;
+  body.innerHTML =
+    row('🔊', 'Sound & voices', 'Effects, chimes and spoken lines', state.voiceOn, 'toggleVoice();renderSettings()') +
+    row('💬', 'Cat subtitles', 'Your cat\'s little thoughts out loud', st.chatter !== false, 'toggleSetting(\'chatter\')') +
+    row('💡', 'Tips & hints', 'Helpful pop-up advice boxes', st.hints !== false, 'toggleSetting(\'hints\')') +
+    row('🌙', 'Comfort lighting', 'Softer colours, easier on the eyes', !!state.darkMode, 'toggleDarkMode();renderSettings()');
+}
+function toggleSetting(k) {
+  state.settings = state.settings || { chatter: true, hints: true };
+  state.settings[k] = state.settings[k] === false;
+  renderSettings();
+  if (typeof sfx === 'function') sfx('ui');
+  if (typeof saveGame === 'function') saveGame();
+}
+function openSettings() {
+  state.uiOpen = true; renderSettings();
+  document.getElementById('settings').classList.add('show');
+  if (typeof sfx === 'function') sfx('ui');
+}
+function closeSettings() { state.uiOpen = false; document.getElementById('settings').classList.remove('show'); }
 
 const mmCanvas = document.getElementById('minimap-canvas');
 const mmCtx = mmCanvas.getContext('2d');

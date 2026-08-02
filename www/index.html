@@ -69,6 +69,7 @@
 <div id="minimap" onclick="openMap()" title="Open the full map"><canvas id="minimap-canvas" width="240" height="240"></canvas><span class="mm-hint">🗺️</span></div>
 <button id="menu-toggle" onclick="toggleToolbar()" title="Menu"><span id="menu-icon">☰</span><span id="menu-badge">0</span></button>
 <div id="toolbar">
+  <button id="settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
   <button id="voice-toggle" onclick="toggleVoice()" title="Toggle voice">🔊</button>
   <button id="customise-btn" onclick="openCustomise()" title="Customise your cat">🎨</button>
   <button id="business-btn" onclick="openBusiness()" title="Business & reputation">📊</button>
@@ -79,6 +80,15 @@
   <button id="inbox-btn" onclick="openInbox()" title="Your mail">📬<span id="inbox-count">0</span></button>
   <button id="neighbors-btn" onclick="openNeighbors()" title="Neighbors — visit friends' towns">🏘️</button>
   <button id="politics-btn" onclick="openPolitics()" title="Your campaign" style="display:none">🗳️</button>
+</div>
+
+<div id="settings" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">⚙️ Settings</div>
+    <div class="modal-sub">Make the game feel just right.</div>
+    <div id="settings-body"></div>
+    <button class="modal-close" onclick="closeSettings()">Done</button>
+  </div>
 </div>
 
 <div id="map" class="modal">

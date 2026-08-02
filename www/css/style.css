@@ -920,3 +920,25 @@ body.indoors #btn-sneak, body.indoors #btn-attack { display: none; }   /* inside
   display: flex; align-items: center; justify-content: center;
 }
 #map-zoom button:active { background: rgba(200,146,42,0.5); }
+
+/* ── ⚙️ settings rows ── */
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 4px; border-bottom: 1px solid rgba(200,146,42,0.25); }
+.set-row:last-child { border-bottom: none; }
+.set-info { display: flex; align-items: center; gap: 10px; text-align: left; }
+.set-icon { font-size: 1.4rem; }
+.set-info small { display: block; opacity: 0.75; font-size: 0.72rem; }
+.set-pill {
+  min-width: 64px; padding: 8px 0; border-radius: 999px; font-family: inherit; font-weight: 700; cursor: pointer;
+  background: rgba(90,70,50,0.5); border: 2px solid #7a6a5a; color: #c8b8a0;
+}
+.set-pill.on { background: rgba(106,160,80,0.45); border-color: #8ac858; color: #d8f0c0; }
+
+/* ── 💬 dialogue lives top-centre, clear of every button (cutscenes keep it low) ── */
+#dialogue { top: calc(122px + env(safe-area-inset-top)); bottom: auto !important; }
+body.cine #dialogue { top: auto; bottom: calc(24px + env(safe-area-inset-bottom)) !important; }
+@media (orientation: landscape) and (max-height: 560px), (orientation: portrait) and (max-width: 560px) {
+  #dialogue { top: calc(100px + env(safe-area-inset-top)); width: min(340px, 58vw); }
+}
+
+/* ── indoors: park tally & population are outdoor business ── */
+body.indoors #park-tally, body.indoors #population { display: none !important; }
