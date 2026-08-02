@@ -531,8 +531,8 @@ function updateGuard(t) {
   if (gd.mode === 'follow') {
     const dx = cp.x - gp.x, dz = cp.z - gp.z, d = Math.hypot(dx, dz);
     if (d > 30) { gp.set(cp.x + 1.3, 0, cp.z); }                                // never left behind
-    else if (d > 1.8) {
-      const sp = Math.min(0.11, (d - 1.6) * 0.06);
+    else if (d > 2.3) {
+      const sp = Math.min(0.11, (d - 2.1) * 0.06);
       gp.x += dx / d * sp; gp.z += dz / d * sp;
       gd.group.rotation.y = Math.atan2(dx, dz);
       gd.walkT = (gd.walkT || 0) + 0.28;
@@ -552,7 +552,7 @@ function updateGuard(t) {
 function guardContext(cp) {
   const gd = state.guard;
   if (!gd || !gd.group || !gd.group.visible || state.driving) return null;
-  if (Math.hypot(cp.x - gd.group.position.x, cp.z - gd.group.position.z) > 2.2) return null;
+  if (Math.hypot(cp.x - gd.group.position.x, cp.z - gd.group.position.z) > 1.9) return null;
   return { id: 'guard:menu', label: '🛡️ Bodyguard orders' };
 }
 
@@ -607,7 +607,6 @@ function updateGrayFrame(t) {
 
 // ── contexts inside the Gray House ──
 function grayContext(cp) {
-  const gc = guardContext(cp); if (gc) return gc;
   const f = state.grayFloor || 0, fx = _GF(f);
   if (Math.hypot(cp.x - (fx + GRAY_LIFT.x), cp.z - GRAY_LIFT.z) < 2.4) return { id: 'gray:lift', label: '🛗 Take the lift' };
   if (f === 3) {
@@ -619,7 +618,7 @@ function grayContext(cp) {
       if (!d.hired && Math.hypot(cp.x - d.x, cp.z - d.z) < 2.2) return { id: 'gray:hire', label: '🧑‍💼 Hire an analyst · ' + HIRE_COST + ' treasury' };
     }
   }
-  return null;
+  return guardContext(cp);   // 🛡️ the guard only gets the button when nothing else wants it
 }
 function grayAction(ctx) {
   if (ctx.id === 'gray:lift') openLift();

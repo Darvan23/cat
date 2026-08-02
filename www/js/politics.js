@@ -118,8 +118,9 @@ function ensureCampaignPoster() {
 // Fame check — called from updateFamilyStatus after every earn/give
 function checkPolitics() {
   const p = state.politics;
-  if (p.phase === 'none' && state.earned >= FAME_GOAL) {
+  if (p.phase === 'none' && !p.invited && state.earned >= FAME_GOAL) {
     p.phase = 'eligible';
+    p.invited = true;   // the town asks ONCE — no more nagging a sitting President
     ensureCampaignPoster();
     updatePoliticsBtn();
     if (typeof sfx === 'function') sfx('upgrade');

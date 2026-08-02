@@ -841,6 +841,7 @@
 #drive-ui { display: none; }
 body.driving #drive-ui { display: block; }
 body.driving #joystick, body.driving #btn-stack { display: none !important; }
+body.planning #drive-ui, body.cine #drive-ui, body.editing #drive-ui { display: none !important; }   /* the cockpit clears out for planner, cutscenes & editing */
 body.driving #minimap {   /* bottom-centre while driving: clear of panels, pedals and thumbs */
   width: 88px; height: 88px;
   top: auto; right: auto; left: 50%;

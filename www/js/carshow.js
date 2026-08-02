@@ -56,8 +56,10 @@ function buildCatCar(styleId) {
   }
   // shared cat face: eye headlights, nose, whiskers, ears, tail
   const noseZ = styleId === 'truck' ? 1.0 : styleId === 'van' ? 1.02 : 1.0;
+  g.userData.eyeMats = [];
   [-1, 1].forEach(d => {
     const eye = mk(new THREE.Mesh(G.sph(0.14, 12, 10), new THREE.MeshStandardMaterial({ color: 0xfff6d8, emissive: 0xffe9a0, emissiveIntensity: 0.7 })), d * 0.32, 0.58, noseZ - 0.08);
+    g.userData.eyeMats.push(eye.material);
     mk(new THREE.Mesh(G.sph(0.055, 8, 6), pbr(0x22222a, 0.4)), d * 0.32, 0.6, noseZ + 0.04);   // pupils looking ahead
     for (let w = 0; w < 3; w++) { const wh = mk(new THREE.Mesh(G.cyl(0.012, 0.012, 0.42, 4), pbr(0xf0f0f0, 0.6)), d * 0.5, 0.36 + w * 0.07, noseZ - 0.1); wh.rotation.z = Math.PI / 2 + d * (0.18 - w * 0.18); }
     const ear = mk(new THREE.Mesh(G.cone(0.16, 0.3, 4), bodyM), d * 0.34, styleId === 'van' ? 1.28 : styleId === 'truck' ? 1.2 : 1.02, 0.28);
@@ -240,7 +242,25 @@ function carPick(styleId) {
 }
 
 // ── DRIVING ──────────────────────────────────────────────────────────────
-const drive = { steer: 0, steerTarget: 0, gas: false, brake: false, v: 0, heading: 0 };
+const drive = { steer: 0, steerTarget: 0, gas: false, brake: false, v: 0, heading: 0, lastV: 0, puffT: 0 };
+const _puffs = [];
+function spawnPuff(x, y, z, col, s) {
+  if (_puffs.length > 14) return;
+  const m = new THREE.Mesh(G.sph(0.09, 8, 6), new THREE.MeshStandardMaterial({ color: col, transparent: true, opacity: 0.5, roughness: 1 }));
+  m.position.set(x, y, z); m.scale.setScalar(s || 1);
+  scene.add(m);
+  _puffs.push({ m, age: 0 });
+}
+function updatePuffs() {
+  for (let i = _puffs.length - 1; i >= 0; i--) {
+    const p = _puffs[i];
+    p.age += 0.016;
+    p.m.position.y += 0.012;
+    p.m.scale.multiplyScalar(1.045);
+    p.m.material.opacity = 0.5 * (1 - p.age / 0.7);
+    if (p.age > 0.7) { scene.remove(p.m); p.m.material.dispose(); _puffs.splice(i, 1); }
+  }
+}
 function carTrunkCap() { return state.activeCar ? CAR_STYLES[state.activeCar].trunk : 0; }
 
 function enterCar() {
@@ -255,6 +275,8 @@ function enterCar() {
 }
 function exitCar() {
   if (!state.driving) return;
+  if (drive._baseDist !== undefined) { state.camDist = drive._baseDist; drive._baseDist = undefined; }
+  _carMesh.rotation.x = 0; _carMesh.position.y = 0;
   state.driving = false;
   document.body.classList.remove('driving');
   parkCarAt(_carMesh.position.x, _carMesh.position.z, drive.heading);
@@ -270,6 +292,7 @@ function updateDriving(t) {
   if (state.activeCar && !_carMesh && state.carPos) parkCarAt(state.carPos.x, state.carPos.z, state.carPos.h);
   if (state._showSpinner) state._showSpinner.rotation.y = t * 0.4;
   if (_carMesh && !state.driving && _carMesh.userData.tail) _carMesh.userData.tail.rotation.x = 0.9 + Math.sin(t * 1.4) * 0.1;   // the parked car wags, softly
+  updatePuffs();
   if (!state.driving || !_carMesh) return;
 
   const st = CAR_STYLES[state.activeCar];
@@ -308,6 +331,26 @@ function updateDriving(t) {
   // wheel UI visual
   const wheelEl = document.getElementById('wheel');
   if (wheelEl) wheelEl.style.transform = 'rotate(' + (drive.steer * 100) + 'deg)';
+  // ── the FEEL: suspension, pitch, exhaust, dust, night lights, speed camera ──
+  const dv = drive.v - drive.lastV; drive.lastV = drive.v;
+  const spd = Math.abs(drive.v) / st.maxV;
+  _carMesh.rotation.x += ((-dv * 5) - _carMesh.rotation.x) * 0.2;                     // nose lifts on throttle, dips on the brakes
+  _carMesh.position.y = Math.abs(Math.sin(t * 14)) * 0.012 * spd;                     // suspension patter at speed
+  if (_carMesh.userData.tailTip) _carMesh.userData.tailTip.position.z = -1.28 - spd * 0.1;
+  drive.puffT -= 0.016;
+  if (kGas && spd < 0.92 && drive.puffT <= 0) {                                       // exhaust chuffs while accelerating
+    drive.puffT = 0.16;
+    const bx2 = nx - Math.sin(drive.heading) * 1.15, bz2 = nz - Math.cos(drive.heading) * 1.15;
+    spawnPuff(bx2, 0.28, bz2, 0x9a9aa2, 0.8);
+  }
+  if (Math.abs(drive.steer) > 0.6 && spd > 0.55 && drive.puffT <= 0) {                // cornering hard kicks up dust
+    drive.puffT = 0.12;
+    spawnPuff(nx - Math.sin(drive.heading) * 0.8, 0.12, nz - Math.cos(drive.heading) * 0.8, 0xcbb894, 1.1);
+  }
+  const night = (state.dayTime || 0.5) < 0.24 || (state.dayTime || 0.5) > 0.76;       // headlight eyes glow after dark
+  (_carMesh.userData.eyeMats || []).forEach(m2 => { m2.emissiveIntensity += ((night ? 1.9 : 0.7) - m2.emissiveIntensity) * 0.1; });
+  if (drive._baseDist === undefined) drive._baseDist = state.camDist;
+  state.camDist = drive._baseDist + spd * 2.6;                                        // the camera breathes back at speed
 }
 
 // ── the driving controls: wheel left, pedals right ──

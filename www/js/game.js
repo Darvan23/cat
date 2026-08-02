@@ -426,7 +426,7 @@ function applySave(s) {
   if (typeof applyFixtureXf === 'function') applyFixtureXf();   // re-place any built-in furniture you moved
   PROPERTIES.forEach(p => { if (isOwned(p) && PROP_SIGNS[p.id]) PROP_SIGNS[p.id].visible = false; });
   if (state.owned.shop) spawnDadAtShop();
-  if (s.politics) state.politics = { phase: s.politics.phase || 'none', homesBuilt: s.politics.homesBuilt || 0, homes: s.politics.homes || [] };
+  if (s.politics) state.politics = { phase: s.politics.phase || 'none', homesBuilt: s.politics.homesBuilt || 0, homes: s.politics.homes || [], invited: !!s.politics.invited };
   if (s.biz) state.biz = { extra: s.biz.extra || [], workers: Array.isArray(s.biz.workers) ? s.biz.workers : [], jobsCreated: s.biz.jobsCreated || 0 };
   if (s.gov) state.gov = Object.assign({ treasury: 0, happiness: 60, corruption: 0, mail: null, spentPublic: 0, spentSelf: 0, jailed: false, jailDays: 0 }, s.gov);
   state.disgraced = !!s.disgraced;
@@ -997,11 +997,6 @@ function updateContextButton() {
       const bt = balloonGiveTarget(cp);
       if (bt) { state.context = 'giveballoon'; state._balloonTo = bt; btn.textContent = '🎈 Give balloon to ' + bt.name; btn.classList.add('show'); return; }
     }
-    // 🛡️ your bodyguard takes orders anywhere
-    if (typeof guardContext === 'function') {
-      const gq = guardContext(cp);
-      if (gq) { state.context = gq.id; state._grayCtx = gq; btn.textContent = gq.label; btn.classList.add('show'); return; }
-    }
     // 🚗 Whisker Motors + your parked car + the trunk
     if (typeof carContext === 'function') {
       const cc = carContext(cp);
@@ -1041,7 +1036,13 @@ function updateContextButton() {
       else if (dbag) { action = 'pickbag'; label = '🛍️ Pick up the bag'; }
       else if (bin) { action = 'searchbin'; label = '🗑️ Search bin'; state.trashTarget = bin; }
       else if (state.carryBag) { action = 'dropbag'; label = '⬇️ Put the bag down'; }
-      else { const p = nearestPerson(cp, 2.4); if (p) { action = 'pet'; label = '🤚 Get Petted'; state.petTarget = p; } else if (state.catBalloon) { action = 'flyballoon'; label = '🎈 Let the balloon fly'; } }
+      else {
+        const p = nearestPerson(cp, 2.4);
+        const gq = (typeof guardContext === 'function') ? guardContext(cp) : null;   // 🛡️ orders only when nothing else needs the button
+        if (p) { action = 'pet'; label = '🤚 Get Petted'; state.petTarget = p; }
+        else if (gq) { action = gq.id; label = gq.label; state._grayCtx = gq; }
+        else if (state.catBalloon) { action = 'flyballoon'; label = '🎈 Let the balloon fly'; }
+      }
     }
   }
   state.context = action;
