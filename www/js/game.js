@@ -360,7 +360,7 @@ function saveGame() {
       civics: state.civics, townGrowth: state.townGrowth,
       townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay, dcPassDay: state.dcPassDay, dcTickets: state.dcTickets, dcBandDay: state.dcBandDay,
       myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk, goldBirdsCaught: state.goldBirdsCaught, settings: state.settings,
-      guard: state.guard ? { kind: state.guard.kind, mode: state.guard.mode } : null, grayHired: state.grayHired,
+      guard: state.guard ? { kind: state.guard.kind, mode: state.guard.mode, name: state.guard.name, workerId: state.guard.workerId, look: state.guard.look } : null, grayHired: state.grayHired, grayStaffNames: state.grayStaffNames, jobsLedger: state.jobsLedger,
     }));
   } catch (e) {}
 }
@@ -459,8 +459,10 @@ function applySave(s) {
   state.carTrunk = s.carTrunk || [];
   state.goldBirdsCaught = s.goldBirdsCaught || 0;
   state.settings = Object.assign({ chatter: true, hints: true }, s.settings || {});
-  state.guard = s.guard ? { kind: s.guard.kind, mode: s.guard.mode || 'follow' } : null;
+  state.guard = s.guard ? { kind: s.guard.kind, mode: s.guard.mode || 'follow', name: s.guard.name, workerId: s.guard.workerId, look: s.guard.look } : null;
   state.grayHired = s.grayHired || 0;
+  state.grayStaffNames = s.grayStaffNames || [];
+  state.jobsLedger = s.jobsLedger || {};
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets

@@ -369,7 +369,7 @@ function openLift() {
 
 // ── hiring analysts (from the treasury, never your own coins) ──
 const HIRE_COST = 400;
-function hireAnalystAt(i, silent) {
+function hireAnalystAt(i, silent, name) {
   const d = state.grayDesks[i]; if (!d || d.hired) return;
   d.hired = true;
   d.screen.material.emissiveIntensity = 0.4;
@@ -380,18 +380,27 @@ function hireAnalystAt(i, silent) {
   state.grayPeople.push({ group, parts, phase: Math.random() * 6, role: 'typing', hx: d.x, hz: d.z + 1.15 });
   if (!silent) {
     if (typeof sfx === 'function') sfx('upgrade');
-    showNotif('🧑‍💼 Analyst hired — they take their desk at once. (' + (state.grayHired || 0) + ' hired, paid by the treasury)');
+    showNotif('🧑‍💼 ' + (name || 'Your analyst') + ' takes their desk at once. (' + (state.grayHired || 0) + ' hired, paid by the treasury)');
   }
 }
 function grayHire() {
   const i = state.grayDesks.findIndex(d => !d.hired);
   if (i < 0) { showNotif('💼 Every desk is filled — Operations is at full strength!'); return; }
   if (!state.gov || (state.gov.treasury || 0) < HIRE_COST) { showNotif('🏛️ The treasury needs ' + HIRE_COST + ' 🪙 to fund this post. Raise taxes, President.'); if (typeof sfx === 'function') sfx('sad'); return; }
-  state.gov.treasury -= HIRE_COST;
-  state.grayHired = (state.grayHired || 0) + 1;
-  hireAnalystAt(i);
-  if (typeof updateHappyHUD === 'function') updateHappyHUD();
-  if (typeof saveGame === 'function') saveGame();
+  openHirePicker({
+    title: '🤝 Hiring: Operations analyst',
+    sub: 'Three CVs on your desk, President. ' + HIRE_COST + ' 🪙 from the treasury.',
+    kind: 'human',
+    onPick(c) {
+      state.gov.treasury -= HIRE_COST;
+      state.grayHired = (state.grayHired || 0) + 1;
+      (state.grayStaffNames = state.grayStaffNames || []).push(c.name);
+      employ(c.id, 'Gray House analyst');
+      hireAnalystAt(i, false, c.name);
+      if (typeof updateHappyHUD === 'function') updateHappyHUD();
+      if (typeof saveGame === 'function') saveGame();
+    },
+  });
 }
 
 // ── 📞 the red phone: presidential services ──
@@ -414,13 +423,30 @@ function phoneGuard(kind) {
   closeCheckout();
   const cost = kind === 'human' ? 500 : 300;
   if (!state.gov || (state.gov.treasury || 0) < cost) { showNotif('🏛️ The treasury needs ' + cost + ' 🪙 for a protection detail.'); if (typeof sfx === 'function') sfx('sad'); return; }
-  state.gov.treasury -= cost;
-  state.guard = { kind, mode: 'follow' };
-  spawnGuardMesh();
-  if (typeof sfx === 'function') sfx('upgrade');
-  showNotif(kind === 'human' ? '🕴️ Your bodyguard reports for duty — they won\'t leave your side.' : '🐈‍⬛ A shadow with whiskers joins you. Nobody will see them coming.');
-  if (typeof updateHappyHUD === 'function') updateHappyHUD();
-  if (typeof saveGame === 'function') saveGame();
+  openHirePicker({
+    title: kind === 'human' ? '🤝 Protection detail — the CVs' : '🤝 Which of YOUR cats gets the badge?',
+    sub: kind === 'human' ? 'Three professionals applied. ' + cost + ' 🪙 from the treasury.' : 'Your own cats, sworn to your side. ' + cost + ' 🪙 from the treasury.',
+    kind,
+    onPick(c) {
+      state.gov.treasury -= cost;
+      state.guard = { kind, mode: 'follow', name: c.name, workerId: c.id };
+      if (c.kind === 'cat') state.guard.look = c.data;
+      employ(c.id, 'presidential bodyguard');
+      hideRoamingCat(c.name, true);
+      spawnGuardMesh();
+      if (typeof sfx === 'function') sfx('upgrade');
+      showNotif(kind === 'human' ? '🕴️ ' + c.name + ' reports for duty — they won\'t leave your side.' : '🐈‍⬛ ' + c.name + ' takes the post. A shadow with whiskers, sworn to you.');
+      if (typeof updateHappyHUD === 'function') updateHappyHUD();
+      if (typeof saveGame === 'function') saveGame();
+    },
+  });
+}
+// while one of your cats is on duty, it isn't ALSO wandering the streets
+function hideRoamingCat(name, hide) {
+  (state.freedCats || []).forEach(c => {
+    const nm = (c.cat && c.cat.name) || c.name;
+    if (nm === name && c.group) c.group.visible = !hide;
+  });
 }
 function phoneFood() {
   closeCheckout();
@@ -440,7 +466,7 @@ function phoneCar() {
 function spawnGuardMesh() {
   const gd = state.guard; if (!gd || gd.group) return;
   if (gd.kind === 'cat') {
-    const m = buildCatModel({ body: 0x26262e, accent: 0x3a3a44, eye: 0xd8b830, markings: 'solid' });
+    const m = buildCatModel(gd.look || { body: 0x26262e, accent: 0x3a3a44, eye: 0xd8b830, markings: 'solid' });
     m.group.scale.setScalar(CAT_SCALE_OUT);
     gd.group = m.group; gd.parts = null; gd.catParts = m;
   } else {
@@ -455,6 +481,8 @@ function spawnGuardMesh() {
 function dismissGuard() {
   const gd = state.guard; if (!gd) return;
   if (gd.group) (gd.inGray ? grayScene : scene).remove(gd.group);
+  if (typeof unemploy === 'function' && gd.workerId) unemploy(gd.workerId);
+  if (gd.name) hideRoamingCat(gd.name, false);   // back to the streets they love
   state.guard = null;
   showNotif('🛡️ "Understood, President." Your guard heads home for a well-earned rest.');
   if (typeof sfx === 'function') sfx('ui');
@@ -463,7 +491,7 @@ function dismissGuard() {
 function openGuardOrders() {
   const gd = state.guard; if (!gd) return;
   state.uiOpen = true;
-  let h = '<div class="zoo-want">' + (gd.kind === 'cat' ? '🐈‍⬛' : '🕴️') + '</div><div class="modal-sub">"Orders, President?"</div><div class="co-grid" style="grid-template-columns:1fr">';
+  let h = '<div class="zoo-want">' + (gd.kind === 'cat' ? '🐈‍⬛' : '🕴️') + '</div><div class="modal-sub">' + (gd.name ? '<b>' + gd.name + '</b> — ' : '') + '"Orders, President?"</div><div class="co-grid" style="grid-template-columns:1fr">';
   h += `<button ${gd.mode === 'follow' ? 'disabled' : ''} onclick="guardOrder('follow')">🚶<small>Follow me${gd.mode === 'follow' ? ' · current' : ''}</small></button>`;
   h += `<button ${gd.mode === 'wait' ? 'disabled' : ''} onclick="guardOrder('wait')">🧍<small>Wait right here${gd.mode === 'wait' ? ' · current' : ''}</small></button>`;
   h += `<button onclick="guardOrder('home')">🏠<small>Go home (dismiss)</small></button>`;

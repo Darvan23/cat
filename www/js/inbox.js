@@ -148,3 +148,80 @@ function toggleStaffCV(bid, i) {
   state._staffOpen = (state._staffOpen === key) ? null : key;
   if (typeof renderBusiness === 'function') renderBusiness();
 }
+
+// ═══ 🤝 THE HIRING OFFICE — real candidates, real CVs, one job per soul ═══
+const CAND_FIRST = ['Sam', 'June', 'Ivo', 'Mara', 'Ola', 'Ken', 'Rita', 'Theo', 'Ada', 'Omar', 'Nina', 'Gus', 'Priya', 'Leo', 'Hana', 'Diego', 'Wren', 'Kofi', 'Elsa', 'Bram'];
+const CAND_LAST = ['Reed', 'Park', 'Brandt', 'Solis', 'Nyberg', 'Ito', 'Vale', 'Marsh', 'Lund', 'Haddad', 'Petrov', 'Whitfield', 'Okafor', 'Moreau', 'Quist', 'Bell', 'Iversen', 'Castell'];
+const CAND_TRAIT2 = ['once out-stared an owl', 'bakes prize-winning pies', 'can carry four coffees at once', 'remembers every birthday', 'alphabetises everything', 'unbeatable at chess', 'whistles show tunes while working', 'never lost a filing cabinet', 'reads three newspapers before dawn', 'makes the best tea in town', 'can nap standing up', 'fixes squeaky doors uninvited'];
+const CAND_PREV2 = ['the docks', 'a farm upcountry', 'the old mill', 'a café out east', 'the fishing boats', 'nowhere — first job!', 'the city market', 'a bakery back home', 'the night post office', 'a lighthouse crew'];
+const CAND_HOME = ['Millbrook', 'East Harbor', 'Pinefield', 'the Old Quarter', 'the North Farms', 'Saltwick', 'Two Rivers', 'Lantern Hill'];
+const CAT_TRAIT2 = ['dreams loudly of fish', 'purrs in perfect pitch', 'has never once been late', 'keeps the mice VERY honest', 'naps efficiently', 'judges everyone kindly', 'a master of the slow blink', 'walks like royalty'];
+
+function jobsLedger() { return state.jobsLedger || (state.jobsLedger = {}); }
+function isEmployed(id) { return !!jobsLedger()[id]; }
+function employ(id, label) { if (id) jobsLedger()[id] = label; }
+function unemploy(id) { if (id) delete jobsLedger()[id]; }
+
+function genCandidates(n) {
+  const out = [], used = new Set(Object.keys(jobsLedger()));
+  let guard = 0;
+  while (out.length < (n || 3) && guard++ < 80) {
+    const name = CAND_FIRST[(Math.random() * CAND_FIRST.length) | 0] + ' ' + CAND_LAST[(Math.random() * CAND_LAST.length) | 0];
+    const id = 'p:' + name;
+    if (used.has(id)) continue;
+    used.add(id);
+    out.push({ id, name, kind: 'human', age: 21 + ((Math.random() * 42) | 0), from: CAND_HOME[(Math.random() * CAND_HOME.length) | 0], prev: CAND_PREV2[(Math.random() * CAND_PREV2.length) | 0], trait: CAND_TRAIT2[(Math.random() * CAND_TRAIT2.length) | 0] });
+  }
+  return out;
+}
+// every cat YOU freed or designed — the real ones roaming this very town
+function myCatsRoster() {
+  const out = [];
+  (state.freed || []).forEach(cid => {
+    const c = (typeof cats !== 'undefined') ? cats.find(x => x.id === cid) : null;
+    if (c) out.push({ id: 'cat:' + c.id, name: c.name, kind: 'cat', data: c, trait: CAT_TRAIT2[c.id.length % CAT_TRAIT2.length] });
+  });
+  (state.createdCats || []).forEach((c, i) => out.push({ id: 'cat:custom' + i, name: c.name || 'The Mystery Cat', kind: 'cat', data: c, trait: CAT_TRAIT2[(i + 3) % CAT_TRAIT2.length] }));
+  return out;
+}
+const _hex = c => '#' + ('000000' + (c || 0x888888).toString(16)).slice(-6);
+
+// the picker: candidates (and/or your cats) laid out as little CVs — hire one, or nobody
+let _hireOnPick = null;
+function openHirePicker(opt) {
+  state.uiOpen = true;
+  _hireOnPick = opt.onPick;
+  let h = '<div class="modal-sub">' + (opt.sub || 'Read the CVs — hire whoever feels right.') + '</div><div class="hire-list">';
+  const cards = [];
+  if (opt.kind !== 'cat') cards.push(...genCandidates(3));
+  if (opt.kind !== 'human') cards.push(...myCatsRoster());
+  if (!cards.length) h += '<div class="cv-line cv-dim">No candidates right now' + (opt.kind === 'cat' ? ' — free or create some cats first! 🐱' : '') + '</div>';
+  window._hireCards = cards;
+  cards.forEach((c, i) => {
+    const busy = isEmployed(c.id);
+    if (c.kind === 'cat') {
+      h += `<div class="hire-card ${busy ? 'busy' : ''}">
+        <div class="hire-head"><span class="hire-chip" style="background:${_hex(c.data.body)};border-color:${_hex(c.data.accent)}"></span><b>${c.name}</b></div>
+        <div class="hire-det">🐱 One of YOUR cats · ${c.trait}</div>
+        ${busy ? `<div class="hire-busy">already working as ${jobsLedger()[c.id]}</div>` : `<button class="hire-btn" onclick="hirePick(${i})">Hire ${c.name} ${opt.cost ? '· ' + opt.cost : ''}</button>`}
+      </div>`;
+    } else {
+      h += `<div class="hire-card">
+        <div class="hire-head">🧑‍💼 <b>${c.name}</b> <span class="cv-dim">· ${c.age}</span></div>
+        <div class="hire-det">🏡 From ${c.from}<br>💼 Previously: ${c.prev}<br>⭐ ${c.trait}</div>
+        <button class="hire-btn" onclick="hirePick(${i})">Hire ${c.name.split(' ')[0]} ${opt.cost ? '· ' + opt.cost : ''}</button>
+      </div>`;
+    }
+  });
+  h += '</div><button class="modal-close" onclick="closeCheckout()">Nobody today</button>';
+  document.getElementById('checkout-title').textContent = opt.title || '🤝 Candidates';
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+  if (typeof sfx === 'function') sfx('ui');
+}
+function hirePick(i) {
+  const c = (window._hireCards || [])[i];
+  if (!c || isEmployed(c.id)) return;
+  closeCheckout();
+  if (_hireOnPick) _hireOnPick(c);
+}

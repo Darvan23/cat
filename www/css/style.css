@@ -942,3 +942,14 @@ body.cine #dialogue { top: auto; bottom: calc(24px + env(safe-area-inset-bottom)
 
 /* ── indoors: park tally & population are outdoor business ── */
 body.indoors #park-tally, body.indoors #population { display: none !important; }
+
+/* ── 🤝 hiring CVs ── */
+.hire-list { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.hire-card { text-align: left; border: 1.5px solid rgba(200,146,42,0.5); border-radius: 12px; padding: 10px 12px; background: rgba(255,240,210,0.05); }
+.hire-card.busy { opacity: 0.55; }
+.hire-head { font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+.hire-chip { width: 20px; height: 20px; border-radius: 50%; border: 3px solid; display: inline-block; }
+.hire-det { font-size: 0.78rem; opacity: 0.85; line-height: 1.5; margin: 6px 0; }
+.hire-busy { font-size: 0.75rem; color: #d8a860; font-style: italic; }
+.hire-btn { width: 100%; padding: 8px; border-radius: 10px; border: 2px solid #8ac858; background: rgba(106,160,80,0.3); color: #d8f0c0; font-family: inherit; font-weight: 700; cursor: pointer; }
+.hire-btn:active { background: rgba(106,160,80,0.55); }

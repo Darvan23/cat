@@ -62,19 +62,29 @@ function hireWorkerFor(bizId, type) {
   const js = jobStats();   // can't employ more townsfolk than exist & are out of work
   if (type === 'cat' && js.openC <= 0) { showNotif('🐱 No cats in town are free to work — rescue more cats first'); return; }
   if (type !== 'cat' && js.openH <= 0) { showNotif('🧑 Nobody left looking for work — build homes to grow the population'); return; }
-  const nw = { type: type === 'cat' ? 'cat' : 'human', biz: bizId, hiredDay: state.dayCount || 0 };
-  if (typeof dressWorkerCV === 'function') dressWorkerCV(nw);   // give them a name & a little résumé
-  workerList().push(nw);
-  state.biz.jobsCreated = (state.biz.jobsCreated || 0) + 1;
-  if (typeof sfx === 'function') sfx('coin');
-  showNotif((type === 'cat' ? '🐱 ' : '🧑 ') + (nw.name || 'Someone') + ' hired at the ' + bizDef(bizId).name + '! (wage ' + WORKER_SALARY + '/day)');
-  refreshWorkersInView(bizId);   // show them right away if you're inside
-  renderBusiness(); if (typeof saveGame === 'function') saveGame();
+  // 📄 read the CVs first — humans apply, or pick one of YOUR OWN cats
+  openHirePicker({
+    title: '🤝 Hiring: ' + bizDef(bizId).name,
+    sub: type === 'cat' ? 'Your cats, ready to work. One job each!' : 'Three townsfolk sent their CVs.',
+    kind: type === 'cat' ? 'cat' : 'human',
+    onPick(c) {
+      const nw = { type: c.kind, biz: bizId, hiredDay: state.dayCount || 0, name: c.name, trait: c.trait, prev: c.prev || 'the streets of this very town', workerId: c.id };
+      if (c.kind === 'cat') nw.look = c.data;                        // the REAL cat clocks in
+      employ(c.id, 'staff at the ' + bizDef(bizId).name);
+      workerList().push(nw);
+      state.biz.jobsCreated = (state.biz.jobsCreated || 0) + 1;
+      if (typeof sfx === 'function') sfx('coin');
+      showNotif((c.kind === 'cat' ? '🐱 ' : '🧑 ') + c.name + ' hired at the ' + bizDef(bizId).name + '! (wage ' + WORKER_SALARY + '/day)');
+      refreshWorkersInView(bizId);
+      renderBusiness(); if (typeof saveGame === 'function') saveGame();
+    },
+  });
 }
 function fireWorkerFrom(bizId) {
   const list = workerList();
   const i = list.map(w => w.biz).lastIndexOf(bizId);
   if (i < 0) return;
+  if (typeof unemploy === 'function' && list[i].workerId) unemploy(list[i].workerId);   // free to work elsewhere
   list.splice(i, 1);
   refreshWorkersInView(bizId);
   renderBusiness(); if (typeof saveGame === 'function') saveGame();
@@ -355,7 +365,7 @@ function spawnWorkersInto(scn, bizId) {
     const spot = cashier ? CASHIER_SPOT : BIZ_WORK_SPOTS[i];
     if (w.type === 'cat') {
       const task = cashier ? 'counter' : CAT_TASKS[i % CAT_TASKS.length];
-      const m = buildCatModel(STREET_CAT_LOOKS[i % STREET_CAT_LOOKS.length]);
+      const m = buildCatModel(w.look || STREET_CAT_LOOKS[i % STREET_CAT_LOOKS.length]);   // YOUR cat, in the flesh
       m.group.scale.setScalar(CAT_SCALE_IN * 1.15);
       m.group.position.set(spot[0], 0, spot[1]); m.group.rotation.y = cashier ? 0 : task === 'bat' ? Math.PI : Math.random() * 6; scn.add(m.group);   // cashier faces the customers (+z)
       state.bizWorkers.push({ type: 'cat', task, cashier, group: m.group, legs: m.legs, tail: m.tail, body: m.body, phase: Math.random() * 6, hx: spot[0], hz: spot[1], t2: 0 });
