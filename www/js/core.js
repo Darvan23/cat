@@ -40,7 +40,10 @@ const state = {
   carTrunk: [],      // the shopping riding in the back
   driving: false,
   goldBirdsCaught: 0, // ✨🐦 the Golden Flock: 24 roost on rooftops, sneak-only
-  settings: { chatter: true, hints: true },   // ⚙️ player comfort: cat subtitles & tip boxes     // the day your zoo ticket is valid for (a day pass)
+  settings: { chatter: true, hints: true },   // ⚙️ player comfort: cat subtitles & tip boxes
+  guard: null,        // 🛡️ your bodyguard {kind, mode}
+  grayHired: 0,       // analysts hired into Operations (treasury-funded)
+  grayFloor: 0,       // which Gray House floor you're on     // the day your zoo ticket is valid for (a day pass)
   zooShift: false,    // working the zoo ticket booth right now
   neighbors: [],      // friends' towns you can visit from above [{code, name}]
   uiOpen: false,      // a give/rescue overlay is open

@@ -11,6 +11,7 @@ const CAR_STYLES = {
   van:    { id: 'van',    name: 'Milk Van',     e: '🥛', price: 260, body: 0xf0eee8, accent: 0x9ab8d0, trunk: 6, maxV: 0.30, blurb: 'The biggest trunk in town.' },
   tux:    { id: 'tux',    name: 'Tuxedo Zoom',  e: '🏎️', price: 350, body: 0x24242c, accent: 0xf0f0f0, trunk: 2, maxV: 0.46, blurb: 'Fastest whiskers on wheels.' },
   royale: { id: 'royale', name: 'Lion Royale',  e: '👑', price: 500, body: 0xe0b040, accent: 0xa06a20, trunk: 3, maxV: 0.40, blurb: 'Arrive like a king.' },
+  presidential: { id: 'presidential', name: 'Presidential One', e: '🎩', price: 0, body: 0x1c1e2a, accent: 0xc8a860, trunk: 5, maxV: 0.44, blurb: 'The office on wheels.' },
 };
 
 // ── the cat car itself: ears, tail, whiskers and headlight eyes ──
@@ -41,6 +42,14 @@ function buildCatCar(styleId) {
     const b = mk(new THREE.Mesh(G.sph(0.68, 14, 10), bodyM), 0, 0.5, 0); b.scale.set(1.0, 0.62, 1.6);
     const mane = mk(new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.16, 10, 18), pbr(0xa06a20, 0.7)), 0, 0.52, 0.86); // the mane grille
     for (let i = 0; i < 5; i++) { const spike = mk(new THREE.Mesh(G.cone(0.07, 0.22, 6), pbr(0xffd040, 0.4)), Math.sin((i - 2) * 0.45) * 0.42, 1.0 + Math.cos((i - 2) * 0.45) * 0.12, 0.1); spike.rotation.x = -0.3; }  // crown
+  } else if (styleId === 'presidential') {   // 🎩 the long black state car
+    mk(new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.6, 2.6), bodyM), 0, 0.55, 0);
+    mk(new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.5, 1.2), bodyM), 0, 1.0, -0.1);
+    mk(new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.18, 1.22), pbr(0x3a3f52, 0.3, 0.4)), 0, 0.86, -0.1);   // tinted glass band
+    mk(new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.06, 2.7), accM), 0, 0.28, 0);                            // gold running trim
+    [-1, 1].forEach(d => { const fp = mk(new THREE.Mesh(G.cyl(0.02, 0.02, 0.34, 5), accM), d * 0.5, 1.0, 1.15);  // fender flags
+      const fl = mk(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.2), pbr(0xc23a3a, 0.6)), d * 0.5 + 0.02, 1.1, 1.08); });
+    mk(new THREE.Mesh(G.sph(0.09, 8, 6), accM), 0, 0.72, 1.32);                                             // hood emblem
   } else {   // the Kitten Bug
     const b = mk(new THREE.Mesh(G.sph(0.66, 14, 10), bodyM), 0, 0.5, 0); b.scale.set(1.0, 0.72, 1.35);
     const rf = mk(new THREE.Mesh(G.sph(0.5, 12, 9), accM), 0, 0.82, -0.05); rf.scale.set(0.85, 0.55, 0.9);
@@ -143,7 +152,7 @@ function buildShowInterior() {
   // the five stars of the show
   state._showCars = [];
   const spots = [[-5.4, -2.2], [-2.7, -2.6], [0, -2.8], [2.7, -2.6], [5.4, -2.2]];
-  Object.keys(CAR_STYLES).forEach((id, i) => {
+  Object.keys(CAR_STYLES).filter(id => id !== 'presidential').forEach((id, i) => {   // the presidential car is EARNED, not sold
     const [px, pz] = spots[i];
     const plinth = add(new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.5, 0.28, 16), pbr(0xc8ccd4, 0.6))); plinth.position.set(px, 0.14, pz);
     const car = buildCatCar(id); car.position.set(px, 0.28, pz); car.scale.setScalar(0.78); car.rotation.y = 0.5; S.add(car);

@@ -360,6 +360,7 @@ function saveGame() {
       civics: state.civics, townGrowth: state.townGrowth,
       townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay, dcPassDay: state.dcPassDay, dcTickets: state.dcTickets, dcBandDay: state.dcBandDay,
       myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk, goldBirdsCaught: state.goldBirdsCaught, settings: state.settings,
+      guard: state.guard ? { kind: state.guard.kind, mode: state.guard.mode } : null, grayHired: state.grayHired,
     }));
   } catch (e) {}
 }
@@ -458,6 +459,8 @@ function applySave(s) {
   state.carTrunk = s.carTrunk || [];
   state.goldBirdsCaught = s.goldBirdsCaught || 0;
   state.settings = Object.assign({ chatter: true, hints: true }, s.settings || {});
+  state.guard = s.guard ? { kind: s.guard.kind, mode: s.guard.mode || 'follow' } : null;
+  state.grayHired = s.grayHired || 0;
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets
@@ -901,11 +904,10 @@ function updateContextButton() {
     if (mc) { btn.textContent = mc.label; btn.classList.add('show'); } else btn.classList.remove('show');
     return;
   }
-  if (state.inGray) {   // 🏛️ the Oval Office: stand by the flags to choose the nation's colours
-    let a = null, l = '';
-    if (Math.hypot(cp.x - (-11.5), cp.z - (-7)) < 3.2) { a = 'chooseflag'; l = '🚩 Choose the nation\'s flag'; }
-    state.context = a;
-    if (a) { btn.textContent = l; btn.classList.add('show'); } else btn.classList.remove('show');
+  if (state.inGray) {   // 🏛️ four floors of lift, phone, flags, hiring — and your guard
+    const gy = (typeof grayContext === 'function') ? grayContext(cp) : null;
+    state.context = gy ? gy.id : null; state._grayCtx = gy;
+    if (gy) { btn.textContent = gy.label; btn.classList.add('show'); } else btn.classList.remove('show');
     return;
   }
   if (state.inWork) {   // inside your workplace — help customers, ring them up, stash cash, run the shift
@@ -993,6 +995,11 @@ function updateContextButton() {
       const bt = balloonGiveTarget(cp);
       if (bt) { state.context = 'giveballoon'; state._balloonTo = bt; btn.textContent = '🎈 Give balloon to ' + bt.name; btn.classList.add('show'); return; }
     }
+    // 🛡️ your bodyguard takes orders anywhere
+    if (typeof guardContext === 'function') {
+      const gq = guardContext(cp);
+      if (gq) { state.context = gq.id; state._grayCtx = gq; btn.textContent = gq.label; btn.classList.add('show'); return; }
+    }
     // 🚗 Whisker Motors + your parked car + the trunk
     if (typeof carContext === 'function') {
       const cc = carContext(cp);
@@ -1059,6 +1066,7 @@ function doContextAction() {
   else if (state.context === 'flyballoon') { if (typeof releaseBalloon === 'function') releaseBalloon(); }
   else if (state.context && state.context.indexOf('dc:') === 0) { if (typeof dcAction === 'function' && state._dcCtx) dcAction(state._dcCtx); }
   else if (state.context && state.context.indexOf('car:') === 0) { if (typeof carAction === 'function' && state._carCtx) carAction(state._carCtx); }
+  else if (state.context && (state.context.indexOf('gray:') === 0 || state.context.indexOf('guard:') === 0)) { if (typeof grayAction === 'function' && state._grayCtx) grayAction(state._grayCtx); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
@@ -2751,6 +2759,7 @@ function animate(now) {
   if (typeof updateDreamCity === 'function') updateDreamCity(t);                   // 🎢 and so does Dream City
   if (typeof updateDriving === 'function') updateDriving(t);                       // 🚗 the cat car rolls with you
   updateGoldBird(t);                                                               // ✨🐦 the Golden Flock
+  if (typeof updateGuard === 'function') updateGuard(t);                           // 🛡️ the detail keeps up
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it
@@ -2829,12 +2838,12 @@ function animate(now) {
     else if (state.inBoughtHome) { bx = 5.4; bzMin = -3.9; bzMax = 3.9; }
     else if (state.inBiz) { if (state.inCivic) { bx = 11.2; bzMin = -8.2; bzMax = 8.2; } else { bx = 6.4; bzMin = -4.6; bzMax = 4.4; } }   // reach behind the counter
     else if (state.inWork) { bx = 6.6; bzMin = -4.6; bzMax = 4.4; }   // your workplace shop floor (incl. behind the counter)
-    else if (state.inGray) { bx = 16.4; bzMin = -11.4; bzMax = 11.4; }   // the Gray House is HUGE
+    else if (state.inGray) { const fo = (typeof _GF === 'function') ? _GF(state.grayFloor || 0) : 0; bx = fo + 16.4; bxMin = fo - 16.4; bzMin = -11.4; bzMax = 11.4; }   // four floors, each its own hall
     else if (state.inJail) { bx = 3.1; bzMin = -2.5; bzMax = 2.6; }   // locked in the cell
     else if (state.inManor) { bx = 6.4; bzMin = -4.2; bzMax = 4.2; }   // the manor's great hall
     else if (state.inFun) { bx = 5.7; bzMin = -3.7; bzMax = 3.7; }   // the fun house
     else if (state.inShow) { bx = 7.1; bzMin = -4.5; bzMax = 4.5; }   // the car showroom
-    if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inJail || state.inManor || state.inFun || state.inShow) bxMin = -bx;
+    if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inJail || state.inManor || state.inFun || state.inShow) bxMin = -bx;
     catGroup.position.x = Math.max(bxMin, Math.min(bx, catGroup.position.x));
     catGroup.position.z = Math.max(bzMin, Math.min(bzMax, catGroup.position.z));
   }

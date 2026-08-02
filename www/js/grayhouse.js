@@ -87,115 +87,77 @@ function tryEnterGrayHouse() {
 let grayScene = null;
 const grayColliders = [];
 let _grayBuilt = false;
+// ═══ THE GRAY HOUSE INTERIOR — four floors of government, one lift ═══
+const GRAY_FLOORS = ['🏛️ Grand Lobby', '💻 Operations', '🤝 Meeting Floor', '🎩 Presidential Office'];
+const _GF = f => f * 60;                                   // each floor lives 60 units apart in the same scene
+const GRAY_LIFT = { x: 13.2, z: -8.6 };                    // lift alcove, same spot every floor
+
 function buildGrayInterior() {
   if (_grayBuilt) return;
   _grayBuilt = true;
   grayScene = new THREE.Scene();
-  grayScene.background = new THREE.Color(0x2a2c34);
+  grayScene.background = new THREE.Color(0x262a36);
   const S = grayScene;
   const add = m => { m.castShadow = true; m.receiveShadow = true; S.add(m); return m; };
-  const B = (w, h, d, m, x, y, z) => { const me = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)); me.position.set(x, y, z); return me; };
+  const B = (w, h, d, m, x, y, z, ry) => { const me = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)); me.position.set(x, y, z); if (ry) me.rotation.y = ry; return me; };
   const CY = (rt, rb, hh, s, m, x, y, z) => { const me = add(new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, hh, s), m)); me.position.set(x, y, z); return me; };
-  const marble = pbr(0xdfe0e4, 0.35), wallM = pbr(0xe8e4da, 0.95), trimM = pbr(0xc8b070, 0.5, 0.3);
-  const wood = pbr(0x5a4028, 0.7), woodDark = pbr(0x3d2c1c, 0.75), redCarpet = pbr(0x9a2a34, 0.95);
-  const W = GRAY_W + 0.6, D = GRAY_D + 0.6, WH = 4.6;
-  add(new THREE.Mesh(new THREE.BoxGeometry(W * 2, 0.1, D * 2), marble)).position.set(0, -0.05, 0);   // marble floor
-  B(W * 2, WH, 0.3, wallM, 0, WH / 2, -D); B(W * 2, WH, 0.3, wallM, 0, WH / 2, D);                    // walls (door gap is visual only)
-  B(0.3, WH, D * 2, wallM, -W, WH / 2, 0); B(0.3, WH, D * 2, wallM, W, WH / 2, 0);
-  B(W * 2, 0.5, 0.34, trimM, 0, 0.25, -D + 0.02); B(W * 2, 0.5, 0.34, trimM, 0, 0.25, D - 0.02);      // gold skirting
-  // interior partitions: Oval Office (west), Kitchen (east) — each with a doorway
-  [[-6.5, -1], [6.5, 1]].forEach(([wx]) => {
-    B(0.3, WH, 8.2, wallM, wx, WH / 2, -D + 4.1);
-    B(0.3, WH, 5.4, wallM, wx, WH / 2, D - 2.7);
-    grayColliders.push({ type: 'box', x0: wx - 0.3, x1: wx + 0.3, z0: -D, z1: -D + 8.2 });
-    grayColliders.push({ type: 'box', x0: wx - 0.3, x1: wx + 0.3, z0: D - 5.4, z1: D });
-  });
-  grayColliders.push({ type: 'box', x0: -W - 0.4, x1: -W, z0: -D, z1: D }, { type: 'box', x0: W, x1: W + 0.4, z0: -D, z1: D });
-  grayColliders.push({ type: 'box', x0: -W, x1: W, z0: -D - 0.4, z1: -D }, { type: 'box', x0: -W, x1: W, z0: D, z1: D + 0.4 });
-  // the red carpet: door → grand hall centre
-  add(new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.06, 14), redCarpet)).position.set(0, 0.03, D - 7);
-  CY(3.4, 3.4, 0.06, 28, redCarpet, 0, 0.03, -3);                                                     // round rug at the hall's heart
-  // columns + chandeliers
-  [[-3.6, -6], [3.6, -6], [-3.6, 2], [3.6, 2]].forEach(([cx, cz]) => {
-    CY(0.34, 0.4, WH, 16, wallM, cx, WH / 2, cz);
-    grayColliders.push({ type: 'circle', x: cx, z: cz, r: 0.5 });
-  });
-  [[0, -3], [0, 6]].forEach(([cx, cz]) => {
-    CY(0.04, 0.04, 1.2, 6, trimM, cx, WH - 0.6, cz);
-    const orb = add(new THREE.Mesh(G.sph(0.34, 16, 12), new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: 0xffd070, emissiveIntensity: 1.1, roughness: 0.4 })));
-    orb.position.set(cx, WH - 1.3, cz);
-    const pl = new THREE.PointLight(0xffeecf, 0.7, 30, 2); pl.position.set(cx, WH - 1.5, cz); S.add(pl);
-  });
-  S.add(new THREE.AmbientLight(0xfff2e8, 0.6));
-  S.add(new THREE.HemisphereLight(0xfff4ee, 0x3a3630, 0.5));
-
-  // ── The OVAL OFFICE (west wing) ──
-  CY(3.1, 3.1, 0.05, 30, pbr(0x2e4a6a, 0.9), -11.5, 0.03, -3);                                        // the oval rug
-  const desk = add(new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.9, 24, 1, false, 0, Math.PI), woodDark)); // the curved Resolute desk
-  desk.position.set(-11.5, 0.45, -4.4); desk.rotation.y = Math.PI;
-  grayColliders.push({ type: 'box', x0: -13.4, x1: -9.6, z0: -6.3, z1: -4.2 });
-  B(1.1, 1.5, 0.9, pbr(0x3a2a4a, 0.6), -11.5, 0.75, -6.1);                                            // the President's chair
-  [[-13.2, -7.4], [-9.8, -7.4]].forEach(([fx, fz]) => {                                               // twin flags behind the desk
-    CY(0.05, 0.05, 3, 8, trimM, fx, 1.5, fz);
-    const fl = makeFlagMesh(1.1); fl.position.set(fx + 0.55, 2.55, fz); S.add(fl); fl.castShadow = true;
-    grayColliders.push({ type: 'circle', x: fx, z: fz, r: 0.3 });
-  });
-  B(3.6, 2.4, 0.3, wood, -14.8, 1.2, 1.6);                                                            // bookcase
-  grayColliders.push({ type: 'box', x0: -16.6, x1: -13, z0: 1.4, z1: 1.9 });
-
-  // ── The KITCHEN (east wing) ──
-  B(6.8, 1.0, 1.2, pbr(0xb8bcc2, 0.5, 0.2), 12.6, 0.5, -7.4);                                         // steel counter run
-  B(1.4, 1.3, 1.1, pbr(0x8a8f98, 0.5, 0.3), 9.4, 0.65, -7.4);                                         // stove
-  B(1.3, 2.2, 1.1, pbr(0xdfe0e4, 0.55), 15.4, 1.1, -7.35);                                            // fridge
-  grayColliders.push({ type: 'box', x0: 8.6, x1: 16.2, z0: -8.2, z1: -6.7 });
-  B(4.4, 0.9, 1.8, wood, 11.5, 0.45, -1);                                                             // prep table
-  grayColliders.push({ type: 'box', x0: 9.2, x1: 13.8, z0: -2, z1: 0 });
-
-  // ── staff desks along the hall's north wall ──
-  [[-3.4, -9.4], [0, -9.4], [3.4, -9.4]].forEach(([dx, dz]) => {
-    B(2.4, 0.85, 1.1, wood, dx, 0.42, dz);
-    grayColliders.push({ type: 'box', x0: dx - 1.3, x1: dx + 1.3, z0: dz - 0.7, z1: dz + 0.7 });
-  });
-  // portraits of past presidents (cats, naturally)
-  [-5, 0, 5].forEach(px => { B(1.5, 1.9, 0.1, wood, px, 2.7, -D + 0.24); B(1.2, 1.6, 0.08, pbr(0xd8c8a8, 0.9), px, 2.7, -D + 0.3); });
-  // the staff, hard at work
+  // a WARM palette — no more hospital white
+  const wallM = pbr(0xd9c9a8, 0.92), wainscot = pbr(0x31415e, 0.85), trimM = pbr(0xc8a860, 0.5, 0.3);
+  const wood = pbr(0x6a4c2c, 0.7), woodDark = pbr(0x40301e, 0.75), redCarpet = pbr(0x8e2732, 0.95);
+  const navyCarpet = pbr(0x2c3a54, 0.95), screenM = () => new THREE.MeshStandardMaterial({ color: 0x9fd4ff, emissive: 0x4a90d8, emissiveIntensity: 0.9, roughness: 0.4 });
+  const W = GRAY_W + 0.6, D = GRAY_D + 0.6, WH = 4.8;
+  S.add(new THREE.AmbientLight(0xffeeda, 0.62));
+  S.add(new THREE.HemisphereLight(0xfff2e0, 0x40382c, 0.5));
   state.grayPeople = [];
-  const staffCfg = [
-    { x: -3.4, z: -8.3, ry: Math.PI, cfg: { skin: 0xe8b890, hair: 0x3a2a1a, hairStyle: 'bun', shirt: 0x4a5568, pants: 0x2e3440, height: 0.98, build: 'avg', eye: 0x3a2a1a } },
-    { x: 0, z: -8.3, ry: Math.PI, cfg: { skin: 0x8a5a3a, hair: 0x141414, hairStyle: 'short', glasses: true, shirt: 0x50586a, pants: 0x2e3440, height: 1.03, build: 'avg', eye: 0x2a1a12 } },
-    { x: 3.4, z: -8.3, ry: Math.PI, cfg: { skin: 0xf0c8a0, hair: 0x8a6a3a, hairStyle: 'long', shirt: 0x4a5568, pants: 0x2e3440, height: 0.96, build: 'slim', eye: 0x3a5a3a } },
-    { x: 12.6, z: -5.8, ry: Math.PI, cfg: { skin: 0xe0a878, hair: 0x6b4a2a, hairStyle: 'short', apron: true, apronColor: 0xf2f2f2, shirt: 0xb05548, pants: 0x4a4030, height: 1.05, build: 'round', eye: 0x4a3a22 } },   // the chef
-    { x: -11.5, z: -1, ry: 0.4, cfg: { skin: 0xd9a884, hair: 0x1a1a1a, hairStyle: 'short', glasses: true, shirt: 0x22242c, pants: 0x1a1c24, height: 1.06, build: 'avg', eye: 0x2a1a12 } },   // oval office security
-  ];
-  staffCfg.forEach(sd => {
-    const { group, parts } = buildHuman(sd.cfg);
-    group.position.set(sd.x, 0, sd.z); group.rotation.y = sd.ry;
+  state.grayDesks = [];                                     // hireable desks on the ops floor
+  const staff = (fx, x, z, ry, cfg, role) => {
+    const { group, parts } = buildHuman(cfg);
+    group.position.set(fx + x, 0, z); group.rotation.y = ry;
     S.add(group);
-    state.grayPeople.push({ group, parts, phase: Math.random() * 6 });
-  });
-}
+    const p = { group, parts, phase: Math.random() * 6, role: role || 'idle', floor: fx, hx: fx + x, hz: z, hr: ry };
+    state.grayPeople.push(p);
+    return p;
+  };
 
-function enterGrayHouse() {
-  buildGrayInterior();
-  state.inGray = true;
-  grayScene.add(catGroup); catGroup.scale.setScalar(CAT_SCALE_IN);
-  catGroup.position.set(0, 0, GRAY_D - 1.2); catGroup.rotation.y = Math.PI;
-  state.camYaw = 0; state.camHeight = 5.5; state.camDist = 6.5;
-  camera.position.set(0, state.camHeight, GRAY_D - 1.2 + state.camDist);
-  document.getElementById('minimap').style.display = 'block';   // the minimap STAYS — it shows the mansion's floor plan
-  if (typeof sfx === 'function') sfx('door');
-  if (!state._seenGray) { state._seenGray = true; showDialogue('🏛️ The Gray House', 'Welcome home, President ' + (state.catName || '') + '. The nation is watching. 🐾', 5600); }
-}
-function exitGrayHouse() {
-  state.inGray = false;
-  scene.add(catGroup); catGroup.scale.setScalar(CAT_SCALE_OUT);
-  catGroup.position.set(GRAY_SPOT.x, 0, GRAY_SPOT.z - 8.5); catGroup.rotation.y = Math.PI;
-  if (typeof sfx === 'function') sfx('door');
-}
+  // ── the shared shell: warm walls, wainscot, gold skirting, open south side, the lift ──
+  for (let f = 0; f < 4; f++) {
+    const fx = _GF(f);
+    add(new THREE.Mesh(new THREE.BoxGeometry(W * 2, 0.1, D * 2), f === 0 ? pbr(0xd8d2c4, 0.4) : wood)).position.set(fx, -0.05, 0);
+    B(W * 2, WH, 0.3, wallM, fx, WH / 2, -D);
+    B(0.3, WH, D * 2, wallM, fx - W, WH / 2, 0);
+    B(0.3, WH, D * 2, wallM, fx + W, WH / 2, 0);
+    B(W * 2, 1.4, 0.36, wainscot, fx, 0.7, -D + 0.02);      // navy wainscot band
+    [-1, 1].forEach(sd => B(0.36, 1.4, D * 2, wainscot, fx + sd * (W - 0.02), 0.7, 0));
+    B(W * 2, 0.4, 0.4, trimM, fx, WH - 0.2, -D + 0.04);     // gold cornice
+    // half ceiling over the back (dollhouse view from the south)
+    add(new THREE.Mesh(new THREE.BoxGeometry(W * 2, 0.16, D + 2), pbr(0x483c2c, 0.9))).position.set(fx, WH, -D / 2 + 0.4);
+    grayColliders.push(
+      { type: 'box', x0: fx - W - 0.4, x1: fx - W, z0: -D, z1: D }, { type: 'box', x0: fx + W, x1: fx + W + 0.4, z0: -D, z1: D },
+      { type: 'box', x0: fx - W, x1: fx + W, z0: -D - 0.4, z1: -D }, { type: 'box', x0: fx - W, x1: fx + W, z0: D, z1: D + 0.4 });
+    // 🛗 the lift: gold doors, floor lamp, call plate
+    B(2.6, 3.4, 0.5, pbr(0x8a733e, 0.4, 0.5), fx + GRAY_LIFT.x, 1.7, GRAY_LIFT.z - 1.3);
+    B(0.1, 2.6, 0.06, pbr(0x40301e, 0.5), fx + GRAY_LIFT.x, 1.3, GRAY_LIFT.z - 1.02);
+    if (typeof makeTextSign === 'function') {
+      const fs = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.44, 0.08), new THREE.MeshStandardMaterial({ map: makeTextSign('🛗 FLOOR ' + (f + 1), '#31415e', '#ffe9c0', 170, 46), roughness: 0.6 }));
+      fs.position.set(fx + GRAY_LIFT.x, 3.7, GRAY_LIFT.z - 1.28); S.add(fs);
+    }
+    grayColliders.push({ type: 'box', x0: fx + GRAY_LIFT.x - 1.4, x1: fx + GRAY_LIFT.x + 1.4, z0: GRAY_LIFT.z - 1.6, z1: GRAY_LIFT.z - 1.0 });
+    // windows with navy curtains along the north wall
+    [-9, -3, 3, 9].forEach(wx2 => {
+      if (f === 0 && wx2 === 3) return;
+      const win = add(new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 0.1), new THREE.MeshStandardMaterial({ color: 0xbdd8ea, emissive: 0x5a7a94, emissiveIntensity: 0.35, roughness: 0.4 })));
+      win.position.set(fx + wx2, 2.5, -D + 0.22);
+      [-1.15, 1.15].forEach(cd => B(0.34, 2.6, 0.12, navyCarpet, fx + wx2 + cd, 2.5, -D + 0.24));
+    });
+    // warm ceiling globes
+    [[-6, -4], [6, -4], [0, 4]].forEach(([cx, cz]) => {
+      const orb = add(new THREE.Mesh(G.sph(0.3, 14, 10), new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: 0xffd070, emissiveIntensity: 1.0, roughness: 0.4 })));
+      orb.position.set(fx + cx, WH - 0.8, cz);
+      if (f < 2 || cz < 0) { const pl = new THREE.PointLight(0xffe9c8, 0.55, 26, 2); pl.position.set(fx + cx, WH - 1.1, cz); S.add(pl); }
+    });
+  }
 
-// per-frame interior life (called from the render loop while inside)
-function updateGrayFrame(t) {
-  (state.grayPeople || []).forEach(p => idleHuman(p, t));
+  buildGrayFloors(add, B, CY, staff, { wallM, wainscot, trimM, wood, woodDark, redCarpet, navyCarpet, screenM });
 }
 
 // ── The flag picker (Oval Office context action) ──
@@ -222,21 +184,419 @@ function pickCountryFlag(i) {
 }
 
 // ── The mansion minimap: the floor plan replaces the town while you're inside ──
-function drawGrayMinimap(ctx, cv) {
-  const Dm = cv.width;
-  ctx.fillStyle = '#2e3038'; ctx.fillRect(0, 0, Dm, Dm);
-  const sx = Dm / (GRAY_W * 2 + 2), sz = Dm / (GRAY_D * 2 + 2);
-  const X = x => Dm / 2 + x * sx, Z = z => Dm / 2 + z * sz;
-  const room = (x0, z0, x1, z1, col) => { ctx.fillStyle = col; ctx.fillRect(X(x0), Z(z0), (x1 - x0) * sx, (z1 - z0) * sz); ctx.strokeStyle = '#8a8f98'; ctx.lineWidth = 2; ctx.strokeRect(X(x0), Z(z0), (x1 - x0) * sx, (z1 - z0) * sz); };
-  room(-GRAY_W, -GRAY_D, -6.5, GRAY_D, '#3a4256');       // oval office wing
-  room(-6.5, -GRAY_D, 6.5, GRAY_D, '#414653');           // grand hall
-  room(6.5, -GRAY_D, GRAY_W, GRAY_D, '#4a4440');         // kitchen wing
-  ctx.fillStyle = '#9a2a34'; ctx.fillRect(X(-1.6), Z(GRAY_D - 14), 3.2 * sx, 14 * sz);   // the red carpet
-  ctx.fillStyle = '#dfe3ec'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center';
-  ctx.fillText('OVAL', X(-11.5), Z(0)); ctx.fillText('HALL', X(0), Z(3)); ctx.fillText('KITCHEN', X(11.5), Z(0));
-  ctx.fillStyle = '#f0c020'; ctx.fillRect(X(-13.5), Z(-7.8), 8, 8); ctx.fillRect(X(-10), Z(-7.8), 8, 8);   // the flags
-  // you
+function drawGrayMinimap(g, canvas) {
+  const D2 = canvas.width, f = state.grayFloor || 0, fx = _GF(f);
+  g.fillStyle = '#2a2436'; g.fillRect(0, 0, D2, D2);
+  g.strokeStyle = '#c8a860'; g.lineWidth = 3; g.strokeRect(20, 42, D2 - 40, D2 - 84);
+  const MX = x => D2 / 2 + (x - fx) * ((D2 - 56) / 34), MZ = z => D2 / 2 + z * ((D2 - 100) / 24);
+  g.font = '13px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('🛗', MX(fx + GRAY_LIFT.x), MZ(GRAY_LIFT.z));
+  if (f === 0) { g.fillText('🛎️', MX(fx), MZ(-6)); g.fillText('🔥', MX(fx - 15), MZ(-4)); g.fillText('🛋️', MX(fx - 10.5), MZ(0)); g.fillText('🚩', MX(fx), MZ(6)); }
+  if (f === 1) { g.fillText('🖥️', MX(fx - 5), MZ(-4)); g.fillText('🗄️', MX(fx + 14), MZ(-2)); g.fillText('🧑‍💼', MX(fx - 2), MZ(1)); }
+  if (f === 2) { g.fillText('🤝', MX(fx - 2), MZ(-1.5)); g.fillText('🎤', MX(fx - 10.5), MZ(4)); g.fillText('📊', MX(fx - 3), MZ(-8)); }
+  if (f === 3) { g.fillText('🖥️', MX(fx - 4), MZ(-4.5)); g.fillText('📞', MX(fx - 1.9), MZ(-4.5)); g.fillText('🚩', MX(fx - 3), MZ(-7)); g.fillText('🌍', MX(fx + 6), MZ(-5.5)); }
+  (state.grayPeople || []).forEach(p => { const px = p.group.position.x; if (Math.abs(px - fx) < 18) g.fillText('·', MX(px), MZ(p.group.position.z)); });
   const cp = catGroup.position;
-  ctx.fillStyle = '#f0b828'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(X(cp.x), Z(cp.z), 9, 0, 7); ctx.fill(); ctx.stroke();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(MX(cp.x), MZ(cp.z), 5, 0, 7); g.fill();
+  g.fillStyle = '#e05a4a'; g.beginPath(); g.arc(MX(cp.x), MZ(cp.z), 3.4, 0, 7); g.fill();
+  g.fillStyle = '#e8d8b0'; g.font = 'bold 10px sans-serif';
+  g.fillText(GRAY_FLOORS[f] + '  ·  ' + (f + 1) + '/4', D2 / 2, 16);
+}
+function buildGrayFloors(add, B, CY, staff, M2) {
+  const { wallM, trimM, wood, woodDark, redCarpet, navyCarpet, screenM } = M2;
+  const W = GRAY_W + 0.6, D = GRAY_D + 0.6, WH = 4.8;
+  const S = grayScene;
+  const suit = (skin, hair, style, extra) => Object.assign({ skin, hair, hairStyle: style, shirt: 0x3a4458, pants: 0x262c3a, height: 1.0, build: 'avg', eye: 0x2a1a12 }, extra || {});
+
+  // ═ FLOOR 1 — THE GRAND LOBBY ═
+  {
+    const fx = _GF(0);
+    add(new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.06, 15), redCarpet)).position.set(fx, 0.03, D - 7.5);
+    CY(3.6, 3.6, 0.06, 30, redCarpet, fx, 0.03, -2);
+    [[-4.5, -6], [4.5, -6], [-4.5, 2.5], [4.5, 2.5]].forEach(([cx, cz]) => { CY(0.34, 0.42, WH, 16, wallM, fx + cx, WH / 2, cz); grayColliders.push({ type: 'circle', x: fx + cx, z: cz, r: 0.52 }); });
+    // reception desk, curved, centre-north
+    const rd = add(new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 1.0, 24, 1, false, Math.PI, Math.PI), woodDark)); rd.position.set(fx, 0.5, -6.2);
+    B(5.2, 0.12, 1.0, trimM, fx, 1.04, -6.2);
+    grayColliders.push({ type: 'box', x0: fx - 2.7, x1: fx + 2.7, z0: -7.2, z1: -5.4 });
+    if (typeof makeTextSign === 'function') { const ws = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.8, 0.1), new THREE.MeshStandardMaterial({ map: makeTextSign('🏛️ THE GRAY HOUSE', '#31415e', '#ffe9c0', 340, 62), roughness: 0.5 })); ws.position.set(fx + 3, 3.1, -D + 0.26); S.add(ws); }
+    // lounge west: two sofas + fireplace
+    [[-1.4, 0.6], [1.4, 0.6]].forEach(([dz, ry]) => { B(2.6, 0.55, 1.0, navyCarpet, fx - 10.5, 0.45, dz * 2, ry * Math.PI); B(2.6, 0.8, 0.3, navyCarpet, fx - 10.5 - (dz > 0 ? -0 : 0), 0.9, dz * 2 - 0.5); });
+    grayColliders.push({ type: 'box', x0: fx - 12, x1: fx - 9, z0: -3.6, z1: 3.4 });
+    B(2.4, 2.2, 0.5, pbr(0x5a4438, 0.9), fx - W + 0.5, 1.1, -4);
+    const fire = add(new THREE.Mesh(G.cone(0.4, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0xff9840, emissive: 0xe86820, emissiveIntensity: 1.6 }))); fire.position.set(fx - W + 0.62, 0.5, -4); state._grayFire = fire;
+    // portraits of past presidents (cats, naturally)
+    [-7, 0, 7].forEach(px => { B(1.5, 1.9, 0.1, wood, fx + px - 3, 2.8, -D + 0.24); B(1.2, 1.6, 0.08, pbr(0xcbb896, 0.9), fx + px - 3, 2.8, -D + 0.3); });
+    // twin flags flanking the carpet
+    [[-2.2, 6], [2.2, 6]].forEach(([px, pz]) => { CY(0.05, 0.05, 3, 8, trimM, fx + px, 1.5, pz); const fl = makeFlagMesh(1.1); fl.position.set(fx + px + 0.55, 2.55, pz); S.add(fl); });
+    staff(fx, 0, -5.0, 0, suit(0xf0c8a0, 0x6a4a2a, 'bun', { shirt: 0x8e2732 }), 'reception');   // Iris on the front desk
+    staff(fx, -10.4, 1.2, Math.PI / 2, suit(0x8a5a3a, 0x141414, 'short', { glasses: true }), 'wander');
+  }
+
+  // ═ FLOOR 2 — OPERATIONS (the room full of computers) ═
+  {
+    const fx = _GF(1);
+    add(new THREE.Mesh(new THREE.BoxGeometry(24, 0.05, 16), navyCarpet)).position.set(fx, 0.03, -1);
+    // the big wall board
+    B(9, 3, 0.16, pbr(0x1c2230, 0.6), fx - 5, 2.4, -D + 0.3);
+    const big = add(new THREE.Mesh(new THREE.BoxGeometry(8.4, 2.4, 0.06), screenM())); big.position.set(fx - 5, 2.4, -D + 0.4); state._grayBigScreen = big;
+    // server racks east wall, lights blinking
+    state._grayRacks = [];
+    for (let r = 0; r < 4; r++) {
+      B(1.1, 3.0, 0.8, pbr(0x232833, 0.5, 0.3), fx + W - 1.4, 1.5, -7 + r * 2.2);
+      for (let k = 0; k < 4; k++) { const led = add(new THREE.Mesh(G.sph(0.05, 6, 5), new THREE.MeshStandardMaterial({ color: 0x50e070, emissive: 0x28c048, emissiveIntensity: 1.4 }))); led.position.set(fx + W - 1.95, 0.6 + k * 0.62, -7 + r * 2.2); state._grayRacks.push(led); }
+      grayColliders.push({ type: 'box', x0: fx + W - 2, x1: fx + W - 0.8, z0: -7.5 + r * 2.2, z1: -6.5 + r * 2.2 });
+    }
+    // eight desks in two rows — three staffed, five FOR HIRE from the treasury
+    const deskSpots = [];
+    for (let row = 0; row < 2; row++) for (let col = 0; col < 4; col++) deskSpots.push([fx - 9 + col * 4.6, -4.5 + row * 5]);
+    deskSpots.forEach(([dx, dz], i) => {
+      B(2.6, 0.85, 1.2, wood, dx, 0.42, dz);
+      const mon = add(new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.62, 0.08), pbr(0x232833, 0.5))); mon.position.set(dx, 1.25, dz - 0.1);
+      const scr = add(new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.5, 0.04), screenM())); scr.position.set(dx, 1.25, dz - 0.05); scr.material.emissiveIntensity = 0.4;
+      grayColliders.push({ type: 'box', x0: dx - 1.4, x1: dx + 1.4, z0: dz - 0.75, z1: dz + 0.75 });
+      if (i < 3) staff(0, dx, dz + 1.15, Math.PI, suit([0xe8b890, 0x8a5a3a, 0xd9a884][i], [0x3a2a1a, 0x141414, 0x8a6a3a][i % 3], i % 2 ? 'short' : 'bun', { glasses: i === 1 }), 'typing');
+      else { state.grayDesks.push({ x: dx, z: dz, hired: false, screen: scr }); scr.material.emissiveIntensity = 0.05; }   // dark screen until someone's hired
+    });
+  }
+
+  // ═ FLOOR 3 — THE MEETING FLOOR ═
+  {
+    const fx = _GF(2);
+    add(new THREE.Mesh(new THREE.BoxGeometry(26, 0.05, 17), pbr(0x584434, 0.85))).position.set(fx - 1, 0.03, -0.5);
+    // the long table + ten chairs
+    B(10.5, 0.16, 3.0, woodDark, fx - 2, 0.92, -1.5);
+    [[-2]].forEach(() => {});
+    CY(0.3, 0.4, 0.92, 10, woodDark, fx - 6, 0.46, -1.5); CY(0.3, 0.4, 0.92, 10, woodDark, fx + 2, 0.46, -1.5);
+    grayColliders.push({ type: 'box', x0: fx - 7.4, x1: fx + 3.4, z0: -3.1, z1: 0.1 });
+    for (let c = 0; c < 5; c++) [-1, 1].forEach(sd => { const ch = B(0.8, 0.5, 0.8, navyCarpet, fx - 6 + c * 2, 0.45, -1.5 + sd * 2.3); B(0.8, 0.9, 0.2, navyCarpet, fx - 6 + c * 2, 0.95, -1.5 + sd * 2.3 + (sd > 0 ? 0.3 : -0.3)); });
+    // wall chart screen + whiteboard
+    const chart = add(new THREE.Mesh(new THREE.BoxGeometry(5.4, 2.6, 0.08), screenM())); chart.position.set(fx - 3, 2.5, -D + 0.34); state._grayChart = chart;
+    B(3.2, 2.0, 0.1, pbr(0xf2ede2, 0.6), fx + 5.5, 2.2, -D + 0.3);
+    [[-0.8, 0.35], [0.2, -0.2], [-0.2, 0.05]].forEach(([lx, ly]) => B(1.2 + lx * 0.4, 0.07, 0.02, pbr(0xc84a4a, 0.6), fx + 5.5 + lx, 2.2 + ly, -D + 0.36));
+    // press corner: podium + backdrop flags
+    B(1.1, 1.3, 0.8, woodDark, fx - 10.5, 0.65, 4);
+    CY(0.02, 0.02, 0.5, 6, pbr(0x232833, 0.5), fx - 10.2, 1.55, 4);
+    grayColliders.push({ type: 'box', x0: fx - 11.1, x1: fx - 9.9, z0: 3.5, z1: 4.5 });
+    [[-12, 2.4], [-9, 2.4]].forEach(([px, pz]) => { CY(0.05, 0.05, 3, 8, trimM, fx + px, 1.5, pz); const fl = makeFlagMesh(1.0); fl.position.set(fx + px + 0.5, 2.5, pz); S.add(fl); });
+    // water cooler
+    CY(0.22, 0.26, 1.1, 10, pbr(0x9ad0e8, 0.4), fx + 9, 0.55, 3.5);
+    // four aides mid-meeting
+    for (let c = 0; c < 4; c++) staff(0, fx - 6 + c * 2.4, -1.5 + (c % 2 ? 2.6 : -2.6), c % 2 ? Math.PI : 0, suit([0xe8b890, 0x8a5a3a, 0xf0c8a0, 0xd9a884][c], [0x3a2a1a, 0x141414, 0x8a6a3a, 0x6b4a2a][c], c % 2 ? 'bun' : 'short', c === 2 ? { glasses: true } : null), 'meeting');
+  }
+
+  // ═ FLOOR 4 — THE PRESIDENTIAL OFFICE ═
+  {
+    const fx = _GF(3);
+    CY(4.2, 4.2, 0.05, 32, pbr(0x2e4a6a, 0.9), fx - 3, 0.03, -2);                                 // the great oval rug
+    B(0.5, 0.5, 0.5, trimM, fx - 3, 0.05, -2);
+    // the Resolute desk + the President's chair + computer + THE RED PHONE
+    const desk = add(new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.95, 24, 1, false, 0, Math.PI), woodDark));
+    desk.position.set(fx - 3, 0.48, -4.2); desk.rotation.y = Math.PI;
+    grayColliders.push({ type: 'box', x0: fx - 5.2, x1: fx - 0.8, z0: -6.2, z1: -4.0 });
+    B(1.2, 1.6, 0.95, pbr(0x3a2a4a, 0.6), fx - 3, 0.8, -6.0);
+    const mon = add(new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.08), pbr(0x232833, 0.5))); mon.position.set(fx - 4.1, 1.45, -4.6); mon.rotation.y = 0.4;
+    const scr = add(new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.56, 0.04), screenM())); scr.position.set(fx - 4.08, 1.45, -4.55); scr.rotation.y = 0.4; state._grayPCScreen = scr;
+    B(0.34, 0.14, 0.22, pbr(0xc23a3a, 0.4), fx - 1.9, 1.02, -4.5);                                 // the red phone!
+    CY(0.03, 0.16, 0.12, 8, pbr(0xc23a3a, 0.4), fx - 1.9, 1.14, -4.5);
+    // twin flags + bookcases + globe + sofa
+    [[-5.4, -7.2], [-0.6, -7.2]].forEach(([px, pz]) => {
+      CY(0.05, 0.05, 3, 8, trimM, fx + px, 1.5, pz);
+      const fl = makeFlagMesh(1.1); fl.position.set(fx + px + 0.55, 2.55, pz); S.add(fl);
+      grayColliders.push({ type: 'circle', x: fx + px, z: pz, r: 0.3 });
+    });
+    [[-9.5], [-7.1]].forEach(([bx2]) => { B(2.2, 2.6, 0.5, wood, fx + bx2, 1.3, -D + 0.5); for (let sh = 0; sh < 3; sh++) B(1.9, 0.16, 0.4, woodDark, fx + bx2, 0.7 + sh * 0.75, -D + 0.52); });
+    grayColliders.push({ type: 'box', x0: fx - 10.8, x1: fx - 5.9, z0: -D + 0.2, z1: -D + 0.85 });
+    CY(0.05, 0.05, 1.1, 8, trimM, fx + 6, 0.55, -5.5);
+    const globe = add(new THREE.Mesh(G.sph(0.45, 16, 12), pbr(0x4a90c8, 0.5))); globe.position.set(fx + 6, 1.35, -5.5); state._grayGlobe = globe;
+    [[0.2, -0.1], [-0.3, 0.25], [0.1, 0.3]].forEach(([gx, gy]) => { const land = add(new THREE.Mesh(G.sph(0.16, 8, 6), pbr(0x6aa050, 0.7))); land.scale.set(1.3, 0.8, 0.4); land.position.set(fx + 6 + gx * 0.4, 1.35 + gy * 0.4, -5.2); });
+    B(2.8, 0.55, 1.1, redCarpet, fx + 6, 0.45, 1.5); B(2.8, 0.85, 0.3, redCarpet, fx + 6, 0.95, 0.95);
+    grayColliders.push({ type: 'box', x0: fx + 4.5, x1: fx + 7.5, z0: 0.7, z1: 2.2 });
+    staff(0, fx + 2.5, -2, 2.6, suit(0xd9a884, 0x1a1a1a, 'short', { glasses: true, shirt: 0x22242c, pants: 0x1a1c24, height: 1.06 }), 'security');
+  }
+  // restore any analysts hired in an earlier session
+  for (let i = 0; i < (state.grayHired || 0) && i < state.grayDesks.length; i++) hireAnalystAt(i, true);
+}
+
+// ── in, out, and up: the lift ──
+function enterGrayHouse() {
+  buildGrayInterior();
+  state.inGray = true;
+  state.grayFloor = 0;
+  grayScene.add(catGroup); catGroup.scale.setScalar(CAT_SCALE_IN);
+  catGroup.position.set(0, 0, GRAY_D - 1.2); catGroup.rotation.y = Math.PI;
+  state.camYaw = 0; state.camHeight = 5.5; state.camDist = 6.5;
+  camera.position.set(0, state.camHeight, GRAY_D - 1.2 + state.camDist);
+  document.getElementById('minimap').style.display = 'block';
+  state._grayGreeted = false;                              // Iris will come and welcome you
+  if (typeof sfx === 'function') sfx('door');
+  // 🎩 the PRESIDENTIAL CAR — delivered the first time the President comes home
+  if (state.politics && state.politics.phase === 'president' && typeof CAR_STYLES !== 'undefined' && !(state.myCars || []).includes('presidential')) {
+    state.myCars = state.myCars || [];
+    state.myCars.push('presidential');
+    state.activeCar = 'presidential';
+    if (typeof parkCarAt === 'function') parkCarAt(GRAY_SPOT.x + 16, GRAY_SPOT.z - 10, Math.PI / 2);
+    showNotif('🎩 PRESIDENTIAL ONE has been delivered — your official car waits outside!');
+    if (typeof saveGame === 'function') saveGame();
+  }
+  if (!state._seenGray) { state._seenGray = true; showDialogue('🏛️ The Gray House', 'Welcome home, President ' + (state.catName || '') + '. Four floors, all yours — the lift is to the east. 🐾', 5600); }
+}
+function exitGrayHouse() {
+  state.inGray = false;
+  state.grayFloor = 0;
+  scene.add(catGroup); catGroup.scale.setScalar(CAT_SCALE_OUT);
+  catGroup.position.set(GRAY_SPOT.x, 0, GRAY_SPOT.z - 8.5); catGroup.rotation.y = Math.PI;
+  if (typeof sfx === 'function') sfx('door');
+}
+function gotoGrayFloor(f) {
+  closeCheckout();
+  state.grayFloor = f;
+  const fx = _GF(f);
+  catGroup.position.set(fx + GRAY_LIFT.x, 0, GRAY_LIFT.z + 1.6);
+  catGroup.rotation.y = Math.PI;
+  camera.position.set(fx + GRAY_LIFT.x, state.camHeight, GRAY_LIFT.z + 1.6 + state.camDist);
+  if (typeof sfx === 'function') { sfx('door'); setTimeout(() => sfx('ui'), 350); }
+  showNotif('🛗 ' + GRAY_FLOORS[f]);
+}
+function openLift() {
+  state.uiOpen = true;
+  let h = '<div class="zoo-want">🛗</div><div class="modal-sub">Which floor, President?</div><div class="co-grid" style="grid-template-columns:1fr">';
+  GRAY_FLOORS.forEach((nm, f) => { h += `<button ${f === state.grayFloor ? 'disabled' : ''} onclick="gotoGrayFloor(${f})">${nm}${f === state.grayFloor ? ' · here' : ''}</button>`; });
+  h += '</div><button class="modal-close" onclick="closeCheckout()">Stay</button>';
+  document.getElementById('checkout-title').textContent = '🛗 The lift';
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+}
+
+// ── hiring analysts (from the treasury, never your own coins) ──
+const HIRE_COST = 400;
+function hireAnalystAt(i, silent) {
+  const d = state.grayDesks[i]; if (!d || d.hired) return;
+  d.hired = true;
+  d.screen.material.emissiveIntensity = 0.4;
+  const cfgs = [0xe8b890, 0x8a5a3a, 0xf0c8a0, 0xd9a884, 0xe0a878];
+  const { group, parts } = buildHuman({ skin: cfgs[i % 5], hair: [0x3a2a1a, 0x141414, 0x8a6a3a][i % 3], hairStyle: i % 2 ? 'bun' : 'short', glasses: i % 3 === 0, shirt: 0x3a4458, pants: 0x262c3a, height: 0.98 + (i % 3) * 0.03, build: 'avg', eye: 0x2a1a12 });
+  group.position.set(d.x, 0, d.z + 1.15); group.rotation.y = Math.PI;
+  grayScene.add(group);
+  state.grayPeople.push({ group, parts, phase: Math.random() * 6, role: 'typing', hx: d.x, hz: d.z + 1.15 });
+  if (!silent) {
+    if (typeof sfx === 'function') sfx('upgrade');
+    showNotif('🧑‍💼 Analyst hired — they take their desk at once. (' + (state.grayHired || 0) + ' hired, paid by the treasury)');
+  }
+}
+function grayHire() {
+  const i = state.grayDesks.findIndex(d => !d.hired);
+  if (i < 0) { showNotif('💼 Every desk is filled — Operations is at full strength!'); return; }
+  if (!state.gov || (state.gov.treasury || 0) < HIRE_COST) { showNotif('🏛️ The treasury needs ' + HIRE_COST + ' 🪙 to fund this post. Raise taxes, President.'); if (typeof sfx === 'function') sfx('sad'); return; }
+  state.gov.treasury -= HIRE_COST;
+  state.grayHired = (state.grayHired || 0) + 1;
+  hireAnalystAt(i);
+  if (typeof updateHappyHUD === 'function') updateHappyHUD();
+  if (typeof saveGame === 'function') saveGame();
+}
+
+// ── 📞 the red phone: presidential services ──
+function openPhone() {
+  state.uiOpen = true;
+  const gd = state.guard;
+  let h = '<div class="zoo-want">📞</div><div class="modal-sub">"Yes, President? Right away."</div><div class="co-grid" style="grid-template-columns:1fr">';
+  if (!gd) {
+    h += `<button onclick="phoneGuard('human')">🕴️<small>Bodyguard — a suited pro · 500 treasury</small></button>`;
+    h += `<button onclick="phoneGuard('cat')">🐈‍⬛<small>Cat guard — silent, loyal · 300 treasury</small></button>`;
+  } else h += `<button onclick="closeCheckout();openGuardOrders()">🛡️<small>Speak to your bodyguard</small></button>`;
+  h += `<button onclick="phoneFood()">🍽️<small>Bring me food — the kitchen delivers</small></button>`;
+  h += `<button onclick="phoneCar()">🚗<small>Bring my car around front</small></button>`;
+  h += '</div><button class="modal-close" onclick="closeCheckout()">Hang up</button>';
+  document.getElementById('checkout-title').textContent = '📞 Presidential services';
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+}
+function phoneGuard(kind) {
+  closeCheckout();
+  const cost = kind === 'human' ? 500 : 300;
+  if (!state.gov || (state.gov.treasury || 0) < cost) { showNotif('🏛️ The treasury needs ' + cost + ' 🪙 for a protection detail.'); if (typeof sfx === 'function') sfx('sad'); return; }
+  state.gov.treasury -= cost;
+  state.guard = { kind, mode: 'follow' };
+  spawnGuardMesh();
+  if (typeof sfx === 'function') sfx('upgrade');
+  showNotif(kind === 'human' ? '🕴️ Your bodyguard reports for duty — they won\'t leave your side.' : '🐈‍⬛ A shadow with whiskers joins you. Nobody will see them coming.');
+  if (typeof updateHappyHUD === 'function') updateHappyHUD();
+  if (typeof saveGame === 'function') saveGame();
+}
+function phoneFood() {
+  closeCheckout();
+  state._foodT = 3;
+  showNotif('🍽️ "The kitchen is on it, President." …');
+  if (typeof sfx === 'function') sfx('ui');
+}
+function phoneCar() {
+  closeCheckout();
+  if (!state.activeCar) { showNotif('🚗 You don\'t own a car yet — Whisker Motors is by the Gray House!'); return; }
+  if (typeof parkCarAt === 'function') parkCarAt(GRAY_SPOT.x + 16, GRAY_SPOT.z - 10, Math.PI / 2);
+  if (typeof sfx === 'function') sfx('meow');
+  showNotif('🚗 "Bringing it around now." Your ' + CAR_STYLES[state.activeCar].name + ' waits out front.');
+}
+
+// ── 🛡️ THE BODYGUARD — follows you EVERYWHERE (even into the car) ──
+function spawnGuardMesh() {
+  const gd = state.guard; if (!gd || gd.group) return;
+  if (gd.kind === 'cat') {
+    const m = buildCatModel({ body: 0x26262e, accent: 0x3a3a44, eye: 0xd8b830, markings: 'solid' });
+    m.group.scale.setScalar(CAT_SCALE_OUT);
+    gd.group = m.group; gd.parts = null; gd.catParts = m;
+  } else {
+    const { group, parts } = buildHuman({ skin: 0xd9a884, hair: 0x141414, hairStyle: 'short', glasses: true, shirt: 0x1c1e26, pants: 0x14161c, height: 1.08, build: 'avg', eye: 0x2a1a12 });
+    gd.group = group; gd.parts = parts;
+  }
+  gd.phase = Math.random() * 6;
+  gd.group.position.set(catGroup.position.x + 1.4, 0, catGroup.position.z);
+  (state.inGray ? grayScene : scene).add(gd.group);
+  gd.inGray = !!state.inGray;
+}
+function dismissGuard() {
+  const gd = state.guard; if (!gd) return;
+  if (gd.group) (gd.inGray ? grayScene : scene).remove(gd.group);
+  state.guard = null;
+  showNotif('🛡️ "Understood, President." Your guard heads home for a well-earned rest.');
+  if (typeof sfx === 'function') sfx('ui');
+  if (typeof saveGame === 'function') saveGame();
+}
+function openGuardOrders() {
+  const gd = state.guard; if (!gd) return;
+  state.uiOpen = true;
+  let h = '<div class="zoo-want">' + (gd.kind === 'cat' ? '🐈‍⬛' : '🕴️') + '</div><div class="modal-sub">"Orders, President?"</div><div class="co-grid" style="grid-template-columns:1fr">';
+  h += `<button ${gd.mode === 'follow' ? 'disabled' : ''} onclick="guardOrder('follow')">🚶<small>Follow me${gd.mode === 'follow' ? ' · current' : ''}</small></button>`;
+  h += `<button ${gd.mode === 'wait' ? 'disabled' : ''} onclick="guardOrder('wait')">🧍<small>Wait right here${gd.mode === 'wait' ? ' · current' : ''}</small></button>`;
+  h += `<button onclick="guardOrder('home')">🏠<small>Go home (dismiss)</small></button>`;
+  h += '</div><button class="modal-close" onclick="closeCheckout()">Carry on</button>';
+  document.getElementById('checkout-title').textContent = '🛡️ Your bodyguard';
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+}
+function guardOrder(o) {
+  closeCheckout();
+  const gd = state.guard; if (!gd) return;
+  if (o === 'home') { dismissGuard(); return; }
+  gd.mode = o;
+  showNotif(o === 'wait' ? '🧍 "I\'ll hold this spot." Your guard stands watch.' : '🚶 "Right behind you." Your guard falls in.');
+  if (typeof sfx === 'function') sfx('ui');
+  if (typeof saveGame === 'function') saveGame();
+}
+function updateGuard(t) {
+  // 🍽️ pending kitchen delivery ticks anywhere
+  if ((state._foodT || 0) > 0) {
+    state._foodT -= 0.016;
+    if (state._foodT <= 0) {
+      state.needs.hunger = 100; state.needs.thirst = 100;
+      _catHappyT = 1.8; if (typeof spawnHeart === 'function') spawnHeart();
+      if (typeof sfx === 'function') sfx('eat');
+      showNotif('🍽️ Dinner is served, President — the kitchen outdid itself.');
+    }
+  }
+  const gd = state.guard; if (!gd) return;
+  if (!gd.group) { spawnGuardMesh(); return; }
+  if (state.driving) { gd.group.visible = false; return; }                     // riding along in the car
+  const inG = !!state.inGray;
+  if (gd.inGray !== inG) { (inG ? grayScene : scene).add(gd.group); gd.inGray = inG; gd.group.position.set(catGroup.position.x + 1.2, 0, catGroup.position.z); }
+  if (typeof playerIndoors === 'function' && playerIndoors() && !inG) { gd.group.visible = false; return; }   // waits outside the shops
+  gd.group.visible = true;
+  const gp = gd.group.position, cp = catGroup.position;
+  if (gd.mode === 'follow') {
+    const dx = cp.x - gp.x, dz = cp.z - gp.z, d = Math.hypot(dx, dz);
+    if (d > 30) { gp.set(cp.x + 1.3, 0, cp.z); }                                // never left behind
+    else if (d > 1.8) {
+      const sp = Math.min(0.11, (d - 1.6) * 0.06);
+      gp.x += dx / d * sp; gp.z += dz / d * sp;
+      gd.group.rotation.y = Math.atan2(dx, dz);
+      gd.walkT = (gd.walkT || 0) + 0.28;
+      if (gd.parts) {                                                           // suited stride
+        const sw = Math.sin(gd.walkT);
+        if (gd.parts.legs) { gd.parts.legs[0].rotation.x = sw * 0.5; gd.parts.legs[1].rotation.x = -sw * 0.5; }
+        if (gd.parts.arms) { gd.parts.arms[0].rotation.x = -sw * 0.35; gd.parts.arms[1].rotation.x = sw * 0.35; }
+        gp.y = Math.abs(Math.sin(gd.walkT)) * 0.02;
+      } else gp.y = Math.abs(Math.sin(gd.walkT * 1.4)) * 0.05;                  // cat-guard trot
+    } else {
+      if (gd.parts) { if (gd.parts.legs) gd.parts.legs.forEach(l => l.rotation.x *= 0.8); gp.y = 0; if (typeof idleHuman === 'function') idleHuman(gd, t); }
+      else gp.y = Math.abs(Math.sin(t * 1.2 + gd.phase)) * 0.01;
+      gd.group.rotation.y += (Math.atan2(cp.x - gp.x, cp.z - gp.z) - gd.group.rotation.y) * 0.08;   // keeps eyes on you
+    }
+  } else if (gd.parts && typeof idleHuman === 'function') idleHuman(gd, t);     // standing watch
+}
+function guardContext(cp) {
+  const gd = state.guard;
+  if (!gd || !gd.group || !gd.group.visible || state.driving) return null;
+  if (Math.hypot(cp.x - gd.group.position.x, cp.z - gd.group.position.z) > 2.2) return null;
+  return { id: 'guard:menu', label: '🛡️ Bodyguard orders' };
+}
+
+// ── the living floors: everyone has a job to do ──
+function updateGrayFrame(t) {
+  (state.grayPeople || []).forEach(p => {
+    if (p.role === 'typing') {
+      if (p.parts.arms) { p.parts.arms[0].rotation.x = -0.9 + Math.sin(t * 7 + p.phase) * 0.14; p.parts.arms[1].rotation.x = -0.9 + Math.cos(t * 6.4 + p.phase) * 0.14; }
+      p.group.position.y = Math.abs(Math.sin(t * 1.1 + p.phase)) * 0.012;
+    } else if (p.role === 'meeting') {
+      p.group.rotation.y = p.hr + Math.sin(t * 0.5 + p.phase) * 0.25;           // turning to whoever speaks
+      if (p.parts.arms && Math.sin(t * 0.3 + p.phase * 2) > 0.92) p.parts.arms[0].rotation.x = -1.2;   // a point made
+      else if (p.parts.arms) p.parts.arms[0].rotation.x *= 0.9;
+      idleHuman(p, t);
+    } else if (p.role === 'reception') {
+      // Iris comes out to WELCOME you, then returns to her post
+      const cp = catGroup.position, onLobby = (state.grayFloor || 0) === 0;
+      if (onLobby && !state._grayGreeted && Math.hypot(cp.x, cp.z - (GRAY_D - 1)) < 7) state._grayGreeted = 'walking';
+      if (state._grayGreeted === 'walking') {
+        const tx = cp.x * 0.4, tz = cp.z - 2;
+        const dx = tx - p.group.position.x, dz = tz - p.group.position.z, d = Math.hypot(dx, dz);
+        if (d > 0.4) { p.group.position.x += dx / d * 0.055; p.group.position.z += dz / d * 0.055; p.group.rotation.y = Math.atan2(dx, dz); const sw = Math.sin(t * 9); if (p.parts.legs) { p.parts.legs[0].rotation.x = sw * 0.5; p.parts.legs[1].rotation.x = -sw * 0.5; } }
+        else {
+          state._grayGreeted = true;
+          showDialogue('Iris 🏛️', 'Welcome home, President ' + (state.catName || '') + '! The lift is just east — your office is on Floor 4. 💛', 4600);
+          if (p.parts.arms) p.parts.arms[0].rotation.x = -2.6;                   // a little wave
+        }
+      } else if (state._grayGreeted === true) {
+        const dx = p.hx - p.group.position.x, dz = p.hz - p.group.position.z, d = Math.hypot(dx, dz);
+        if (d > 0.3) { p.group.position.x += dx / d * 0.04; p.group.position.z += dz / d * 0.04; p.group.rotation.y = Math.atan2(dx, dz); }
+        else { p.group.rotation.y = p.hr; idleHuman(p, t); }
+      } else idleHuman(p, t);
+    } else if (p.role === 'wander') {
+      p.wT = (p.wT || 0) - 0.016;
+      if (p.wT <= 0) { p.wtx = p.hx + (Math.random() - 0.5) * 8; p.wtz = p.hz + (Math.random() - 0.5) * 6; p.wT = 6 + Math.random() * 6; }
+      const dx = p.wtx - p.group.position.x, dz = p.wtz - p.group.position.z, d = Math.hypot(dx, dz);
+      if (d > 0.4) { p.group.position.x += dx / d * 0.03; p.group.position.z += dz / d * 0.03; p.group.rotation.y = Math.atan2(dx, dz); const sw = Math.sin(t * 8); if (p.parts.legs) { p.parts.legs[0].rotation.x = sw * 0.4; p.parts.legs[1].rotation.x = -sw * 0.4; } }
+      else idleHuman(p, t);
+    } else if (p.role === 'security') {
+      idleHuman(p, t);
+      p.group.rotation.y = p.hr + Math.sin(t * 0.4 + p.phase) * 0.5;            // scanning the room
+    } else idleHuman(p, t);
+  });
+  // ambient life: fire, screens, racks, globe
+  if (state._grayFire) { state._grayFire.scale.y = 1 + Math.sin(t * 9) * 0.2; state._grayFire.material.emissiveIntensity = 1.4 + Math.sin(t * 13) * 0.3; }
+  if (state._grayBigScreen) state._grayBigScreen.material.emissiveIntensity = 0.75 + Math.sin(t * 2.2) * 0.2;
+  if (state._grayChart) state._grayChart.material.emissiveIntensity = 0.7 + Math.sin(t * 1.6) * 0.15;
+  if (state._grayPCScreen) state._grayPCScreen.material.emissiveIntensity = 0.7 + Math.sin(t * 3) * 0.2;
+  (state._grayRacks || []).forEach((led, i) => { led.material.emissiveIntensity = Math.sin(t * 5 + i * 1.7) > 0 ? 1.4 : 0.2; });
+  if (state._grayGlobe) state._grayGlobe.rotation.y = t * 0.3;
+}
+
+// ── contexts inside the Gray House ──
+function grayContext(cp) {
+  const gc = guardContext(cp); if (gc) return gc;
+  const f = state.grayFloor || 0, fx = _GF(f);
+  if (Math.hypot(cp.x - (fx + GRAY_LIFT.x), cp.z - GRAY_LIFT.z) < 2.4) return { id: 'gray:lift', label: '🛗 Take the lift' };
+  if (f === 3) {
+    if (Math.hypot(cp.x - (fx - 1.9), cp.z - (-4.5)) < 2.6) return { id: 'gray:phone', label: '📞 Presidential services' };
+    if (Math.hypot(cp.x - (fx - 3), cp.z - (-7.2)) < 3.0) return { id: 'gray:flag', label: '🚩 Choose the nation’s flag' };
+  }
+  if (f === 1) {
+    for (const d of state.grayDesks || []) {
+      if (!d.hired && Math.hypot(cp.x - d.x, cp.z - d.z) < 2.2) return { id: 'gray:hire', label: '🧑‍💼 Hire an analyst · ' + HIRE_COST + ' treasury' };
+    }
+  }
+  return null;
+}
+function grayAction(ctx) {
+  if (ctx.id === 'gray:lift') openLift();
+  else if (ctx.id === 'gray:phone') openPhone();
+  else if (ctx.id === 'gray:flag') { if (typeof openFlagPicker === 'function') openFlagPicker(); }
+  else if (ctx.id === 'gray:hire') grayHire();
+  else if (ctx.id === 'guard:menu') openGuardOrders();
 }
