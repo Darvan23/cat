@@ -3,7 +3,12 @@
 
 // ─── Humans (family & neighbours) ───────────────────────────────────────────────
 function pbr(color, rough = 0.85, metal = 0) {
-  return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
+  const m = new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
+  // 🎨 the free texture pack reaches EVERYTHING built through here — NPCs, zoo
+  // animals, cars, ride structures, interiors. Matte surfaces get grain;
+  // shiny ones (eyes, glass, chrome) stay clean.
+  if (rough >= 0.4 && typeof texGrain !== 'undefined') { m.map = rough >= 0.75 ? (window.texFur || texGrain) : texGrain; }
+  return m;
 }
 
 function addHair(head, cfg, hairMat) {

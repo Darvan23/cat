@@ -238,7 +238,7 @@ catGroup.scale.setScalar(CAT_SCALE_OUT);
 // Returns { group, legs, tail, body } so it can be walked/animated independently.
 function buildCatModel(cat) {
   const g = new THREE.Group();
-  const M = (c, rough = 0.85, metal = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal });
+  const M = (c, rough = 0.85, metal = 0) => { const m = new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal }); if (rough >= 0.6 && typeof texFur !== 'undefined') { m.map = texFur; } return m; };
   const bodyM = M(cat.body);
   const darkM = M(cat.markings === 'tuxedo' ? cat.body : cat.accent);   // ears & tail
   const innerM = M(0xe89a9a, 0.9), noseM = M(0xe0788a, 0.6), eyeM = M(cat.eye, 0.25, 0.1), pupM = M(0x101014, 0.2);

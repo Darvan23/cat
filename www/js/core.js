@@ -453,6 +453,20 @@ const texLeaf = _detailTex((g, w, h) => {
   for (let i = 0; i < 26; i++) { g.fillStyle = _lum(0.86 + Math.random() * 0.22); g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 3 + Math.random() * 5, 0, 7); g.fill(); }
 }, 128, 3, 3);
 function grassMap(rep) { const t = texGrass.clone(); t.needsUpdate = true; t.repeat.set(rep, rep); return t; }   // fitted clones for the big lawns
+// character & surface grain: fur for cats, weave for cloth, flake for paint, grain for everything else
+const texFur = _detailTex((g, w, h) => {
+  _speckle(g, w, h, 0.96, 0.06, 300, 2);
+  g.lineWidth = 1;
+  for (let i = 0; i < 240; i++) {                                    // short directional fur strokes
+    const x = Math.random() * w, y = Math.random() * h;
+    g.strokeStyle = _lum(0.9 + Math.random() * 0.14);
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 1.6, y + 3 + Math.random() * 3); g.stroke();
+  }
+}, 128, 2, 2);
+const texGrain = _detailTex((g, w, h) => { _speckle(g, w, h, 0.97, 0.05, 420, 2); }, 64, 2, 2);
+window.texFur = texFur; window.texGrain = texGrain;
+[mat.catBody, mat.catDark, mat.catWhite, mat.catMarkA, mat.catMarkB, mat.catInner].forEach(m => { m.map = texFur; m.needsUpdate = true; });
+[mat.npcSkin, mat.npcPants, mat.npcHair].concat(mat.npcShirt).forEach(m => { m.map = texGrain; m.needsUpdate = true; });
 mat.ground.map = texGrass;       mat.ground.needsUpdate = true;
 mat.road.map = texAsphalt;       mat.road.needsUpdate = true;
 mat.sidewalk.map = texPaving;    mat.sidewalk.needsUpdate = true;
