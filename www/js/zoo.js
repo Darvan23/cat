@@ -76,7 +76,7 @@ function buildFrontier() {
 
 function buildGrandPark() {
   const P = GRAND_PARK;
-  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(P.x1 - P.x0, P.z1 - P.z0), new THREE.MeshStandardMaterial({ color: 0x8ccc68, roughness: 0.95 }));
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(P.x1 - P.x0, P.z1 - P.z0), new THREE.MeshStandardMaterial({ color: 0x8ccc68, roughness: 0.95, map: grassMap(24) }));
   lawn.rotation.x = -Math.PI / 2; lawn.position.set((P.x0 + P.x1) / 2, 0.02, (P.z0 + P.z1) / 2); lawn.receiveShadow = true; scene.add(lawn);
   const postM = pbr(0x9a8a6a, 0.9);
   for (let x = P.x0; x <= P.x1; x += 6) [P.z0, P.z1].forEach(z => { const p = new THREE.Mesh(G.cyl(0.09, 0.11, 1.0), postM); p.position.set(x, 0.5, z); p.castShadow = true; scene.add(p); });

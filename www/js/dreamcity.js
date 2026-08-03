@@ -74,7 +74,7 @@ function buildDreamCity() {
   dcWaterMat = pbr(0x5ab6d8, 0.25);
 
   // pastel grounds + main paths
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(DC.x1 - DC.x0, DC.z1 - DC.z0), new THREE.MeshStandardMaterial({ color: 0x9ed08a, roughness: 0.95 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(DC.x1 - DC.x0, DC.z1 - DC.z0), new THREE.MeshStandardMaterial({ color: 0x9ed08a, roughness: 0.95, map: grassMap(34) }));
   ground.rotation.x = -Math.PI / 2; ground.position.set((DC.x0 + DC.x1) / 2, 0.02, (DC.z0 + DC.z1) / 2); ground.receiveShadow = true; scene.add(ground);
   const path = (x, z, w, d) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0xe8d8c0, roughness: 0.95 })); p.rotation.x = -Math.PI / 2; p.position.set(x, 0.04, z); p.receiveShadow = true; scene.add(p); };
   path(-146, 0, 76, 7);                       // the main avenue west from the gate

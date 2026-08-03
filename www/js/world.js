@@ -482,7 +482,7 @@ function buildHighway() {
 const PARK = { x0: 50, x1: 92, z0: 12, z1: 54 };
 function buildPark() {
   const { x0, x1, z0, z1 } = PARK, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-  box(x1 - x0, 0.04, z1 - z0, new THREE.MeshStandardMaterial({ color: 0x5a8a3a, roughness: 1 }), cx, 0.045, cz); // lawn
+  box(x1 - x0, 0.04, z1 - z0, new THREE.MeshStandardMaterial({ color: 0x5a8a3a, roughness: 1, map: grassMap(11) }), cx, 0.045, cz); // lawn
   box(9, 0.05, 2.4, mat.sidewalk, x0 + 5, 0.06, cz);                                                              // entry path
   // perimeter fence with a gap at the west gate
   for (let x = x0; x <= x1; x += 2) { box(0.12, 0.7, 0.12, mat.fence, x, 0.45, z0); box(0.12, 0.7, 0.12, mat.fence, x, 0.45, z1); }

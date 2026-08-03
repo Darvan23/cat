@@ -380,6 +380,92 @@ const mat = {
   brick:     new THREE.MeshStandardMaterial({ color: 0x9a5a44, roughness: 0.95, metalness: 0 }),
 };
 
+// ─── 🎨 PROCEDURAL DETAIL MAPS — a free "texture pack", generated in code ─────
+//     Near-white grayscale maps multiply the existing palette: every surface
+//     keeps its colour but gains grain, slabs, shingles and blades.
+function _detailTex(draw, size, repX, repY, aniso) {
+  const c = document.createElement('canvas'); c.width = c.height = size || 128;
+  draw(c.getContext('2d'), c.width, c.height);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repX || 1, repY || repX || 1);
+  t.encoding = THREE.sRGBEncoding;
+  t.anisotropy = aniso || 2;
+  return t;
+}
+const _lum = v => { const h = ('0' + Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16)).slice(-2); return '#' + h + h + h; };
+function _speckle(g, w, h, base, spread, n, sz) {
+  g.fillStyle = _lum(base); g.fillRect(0, 0, w, h);
+  for (let i = 0; i < n; i++) {
+    g.fillStyle = _lum(base + (Math.random() - 0.5) * spread);
+    const s = 1 + Math.random() * (sz || 3);
+    g.fillRect(Math.random() * w, Math.random() * h, s, s);
+  }
+}
+const texGrass = _detailTex((g, w, h) => {
+  _speckle(g, w, h, 0.93, 0.14, 700, 3);
+  for (let i = 0; i < 90; i++) {                                     // blades & clover clumps
+    const x = Math.random() * w, y = Math.random() * h;
+    g.strokeStyle = _lum(0.86 + Math.random() * 0.2); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 2, y - 3 - Math.random() * 3); g.stroke();
+  }
+  for (let i = 0; i < 10; i++) { g.fillStyle = _lum(0.88); g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 5 + Math.random() * 9, 0, 7); g.fill(); }
+}, 128, 150, 150, 4);
+const texAsphalt = _detailTex((g, w, h) => {
+  _speckle(g, w, h, 0.94, 0.10, 900, 2);
+  g.strokeStyle = _lum(0.82); g.lineWidth = 1;                       // hairline cracks
+  for (let i = 0; i < 5; i++) {
+    let x = Math.random() * w, y = Math.random() * h;
+    g.beginPath(); g.moveTo(x, y);
+    for (let k = 0; k < 4; k++) { x += (Math.random() - 0.5) * 22; y += Math.random() * 14; g.lineTo(x, y); }
+    g.stroke();
+  }
+}, 128, 3, 3, 4);
+const texPaving = _detailTex((g, w, h) => {
+  _speckle(g, w, h, 0.95, 0.07, 400, 2);
+  for (let y = 0; y <= h; y += 32) {                                 // slabs with tone jitter
+    for (let x = 0; x <= w; x += 32) { g.fillStyle = _lum(0.9 + Math.random() * 0.1); g.fillRect(x + 1, y + 1, 30, 30); }
+  }
+  g.strokeStyle = _lum(0.8); g.lineWidth = 1.5;
+  for (let y = 0; y <= h; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); g.beginPath(); g.moveTo(y, 0); g.lineTo(y, h); g.stroke(); }
+}, 128, 2, 2);
+const texShingle = _detailTex((g, w, h) => {
+  g.fillStyle = _lum(0.96); g.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 16) {                                  // shingle courses, offset each row
+    const off = (y / 16) % 2 ? 16 : 0;
+    for (let x = -16; x < w; x += 32) { g.fillStyle = _lum(0.9 + Math.random() * 0.1); g.fillRect(x + off, y, 30, 14); }
+    g.strokeStyle = _lum(0.78); g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(0, y + 15); g.lineTo(w, y + 15); g.stroke();
+  }
+}, 128, 2, 2);
+const texPlaster = _detailTex((g, w, h) => {
+  _speckle(g, w, h, 0.965, 0.05, 500, 2);
+  g.strokeStyle = _lum(0.9); g.lineWidth = 1;                        // faint weathering streaks
+  for (let i = 0; i < 6; i++) { const x = Math.random() * w; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + (Math.random() - 0.5) * 6, h); g.stroke(); }
+}, 128, 2, 2);
+const texBark = _detailTex((g, w, h) => {
+  _speckle(g, w, h, 0.9, 0.12, 300, 2);
+  g.strokeStyle = _lum(0.78); g.lineWidth = 2;                       // vertical bark furrows
+  for (let i = 0; i < 9; i++) { const x = (i / 9) * w + Math.random() * 6; g.beginPath(); g.moveTo(x, 0); g.quadraticCurveTo(x + 5, h / 2, x, h); g.stroke(); }
+}, 64, 1.5, 3);
+const texLeaf = _detailTex((g, w, h) => {
+  _speckle(g, w, h, 0.94, 0.12, 500, 3);
+  for (let i = 0; i < 26; i++) { g.fillStyle = _lum(0.86 + Math.random() * 0.22); g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 3 + Math.random() * 5, 0, 7); g.fill(); }
+}, 128, 3, 3);
+function grassMap(rep) { const t = texGrass.clone(); t.needsUpdate = true; t.repeat.set(rep, rep); return t; }   // fitted clones for the big lawns
+mat.ground.map = texGrass;       mat.ground.needsUpdate = true;
+mat.road.map = texAsphalt;       mat.road.needsUpdate = true;
+mat.sidewalk.map = texPaving;    mat.sidewalk.needsUpdate = true;
+mat.house1.map = texPlaster;     mat.house1.needsUpdate = true;
+mat.house2.map = texPlaster;     mat.house2.needsUpdate = true;
+mat.poorHouse.map = texPlaster;  mat.poorHouse.needsUpdate = true;
+mat.brick.map = texShingle;      mat.brick.needsUpdate = true;
+mat.roofRed.map = texShingle;    mat.roofRed.needsUpdate = true;
+mat.roofBlue.map = texShingle;   mat.roofBlue.needsUpdate = true;
+mat.tree.map = texLeaf;          mat.tree.needsUpdate = true;
+mat.treeDark.map = texLeaf;      mat.treeDark.needsUpdate = true;
+mat.treeTrunk.map = texBark;     mat.treeTrunk.needsUpdate = true;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function box(w, h, d, mat, x=0, y=0, z=0, rx=0, ry=0, rz=0) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
