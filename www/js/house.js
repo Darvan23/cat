@@ -56,27 +56,39 @@ function buildInterior() {
   const wood = pbr(0x6a4a2c, 0.8), woodDark = pbr(0x49331f, 0.8);
   const crackMat = pbr(0x3a3026, 1.0);
 
-  // ── permanent shell & big pieces ──
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(7, 0.1, 6), floorMat); floor.position.set(0, -0.05, 0); floor.receiveShadow = true; groundGroup.add(floor);
-  const WH = 2.6, WY = 1.3;
-  B(7, WH, 0.2, wallA, 0, WY, -3);
-  B(0.2, WH, 6, wallB, -3.5, WY, 0);
-  B(0.2, WH, 6, wallB, 3.5, WY, 0);
-  B(3.3, WH, 0.2, wallA, -1.85, WY, 3);
-  B(2.0, WH, 0.2, wallA, 2.5, WY, 3);
-  B(1.7, 0.5, 0.2, wallA, 0.65, 2.35, 3);
-  B(1.3, 1.05, 0.06, pbr(0xbfe0ff, 0.08, 0), -2.3, 1.7, -2.9);     // window
-  B(1.45, 0.08, 0.1, wood, -2.3, 2.25, -2.88);
-  B(1.45, 0.08, 0.1, wood, -2.3, 1.15, -2.88);
-  B(0.08, 1.1, 0.1, wood, -2.3, 1.7, -2.88);
+  // ── permanent shell & big pieces — a proper family room now (9 x 7.4) ──
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(9, 0.1, 7.4), floorMat); floor.position.set(0, -0.05, 0); floor.receiveShadow = true; groundGroup.add(floor);
+  const WH = 2.7, WY = 1.35;
+  B(9, WH, 0.2, wallA, 0, WY, -3.7);
+  B(0.2, WH, 7.4, wallB, -4.5, WY, 0);
+  B(0.2, WH, 7.4, wallB, 4.5, WY, 0);
+  B(4.3, WH, 0.2, wallA, -2.35, WY, 3.7);
+  B(3.0, WH, 0.2, wallA, 3.0, WY, 3.7);
+  B(1.7, 0.5, 0.2, wallA, 0.65, 2.45, 3.7);
+  B(1.3, 1.05, 0.06, pbr(0xbfe0ff, 0.08, 0), -2.6, 1.7, -3.6);     // window
+  B(1.45, 0.08, 0.1, wood, -2.6, 2.25, -3.58);
+  B(1.45, 0.08, 0.1, wood, -2.6, 1.15, -3.58);
+  B(0.08, 1.1, 0.1, wood, -2.6, 1.7, -3.58);
+  B(1.1, 0.95, 0.06, pbr(0xbfe0ff, 0.08, 0), 4.4, 1.65, -1.2);     // east window
+  B(0.08, 1.1, 1.25, wood, 4.42, 1.65, -1.2);
+  [-1, 1].forEach(d => { const cur = B(0.06, 1.5, 0.42, pbr(0x5a6a8a, 0.95), 4.36, 1.7, -1.2 + d * 0.72); cur.rotation.x = 0.04 * d; });   // faded curtains
+  [-1, 1].forEach(d => B(0.06, 1.5, 0.4, pbr(0x5a6a8a, 0.95), -2.6 + d * 0.85, 1.7, -3.55));
+  // skirting boards + ceiling beams tie the room together
+  B(9, 0.16, 0.06, wood, 0, 0.08, -3.62); B(0.06, 0.16, 7.4, wood, -4.42, 0.08, 0); B(0.06, 0.16, 7.4, wood, 4.42, 0.08, 0);
+  [-2.8, 0, 2.8].forEach(bx2 => B(0.18, 0.14, 7.4, woodDark, bx2, WH - 0.07, 0));
+  // a worn old rug, a welcome mat, and little wall keepsakes
+  { const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.03, 22), pbr(0x8a5a4a, 0.98)); rug.scale.z = 0.72; rug.position.set(-0.4, 0.03, -0.4); rug.receiveShadow = true; groundGroup.add(rug); }
+  B(1.1, 0.03, 0.6, pbr(0x7a6a4c, 0.98), 0.65, 0.03, 3.3);
+  B(0.5, 0.62, 0.05, wood, 1.7, 1.9, -3.58); B(0.4, 0.5, 0.03, pbr(0xd8c8a8, 0.9), 1.7, 1.9, -3.55);   // the family photo
+  { const clk = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 18), pbr(0xe8e0d0, 0.7)); clk.rotation.x = Math.PI / 2; clk.position.set(3.2, 2.1, -3.6); groundGroup.add(clk); B(0.02, 0.14, 0.02, woodDark, 3.2, 2.15, -3.56); B(0.02, 0.1, 0.02, woodDark, 3.24, 2.08, -3.56); }
   // The cat's plate & water bowl — the only comforts this poor family can offer (eat & drink)
-  C(0.17, 0.13, 0.07, 14, pbr(0xcc5a4a, 0.5), 1.45, 0.05, 1.9);                  // food bowl (the "plate")
-  Sp(0.045, pbr(0x8a5a2a, 0.8), 1.42, 0.11, 1.87); Sp(0.045, pbr(0x9a6a3a, 0.8), 1.5, 0.11, 1.92); Sp(0.045, pbr(0x7a4a26, 0.8), 1.45, 0.11, 1.95);
-  C(0.17, 0.13, 0.07, 14, pbr(0x4a88c8, 0.5), 1.85, 0.05, 1.9);                  // water bowl
-  C(0.14, 0.14, 0.012, 14, pbr(0x6ab0e0, 0.15, 0.1), 1.85, 0.095, 1.9);         // water surface
+  C(0.17, 0.13, 0.07, 14, pbr(0xcc5a4a, 0.5), 2.4, 0.05, 2.6);                  // food bowl (the "plate")
+  Sp(0.045, pbr(0x8a5a2a, 0.8), 2.37, 0.11, 2.57); Sp(0.045, pbr(0x9a6a3a, 0.8), 2.45, 0.11, 2.62); Sp(0.045, pbr(0x7a4a26, 0.8), 2.4, 0.11, 2.65);
+  C(0.17, 0.13, 0.07, 14, pbr(0x4a88c8, 0.5), 2.8, 0.05, 2.6);                  // water bowl
+  C(0.14, 0.14, 0.012, 14, pbr(0x6ab0e0, 0.15, 0.1), 2.8, 0.095, 2.6);         // water surface
   // A little cat bed — the one place the cat has to curl up and sleep
-  C(0.42, 0.46, 0.16, 16, pbr(0x9a5a6a, 0.9), 2.5, 0.08, 1.1);                   // bed rim
-  C(0.32, 0.32, 0.06, 16, pbr(0xe8d8c0, 0.9), 2.5, 0.16, 1.1);                   // soft cushion
+  C(0.42, 0.46, 0.16, 16, pbr(0x9a5a6a, 0.9), 3.6, 0.08, 1.6);                   // bed rim
+  C(0.32, 0.32, 0.06, 16, pbr(0xe8d8c0, 0.9), 3.6, 0.16, 1.6);                   // soft cushion
   interiorDrip = null;   // the bare starter house has no furniture — everything else must be bought
   // hanging bulb (stays)
   C(0.012, 0.012, 0.7, 6, pbr(0x222222, 0.5), 0.4, 2.25, -0.2);
@@ -92,17 +104,22 @@ function buildInterior() {
 
   // ── Tired old walls that heal as you give money (disrepair, not furniture) ──
   const cracks = tierGroup(0, 1);
-  B(0.04, 1.3, 0.02, crackMat, -1.0, 1.55, -2.89, cracks);
-  B(0.5, 0.04, 0.02, crackMat, 1.6, 1.95, -2.89, cracks);
+  B(0.04, 1.3, 0.02, crackMat, -1.0, 1.55, -3.59, cracks);
+  B(0.5, 0.04, 0.02, crackMat, 1.6, 1.95, -3.59, cracks);
   const peel = tierGroup(0, 3);
-  B(0.8, 0.6, 0.012, wallB, -2.7, 1.6, -2.88, peel);
-  B(0.5, 0.4, 0.012, wallB, 0.4, 0.9, 2.88, peel);
+  B(0.8, 0.6, 0.012, wallB, -3.4, 1.6, -3.58, peel);
+  B(0.5, 0.4, 0.012, wallB, 0.4, 0.9, 3.58, peel);
 
   // A REAL staircase to the second floor — ten walkable steps you actually climb (movable)
-  makeFixture('home', 'stairs', tierGroup(3, 99), groundColliders, -2.9, 0.6, (B) => {
-    for (let i = 0; i < 10; i++) B(0.95, 0.24, 0.4, wood, 0, 0.12 + i * 0.24, 1.5 - i * 0.33);
-    B(0.08, 2.5, 3.4, woodDark, -0.52, 1.25, 0);                                  // side rail panel
-    B(0.06, 0.06, 3.4, woodDark, -0.52, 2.55, 0);                                 // handrail
+  makeFixture('home', 'stairs', tierGroup(3, 99), groundColliders, -3.7, 0.4, (B) => {
+    for (let i = 0; i < 12; i++) {
+      B(1.3, 0.2, 0.42, wood, 0, 0.1 + i * 0.2, 1.6 - i * 0.3);                   // twelve gentle steps
+      B(0.9, 0.21, 0.3, pbr(0x9a3a34, 0.95), 0, 0.105 + i * 0.2, 1.6 - i * 0.3);  // the red carpet runner
+    }
+    B(0.08, 2.6, 4.0, woodDark, -0.72, 1.3, 0);                                   // side rail panel
+    B(0.06, 0.06, 4.0, woodDark, -0.72, 2.65, 0);                                 // handrail
+    for (let i = 0; i < 5; i++) B(0.05, 0.6 + i * 0.5, 0.05, woodDark, 0.68, (0.6 + i * 0.5) / 2, 1.5 - i * 0.8);   // banister posts climb the flight
+    { const rail2 = B(0.05, 0.05, 4.1, woodDark, 0.68, 1.55, -0.05); rail2.rotation.x = -0.6; }        // sloped banister rail
   }, null);
 
   interior = {
@@ -125,22 +142,24 @@ function buildUpstairs() {
   const glass = pbr(0xbfe0ff, 0.08, 0);
 
   // shell — same footprint as downstairs, with a ceiling-less open top for the camera
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(7, 0.1, 6), floorMat); floor.position.set(0, -0.05, 0); floor.receiveShadow = true; G.add(floor);
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(9, 0.1, 7.4), floorMat); floor.position.set(0, -0.05, 0); floor.receiveShadow = true; G.add(floor);
   const WH = 2.4, WY = 1.2;
-  B(7, WH, 0.2, wallU, 0, WY, -3);
-  B(0.2, WH, 6, wallU, -3.5, WY, 0);
-  B(0.2, WH, 6, wallU, 3.5, WY, 0);
-  B(7, WH, 0.2, wallU, 0, WY, 3);
-  B(1.0, 0.9, 0.06, glass, -2.0, 1.5, -2.92);   // windows
-  B(1.0, 0.9, 0.06, glass, 2.0, 1.5, -2.92);
+  B(9, WH, 0.2, wallU, 0, WY, -3.7);
+  B(0.2, WH, 7.4, wallU, -4.5, WY, 0);
+  B(0.2, WH, 7.4, wallU, 4.5, WY, 0);
+  B(9, WH, 0.2, wallU, 0, WY, 3.7);
+  B(1.0, 0.9, 0.06, glass, -2.2, 1.5, -3.62);   // windows
+  B(1.0, 0.9, 0.06, glass, 2.2, 1.5, -3.62);
+  B(9, 0.14, 0.06, wood, 0, 0.07, -3.62);       // skirting
+  { const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.03, 20), pbr(0x6a7a9a, 0.98)); rug.scale.z = 0.7; rug.position.set(0.6, 0.03, 0.2); rug.receiveShadow = true; G.add(rug); }
 
   // partition walls between the two bedrooms — MOVABLE (drag to reshape the rooms, or delete to open it up)
   makeFixture('upper', 'upartA', G, upstairsColliders, 0, -2.1, (B) => { B(0.18, WH, 1.8, wallU, 0, WY, 0); }, { dx0: -0.13, dx1: 0.13, dz0: -0.9, dz1: 0.9 }, 3);
   makeFixture('upper', 'upartB', G, upstairsColliders, 0, 0.5, (B) => { B(0.18, WH, 1.0, wallU, 0, WY, 0); }, { dx0: -0.13, dx1: 0.13, dz0: -0.5, dz1: 0.5 }, 3);
 
   // staircase back down (matches the ground-floor stairs spot)
-  for (let i = 0; i < 6; i++) B(0.95, 0.18, 0.55, wood, -2.9, 0.09 + i * 0.18, 1.95 + i * 0.16);
-  B(0.1, 1.1, 1.3, woodDark, -3.42, 0.6, 2.0);
+  for (let i = 0; i < 6; i++) B(1.25, 0.18, 0.55, wood, -3.7, 0.09 + i * 0.18, 1.95 + i * 0.16);
+  B(0.1, 1.1, 1.3, woodDark, -4.35, 0.6, 2.0);
 
   // ── Kids' bedroom (left) — movable beds + toy chest ──
   const kidsGrp = new THREE.Group(); G.add(kidsGrp);
@@ -628,9 +647,9 @@ function houseStairY(x, z) {
   const dx = x - gp.x, dz = z - gp.z;
   const lx = dx * Math.cos(ry) - dz * Math.sin(ry);        // into the staircase's local space
   const lz = dx * Math.sin(ry) + dz * Math.cos(ry);
-  if (Math.abs(lx) > 0.55 || lz > 1.85 || lz < -1.75) return 0;
-  const p = (1.72 - lz) / 3.3;                              // 0 at the bottom step → 1 at the top
-  return Math.max(0, Math.min(10, Math.ceil(p * 10))) * 0.24;
+  if (Math.abs(lx) > 0.72 || lz > 1.95 || lz < -1.95) return 0;
+  const p = (1.81 - lz) / 3.6;                              // 0 at the bottom step → 1 at the top
+  return Math.max(0, Math.min(12, Math.ceil(p * 12))) * 0.2;   // twelve shallow steps — a smooth, unfussy climb
 }
 // A quick soft fade over the floor swap — the old instant teleport read as a glitch
 function stairFade(swap) {
@@ -678,6 +697,15 @@ function decorDefaultPos(id, ck) {
 const WALL_COLL = {
   wall:      { dx0: -0.1, dx1: 0.1, dz0: -0.8, dz1: 0.8 },
   wallshort: { dx0: -0.1, dx1: 0.1, dz0: -0.45, dz1: 0.45 },
+};
+// …and so does the BIG furniture — no more hoovering through the couch
+const FURN_COLL = {
+  couch:     { dx0: -0.95, dx1: 0.95, dz0: -0.42, dz1: 0.42 },
+  diningset: { dx0: -0.85, dx1: 0.85, dz0: -0.85, dz1: 0.85 },
+  bed:       { dx0: -0.62, dx1: 0.62, dz0: -0.95, dz1: 0.95 },
+  bookshelf: { dx0: -0.55, dx1: 0.55, dz0: -0.24, dz1: 0.24 },
+  cattree:   { dx0: -0.34, dx1: 0.34, dz0: -0.34, dz1: 0.34 },
+  dresser:   { dx0: -0.5, dx1: 0.5, dz0: -0.26, dz1: 0.26 },
 };
 function attachDecorCollider(g, ck, half) {
   const arr = DECOR_CTX[ck].col && DECOR_CTX[ck].col();
@@ -848,6 +876,7 @@ function buildDecorItem(id, ck) {
   g.userData = { id, isDecor: true, ctx: ck };
   target.add(g); reg[id] = g;
   if (WALL_COLL[base]) attachDecorCollider(g, ck, WALL_COLL[base]);   // walls block the cat
+  else if (FURN_COLL[base]) attachDecorCollider(g, ck, FURN_COLL[base]);   // big furniture blocks everyone
 }
 function rebuildDecor() { Object.keys(DECOR_CTX).forEach(ck => decorList(ck).forEach(id => buildDecorItem(id, ck))); }
 
@@ -1148,11 +1177,14 @@ function updateMillerHomeLife(t) {
         groundGroup.add(hv); f.hooverMesh = hv;
       }
       const sweep = Math.sin(t * 0.7);
-      const hx = -1 + sweep * 1.5, hz = 0.6 + Math.sin(t * 0.23) * 0.9;         // slowly covers the whole room
+      const rawX = -1.2 + sweep * 2.0, rawZ = 0.5 + Math.sin(t * 0.23) * 1.2;   // slowly covers the (bigger) room
+      const hp = collide(rawX, rawZ, groundColliders, 0.34);                    // …politely AROUND the furniture
+      const hx = hp.x, hz = hp.z;
       const face = Math.atan2(Math.cos(t * 0.7) * 1.5, 0.001);                  // faces the direction she's sweeping
       f.group.position.set(hx, 0, hz); f.group.rotation.set(0, face, 0);
       f.hooverMesh.visible = true;
-      f.hooverMesh.position.set(hx + Math.sin(face) * 0.55, 0, hz + Math.cos(face) * 0.55);
+      const hvp = collide(hx + Math.sin(face) * 0.55, hz + Math.cos(face) * 0.55, groundColliders, 0.2);
+      f.hooverMesh.position.set(hvp.x, 0, hvp.z);
       f.hooverMesh.rotation.y = face;
       if (f.parts.arms) { f.parts.arms[0].rotation.x = -0.85 + Math.sin(t * 3.2) * 0.12; f.parts.arms[1].rotation.x = -0.2; }
       if (legs) { legs[0].rotation.x = Math.sin(t * 2.6) * 0.2; legs[1].rotation.x = -Math.sin(t * 2.6) * 0.2; }
@@ -1171,7 +1203,8 @@ function updateMillerHomeLife(t) {
       if (f.parts.head) { f.parts.head.rotation.x = 0.42; f.parts.head.rotation.y = Math.sin(t * 0.6 + i) * 0.06; }   // nose in the book
     } else if (plan.act === 'play' && (f.name === 'Lily' || f.name === 'Noah')) {   // 🧸 the kids play on the floor with a little ball
       const kidIx = f.name === 'Lily' ? 0 : 1;
-      const px = -1.6 + kidIx * 1.1, pz = 1.55;
+      const kp = collide(-1.6 + kidIx * 1.1, 1.55, groundColliders, 0.34);      // never criss-cross INSIDE the couch
+      const px = kp.x, pz = kp.z;
       f.group.position.set(px, -0.45 * h, pz);
       f.group.rotation.set(0, kidIx === 0 ? Math.PI / 2 : -Math.PI / 2, 0);      // sat facing each other
       if (legs) legs.forEach(l => l.rotation.x = -1.5);                          // criss-cross on the floor

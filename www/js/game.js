@@ -2835,7 +2835,7 @@ function animate(now) {
     const hit = collide(catGroup.position.x, catGroup.position.z, catColliders(), state.inHouse ? 0.16 : 0.24);
     catGroup.position.x = hit.x; catGroup.position.z = hit.z;
     let bx = 234, bxMin = -258, bzMin = -156, bzMax = 84;   // the frontier: Dream City west, safari zoo east — and the RING HIGHWAY all around
-    if (state.inHouse) { bx = 3.2; bzMin = -2.6; bzMax = 2.6; }
+    if (state.inHouse) { bx = 4.2; bzMin = -3.4; bzMax = 3.4; }   // the family room grew
     else if (state.inShop) { bx = 6.4; bzMin = -4.6; bzMax = 4.4; }   // incl. behind Dad's counter
     else if (state.inShelter) { bx = 11.4; bzMin = -7.4; bzMax = 7.4; }
     else if (state.inBoughtHome) { bx = 5.4; bzMin = -3.9; bzMax = 3.9; }
