@@ -443,7 +443,7 @@ function phoneGuard(kind) {
 }
 // while one of your cats is on duty, it isn't ALSO wandering the streets
 function hideRoamingCat(name, hide) {
-  (state.freedCats || []).forEach(c => {
+  (state.freedCats || []).concat(state.streetCats || []).forEach(c => {
     const nm = (c.cat && c.cat.name) || c.name;
     if (nm === name && c.group) c.group.visible = !hide;
   });
@@ -569,8 +569,21 @@ function updateGuard(t) {
       }
       gd.group.rotation.y += (Math.atan2(cp.x - gp.x, cp.z - gp.z) - gd.group.rotation.y) * 0.08;   // keeps eyes on you
     }
-    // 🐈‍⬛ the cat guard scales any roof you can: its feet ease to YOUR tier
-    if (gd.catParts) gd.floorY = (gd.floorY || 0) + (((state.catBaseY || 0)) - (gd.floorY || 0)) * 0.08;
+    // 🐈‍⬛ the cat guard scales any roof you can — with a REAL leap, just like yours
+    if (gd.catParts) {
+      const targetY = state.catBaseY || 0;
+      if (gd.jumpT == null && Math.abs(targetY - (gd.floorY || 0)) > 0.35) {
+        gd.jumpT = 0; gd.jumpFrom = gd.floorY || 0; gd.jumpTo = targetY;      // coil… and spring
+      }
+      if (gd.jumpT != null) {
+        gd.jumpT += 0.05;
+        const p = Math.min(1, gd.jumpT), arc = Math.sin(p * Math.PI);
+        gd.floorY = gd.jumpFrom + (gd.jumpTo - gd.jumpFrom) * p + arc * (0.7 + Math.abs(gd.jumpTo - gd.jumpFrom) * 0.25);
+        (gd.catParts.legs || []).forEach((l, i2) => { l.rotation.x = arc * (i2 < 2 ? -0.8 : 0.8); });   // tuck front, kick back
+        if (gd.catParts.body) gd.catParts.body.rotation.x = -Math.cos(p * Math.PI) * 0.3;               // nose up, then down
+        if (p >= 1) { gd.floorY = gd.jumpTo; gd.jumpT = null; if (gd.catParts.body) gd.catParts.body.rotation.x = 0; }
+      }
+    }
   } else if (gd.parts && typeof idleHuman === 'function') idleHuman(gd, t);     // standing watch
 }
 function guardContext(cp) {

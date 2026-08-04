@@ -378,7 +378,7 @@ function addStreetCat(i) {
   const start = randomRoamHome();
   m.group.position.set(start.x, 0, start.z);
   scene.add(m.group);
-  const c = { group: m.group, legs: m.legs, tail: m.tail, body: m.body, name: STREET_CAT_NAMES[idx % STREET_CAT_NAMES.length], phase: Math.random() * 6, playT: 0 };
+  const c = { group: m.group, legs: m.legs, tail: m.tail, body: m.body, look, name: STREET_CAT_NAMES[idx % STREET_CAT_NAMES.length], phase: Math.random() * 6, playT: 0 };
   initCatWander(c, randomRoamHome(), 10);
   state.streetCats.push(c);
   return c;

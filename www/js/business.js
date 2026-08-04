@@ -70,6 +70,7 @@ function hireWorkerFor(bizId, type) {
     onPick(c) {
       const nw = { type: c.kind, biz: bizId, hiredDay: state.dayCount || 0, name: c.name, trait: c.trait, prev: c.prev || 'the streets of this very town', workerId: c.id };
       if (c.kind === 'cat') nw.look = c.data;                        // the REAL cat clocks in
+      if (c.kind === 'cat' && typeof hideRoamingCat === 'function') hideRoamingCat(c.name, true);   // …so it's not ALSO out roaming
       employ(c.id, 'staff at the ' + bizDef(bizId).name);
       workerList().push(nw);
       state.biz.jobsCreated = (state.biz.jobsCreated || 0) + 1;
@@ -85,6 +86,7 @@ function fireWorkerFrom(bizId) {
   const i = list.map(w => w.biz).lastIndexOf(bizId);
   if (i < 0) return;
   if (typeof unemploy === 'function' && list[i].workerId) unemploy(list[i].workerId);   // free to work elsewhere
+  if (list[i].type === 'cat' && list[i].name && typeof hideRoamingCat === 'function') hideRoamingCat(list[i].name, false);   // back to the streets
   list.splice(i, 1);
   refreshWorkersInView(bizId);
   renderBusiness(); if (typeof saveGame === 'function') saveGame();

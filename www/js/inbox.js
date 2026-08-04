@@ -182,9 +182,14 @@ function myCatsRoster() {
     if (c) out.push({ id: 'cat:' + c.id, name: c.name, kind: 'cat', data: c, trait: CAT_TRAIT2[c.id.length % CAT_TRAIT2.length] });
   });
   (state.createdCats || []).forEach((c, i) => out.push({ id: 'cat:custom' + i, name: c.name || 'The Mystery Cat', kind: 'cat', data: c, trait: CAT_TRAIT2[(i + 3) % CAT_TRAIT2.length] }));
+  // and every street cat in town wants work too — new houses bring new cats, new cats bring new CVs
+  (state.streetCats || []).forEach((c, i) => {
+    if (!c.name || !c.look) return;
+    out.push({ id: 'cat:street:' + c.name + ':' + i, name: c.name, kind: 'cat', data: c.look, street: true, trait: CAT_TRAIT2[(c.name.length + i) % CAT_TRAIT2.length] });
+  });
   return out;
 }
-const _hex = c => '#' + ('000000' + (c || 0x888888).toString(16)).slice(-6);
+const _hex = c => typeof c === 'string' ? c : '#' + ('000000' + (c || 0x888888).toString(16)).slice(-6);
 
 // the picker: candidates (and/or your cats) laid out as little CVs — hire one, or nobody
 let _hireOnPick = null;
