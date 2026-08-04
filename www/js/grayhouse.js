@@ -528,7 +528,15 @@ function updateGuard(t) {
   if (typeof playerIndoors === 'function' && playerIndoors() && !inG) { gd.group.visible = false; return; }   // waits outside the shops
   gd.group.visible = true;
   const gp = gd.group.position, cp = catGroup.position;
-  if (gd.mode === 'follow') {
+  const catUp = (state.catBaseY || 0) > 0.5;                                    // you're up on a ledge or roof
+  if (gd.mode === 'follow' && gd.parts && catUp) {
+    // 🕴️ a human in a suit does NOT climb roofs — waits below, eyes on you
+    if (gd.parts.legs) gd.parts.legs.forEach(l => l.rotation.x *= 0.8);
+    gp.y += (0 - gp.y) * 0.2;
+    if (typeof idleHuman === 'function') idleHuman(gd, t);
+    gd.group.rotation.y += (Math.atan2(cp.x - gp.x, cp.z - gp.z) - gd.group.rotation.y) * 0.1;
+    if (gd.parts.head) gd.parts.head.rotation.x = -0.4;                         // watching you up there
+  } else if (gd.mode === 'follow') {
     const dx = cp.x - gp.x, dz = cp.z - gp.z, d = Math.hypot(dx, dz);
     if (d > 30) { gp.set(cp.x + 1.3, 0, cp.z); }                                // never left behind
     else if (d > 2.3) {
@@ -541,12 +549,28 @@ function updateGuard(t) {
         if (gd.parts.legs) { gd.parts.legs[0].rotation.x = sw * 0.5; gd.parts.legs[1].rotation.x = -sw * 0.5; }
         if (gd.parts.arms) { gd.parts.arms[0].rotation.x = -sw * 0.35; gd.parts.arms[1].rotation.x = sw * 0.35; }
         gp.y = Math.abs(Math.sin(gd.walkT)) * 0.02;
-      } else gp.y = Math.abs(Math.sin(gd.walkT * 1.4)) * 0.05;                  // cat-guard trot
+      } else if (gd.catParts) {                                                 // 🐈‍⬛ a REAL cat trot: legs, tail, body
+        gd.walkT2 = (gd.walkT2 || 0) + 0.42;
+        const sw = Math.sin(gd.walkT2);
+        (gd.catParts.legs || []).forEach((leg, i) => { leg.rotation.x = (i % 2 ? sw : -sw) * 0.85; });
+        { const segs = gd.catParts.tail && (gd.catParts.tail.userData && gd.catParts.tail.userData.segs); 
+          if (segs) segs.forEach((s2, i) => { s2.rotation.x = ((s2.userData && s2.userData.rx) || 0) + Math.sin(gd.walkT2 * 0.5 + i) * 0.12; });
+          else if (gd.catParts.tail) gd.catParts.tail.rotation.z = Math.sin(gd.walkT2 * 0.6) * 0.25; }
+        if (gd.catParts.body) gd.catParts.body.rotation.z = sw * 0.05;
+        gp.y = (gd.floorY || 0) + Math.abs(Math.sin(gd.walkT2)) * 0.06;
+      }
     } else {
       if (gd.parts) { if (gd.parts.legs) gd.parts.legs.forEach(l => l.rotation.x *= 0.8); gp.y = 0; if (typeof idleHuman === 'function') idleHuman(gd, t); }
-      else gp.y = Math.abs(Math.sin(t * 1.2 + gd.phase)) * 0.01;
+      else if (gd.catParts) {                                                    // sitting pretty: breath + tail flick
+        (gd.catParts.legs || []).forEach(l => l.rotation.x *= 0.75);
+        if (gd.catParts.body) { gd.catParts.body.rotation.z = 0; gd.catParts.body.scale.y = 1 + Math.sin(t * 2.2 + gd.phase) * 0.03; }
+        if (gd.catParts.tail && gd.catParts.tail.rotation) gd.catParts.tail.rotation.z = Math.sin(t * 1.6 + gd.phase) * 0.3;
+        gp.y = (gd.floorY || 0);
+      }
       gd.group.rotation.y += (Math.atan2(cp.x - gp.x, cp.z - gp.z) - gd.group.rotation.y) * 0.08;   // keeps eyes on you
     }
+    // 🐈‍⬛ the cat guard scales any roof you can: its feet ease to YOUR tier
+    if (gd.catParts) gd.floorY = (gd.floorY || 0) + (((state.catBaseY || 0)) - (gd.floorY || 0)) * 0.08;
   } else if (gd.parts && typeof idleHuman === 'function') idleHuman(gd, t);     // standing watch
 }
 function guardContext(cp) {

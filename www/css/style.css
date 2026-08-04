@@ -944,13 +944,29 @@ body.cine #dialogue { top: auto; bottom: calc(24px + env(safe-area-inset-bottom)
 /* ── indoors: park tally & population are outdoor business ── */
 body.indoors #park-tally, body.indoors #population { display: none !important; }
 
-/* ── 🤝 hiring CVs ── */
-.hire-list { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
-.hire-card { text-align: left; border: 1.5px solid rgba(200,146,42,0.5); border-radius: 12px; padding: 10px 12px; background: rgba(255,240,210,0.05); }
+/* ── 🤝 hiring CVs — little paper résumés you can actually read ── */
+.hire-list { display: flex; flex-direction: column; gap: 12px; margin: 10px 0; color: #f2e4c8; }
+.hire-card {
+  text-align: left; border: 2px solid rgba(200,146,42,0.55); border-radius: 14px;
+  padding: 12px 14px; color: #f2e4c8;
+  background: linear-gradient(rgba(255,240,210,0.10), rgba(255,240,210,0.04));
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07);
+}
 .hire-card.busy { opacity: 0.55; }
-.hire-head { font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
-.hire-chip { width: 20px; height: 20px; border-radius: 50%; border: 3px solid; display: inline-block; }
-.hire-det { font-size: 0.78rem; opacity: 0.85; line-height: 1.5; margin: 6px 0; }
-.hire-busy { font-size: 0.75rem; color: #d8a860; font-style: italic; }
-.hire-btn { width: 100%; padding: 8px; border-radius: 10px; border: 2px solid #8ac858; background: rgba(106,160,80,0.3); color: #d8f0c0; font-family: inherit; font-weight: 700; cursor: pointer; }
+.hire-head { font-size: 1rem; display: flex; align-items: center; gap: 9px; color: #ffe9c0; border-bottom: 1px dashed rgba(200,146,42,0.4); padding-bottom: 6px; }
+.hire-chip { width: 22px; height: 22px; border-radius: 50%; border: 3px solid; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+.hire-det { font-size: 0.8rem; color: #e2d2b2; line-height: 1.6; margin: 7px 0; }
+.hire-busy { font-size: 0.76rem; color: #d8a860; font-style: italic; }
+.hire-btn { width: 100%; padding: 9px; border-radius: 10px; border: 2px solid #8ac858; background: rgba(106,160,80,0.32); color: #d8f0c0; font-family: inherit; font-weight: 700; cursor: pointer; }
 .hire-btn:active { background: rgba(106,160,80,0.55); }
+
+/* ── ✕ every panel closes from the top corner ── */
+.modal-card { position: relative; }
+.modal-x {
+  position: absolute; top: 8px; right: 8px; z-index: 5;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid #c8922a; background: rgba(20,12,5,0.85); color: #f0d080;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-x:active { background: rgba(200,146,42,0.5); }

@@ -329,7 +329,27 @@ function updateDoorArrows(t) {
 function updateEnterPrompt() {
   document.body.classList.toggle('indoors', typeof playerIndoors === 'function' && playerIndoors());   // interiors trim the button stack
   const btn = document.getElementById('enter-btn');
-  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inManor || state.inFun || state.inShow) { btn.textContent = '🚪 Leave'; btn.classList.add('show'); return; }
+  if (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.inGray || state.inManor || state.inFun || state.inShow) {
+    // 🚪 WALK OUT: no Leave button — stroll into the doorway and you're outside
+    btn.classList.remove('show');
+    if (state.uiOpen || mg.active || state.cinematic) return;
+    let ex = null, ez = null, zone = 0;
+    if (state.inHouse && state.floor !== 'upper') { ex = 0.65; ez = 3.7; zone = 1.15; }
+    else if (state.inShop || state.inBiz || state.inWork) { ex = 0; ez = 4.4; zone = 1.3; }
+    else if (state.inBoughtHome) { ex = 0; ez = 3.9; zone = 1.3; }
+    else if (state.inShelter) { ex = 0; ez = 7.4; zone = 1.4; }
+    else if (state.inGray && (state.grayFloor || 0) === 0) { ex = 0; ez = GRAY_D + 0.4; zone = 1.6; }
+    else if (state.inManor) { ex = 0; ez = (typeof MANOR_D !== 'undefined' ? MANOR_D : 4.3) + 0.3; zone = 1.3; }
+    else if (state.inFun) { ex = 0; ez = (typeof FUN_D !== 'undefined' ? FUN_D : 3.8) + 0.3; zone = 1.3; }
+    else if (state.inShow) { ex = 0; ez = (typeof SHOW_D !== 'undefined' ? SHOW_D : 4.6) + 0.3; zone = 1.3; }
+    if (ex !== null) {
+      const cpI = catGroup.position;
+      const dd = Math.hypot(cpI.x - ex, cpI.z - ez);
+      if (dd > zone + 1.1) state._doorArmed = true;
+      else if (dd < zone && state._doorArmed) { state._doorArmed = false; toggleHouse(); }
+    }
+    return;
+  }
   if (state.driving) { state.nearBuilding = null; btn.classList.remove('show'); return; }   // park before you go indoors
   const cp = catGroup.position;
   let target = null, label = '';

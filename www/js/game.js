@@ -2626,6 +2626,19 @@ function openSettings() {
 }
 function closeSettings() { state.uiOpen = false; document.getElementById('settings').classList.remove('show'); }
 
+// ✕ every modal gets a top-corner close that clicks its own close button
+document.querySelectorAll('.modal .modal-card').forEach(card => {
+  const x = document.createElement('button');
+  x.className = 'modal-x'; x.textContent = '✕'; x.title = 'Close';
+  x.addEventListener('click', () => {
+    const mc = card.querySelector('.modal-close');
+    if (mc) { mc.click(); return; }
+    const modal = card.closest('.modal');
+    if (modal) { modal.classList.remove('show'); state.uiOpen = false; }
+  });
+  card.appendChild(x);
+});
+
 const mmCanvas = document.getElementById('minimap-canvas');
 const mmCtx = mmCanvas.getContext('2d');
 function drawMinimap() {
