@@ -2763,6 +2763,7 @@ function animate(now) {
   if (typeof updateDriving === 'function') updateDriving(t);                       // 🚗 the cat car rolls with you
   updateGoldBird(t);                                                               // ✨🐦 the Golden Flock
   if (typeof updateGuard === 'function') updateGuard(t);                           // 🛡️ the detail keeps up
+  if (typeof updateDoorArrows === 'function') updateDoorArrows(t);                 // 🟢 doors wave you in
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it

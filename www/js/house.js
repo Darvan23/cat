@@ -21,26 +21,24 @@ const RENT = { goal: 100, days: 16, triggerCoins: 40, penalty: 18 };
 
 // ─── Miller home interior (with upgrade tiers) ──────────────────────────────────
 // 🎓 Your diplomas hang on the living-room wall — one framed certificate per degree
-let _diplomaGroup = null;
 function refreshDiplomaWall() {
-  if (typeof groundGroup === 'undefined' || !groundGroup) return;
-  if (_diplomaGroup) { groundGroup.remove(_diplomaGroup); _diplomaGroup = null; }
+  const fx = (typeof fixtureReg !== 'undefined') && fixtureReg.diplomas;
+  if (!fx || !fx.group) return;
+  while (fx.group.children.length) fx.group.remove(fx.group.children[0]);
   const done = (state.school && state.school.done) || [];
   if (!done.length) return;
   const icons = { logistics: '💼', business: '📊', civics: '🏛️', humanity: '❤️', art: '🎨', park: '🌳', planning: '🏗️' };
-  _diplomaGroup = new THREE.Group();
   done.slice(0, 8).forEach((id, i) => {
     const col = i % 4, row = Math.floor(i / 4);
-    const x = 0.7 + col * 0.68, y = 2.0 - row * 0.55;
+    const x = -1.02 + col * 0.68, y = 2.0 - row * 0.55;   // local coords — drag the whole wall of pride anywhere
     const frame = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.42, 0.05), pbr(0x6a4a2c, 0.8));
-    frame.position.set(x, y, -2.92); frame.castShadow = true; _diplomaGroup.add(frame);
+    frame.position.set(x, y, 0); frame.castShadow = true; fx.group.add(frame);
     const paper = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.02),
       (typeof makeTextSign === 'function')
         ? new THREE.MeshStandardMaterial({ map: makeTextSign((icons[id] || '🎓') + ' DIPLOMA', '#f2ead8', '#4a3a22', 210, 96), roughness: 0.85 })
         : pbr(0xf2ead8, 0.9));
-    paper.position.set(x, y, -2.885); _diplomaGroup.add(paper);
+    paper.position.set(x, y, 0.04); fx.group.add(paper);
   });
-  groundGroup.add(_diplomaGroup);
 }
 function buildInterior() {
   const tiers = [];
@@ -122,6 +120,9 @@ function buildInterior() {
     { const rail2 = B(0.05, 0.05, 4.1, woodDark, 0.68, 1.55, -0.05); rail2.rotation.x = -0.6; }        // sloped banister rail
   }, null);
 
+  makeFixture('home', 'diplomas', groundGroup, null, 1.7, -3.55, () => {}, null);   // 🎓 the wall of pride — movable like any furniture
+  refreshDiplomaWall();
+
   interior = {
     tiers, wallMats: [wallA, wallB], bulb, bulbLight,
     wallColors: [0xb9a98c, 0xb9a98c, 0xc2b393, 0xccbd9c, 0xe2d6ba, 0xeaddc2],
@@ -157,9 +158,15 @@ function buildUpstairs() {
   makeFixture('upper', 'upartA', G, upstairsColliders, 0, -2.1, (B) => { B(0.18, WH, 1.8, wallU, 0, WY, 0); }, { dx0: -0.13, dx1: 0.13, dz0: -0.9, dz1: 0.9 }, 3);
   makeFixture('upper', 'upartB', G, upstairsColliders, 0, 0.5, (B) => { B(0.18, WH, 1.0, wallU, 0, WY, 0); }, { dx0: -0.13, dx1: 0.13, dz0: -0.5, dz1: 0.5 }, 3);
 
-  // staircase back down (matches the ground-floor stairs spot)
-  for (let i = 0; i < 6; i++) B(1.25, 0.18, 0.55, wood, -3.7, 0.09 + i * 0.18, 1.95 + i * 0.16);
-  B(0.1, 1.1, 1.3, woodDark, -4.35, 0.6, 2.0);
+  // the stairWELL — an opening in the floor with steps descending into it
+  B(2.0, 0.05, 2.3, pbr(0x1a120a, 1.0), -3.55, 0.032, 2.35);                    // the dark opening
+  for (let i = 0; i < 6; i++) B(1.25, 0.16, 0.42, wood, -3.7, -0.06 - i * 0.22, 1.62 + i * 0.34);   // steps sink DOWNWARD
+  B(0.08, 1.5, 2.3, woodDark, -4.38, -0.4, 2.35);                               // well sides
+  B(0.08, 1.5, 2.3, woodDark, -2.98, -0.4, 2.35);
+  B(1.4, 1.5, 0.08, woodDark, -3.7, -0.4, 3.5);                                 // back of the well
+  B(0.06, 0.75, 2.2, woodDark, -2.95, 0.55, 2.3);                               // safety rail round the opening
+  B(0.06, 0.06, 2.25, woodDark, -2.95, 0.95, 2.3);
+  B(0.8, 0.06, 0.06, woodDark, -3.35, 0.95, 1.25);
 
   // ── Kids' bedroom (left) — movable beds + toy chest ──
   const kidsGrp = new THREE.Group(); G.add(kidsGrp);
@@ -285,6 +292,40 @@ function applyHouseLevel(level) {
   if (level < 3 && state.floor === 'upper') { setFloor('ground'); if (state.inHouse) catGroup.position.set(-2.4, 0, 1.9); }
 }
 
+// ── 🟢 DOOR ARROWS: every enterable door gets a bobbing arrow — just walk in ──
+const DOOR_ARROWS = [];
+let _arrowRefreshT = 0;
+function _doorSpots() {
+  const spots = [{ x: -3, z: -6.6 }];                                              // the Millers' door
+  if (state.owned.shop && typeof shopIsOpen === 'function' && shopIsOpen()) spots.push({ x: -18, z: -5.2 });
+  if (typeof SHELTER !== 'undefined') spots.push({ x: SHELTER.x, z: SHELTER.z - 4 });
+  if (typeof GRAY_SPOT !== 'undefined' && state.politics && state.politics.phase === 'president') spots.push({ x: GRAY_SPOT.x, z: GRAY_SPOT.z - 6 });
+  if (typeof CARSHOW !== 'undefined') spots.push({ x: CARSHOW.x, z: CARSHOW.z + CARSHOW.d / 2 + 0.7 });
+  if (typeof JOB_SITES !== 'undefined') JOB_SITES.forEach(s => spots.push({ x: s.x, z: s.z + 1.2 }));
+  if (typeof PROPERTIES !== 'undefined') PROPERTIES.forEach(p => { if (p.type === 'home' && state.owned.homes.includes(p.id)) spots.push({ x: p.x, z: p.z + 2.6 }); });
+  if (typeof BUSINESS_LOTS !== 'undefined') for (const id in BUSINESS_LOTS) { if (typeof ownsBusiness === 'function' && ownsBusiness(id)) { const l = BUSINESS_LOTS[id]; spots.push({ x: l.x, z: l.z + 3 }); } }
+  if (typeof CIVIC_LOTS !== 'undefined') for (const id in CIVIC_LOTS) { if (typeof ownsCivic === 'function' && ownsCivic(id)) { const l = CIVIC_LOTS[id]; spots.push({ x: l.x, z: l.z - 2.6 }); } }
+  return spots;
+}
+function refreshDoorArrows() {
+  DOOR_ARROWS.forEach(a => scene.remove(a.g));
+  DOOR_ARROWS.length = 0;
+  const am = new THREE.MeshStandardMaterial({ color: 0x6ae08a, emissive: 0x2a9a4a, emissiveIntensity: 0.9, roughness: 0.5 });
+  _doorSpots().forEach((s, i) => {
+    const g = new THREE.Group();
+    const head = new THREE.Mesh(G.cone(0.2, 0.34, 4), am); head.rotation.x = Math.PI; g.add(head);
+    const shaft = new THREE.Mesh(G.cyl(0.06, 0.06, 0.3, 4), am); shaft.position.y = 0.3; g.add(shaft);
+    g.position.set(s.x, 2.5, s.z);
+    scene.add(g);
+    DOOR_ARROWS.push({ g, base: 2.5, ph: i * 1.3 });
+  });
+}
+function updateDoorArrows(t) {
+  _arrowRefreshT -= 0.016;
+  if (_arrowRefreshT <= 0) { _arrowRefreshT = 5; refreshDoorArrows(); }           // ownership changes get picked up
+  DOOR_ARROWS.forEach(a => { a.g.position.y = a.base + Math.sin(t * 2.6 + a.ph) * 0.24; a.g.rotation.y = t * 1.4; });
+}
+
 function updateEnterPrompt() {
   document.body.classList.toggle('indoors', typeof playerIndoors === 'function' && playerIndoors());   // interiors trim the button stack
   const btn = document.getElementById('enter-btn');
@@ -341,7 +382,25 @@ function updateEnterPrompt() {
     }
   }
   state.nearBuilding = target; state.nearHouse = target === 'house';
-  if (target) { btn.textContent = label; btn.classList.add('show'); }
+  // 🚪 WALK RIGHT IN: cross the doorway and it opens itself (gates still use the button)
+  const gatey = target === 'zoo' || target === 'dreamcity';
+  if (target && !gatey && !state.driving && !state.uiOpen && !mg.active && !state.cinematic) {
+    let px = null, pz = null;
+    if (target === 'house') { px = -3; pz = -7.7; }
+    else if (target === 'shop') { px = -18; pz = -6.3; }
+    else if (target === 'shelter') { px = SHELTER.x; pz = SHELTER.z - 5; }
+    else if (target === 'gray') { px = GRAY_SPOT.x; pz = GRAY_SPOT.z - 7; }
+    else if (target === 'boughthome' && state.nearHomeDoor) { px = state.nearHomeDoor.x; pz = state.nearHomeDoor.z; }
+    else if (target === 'biz' && typeof BUSINESS_LOTS !== 'undefined' && state.nearBizId) { const l = BUSINESS_LOTS[state.nearBizId]; px = l.x; pz = l.z + 3; }
+    else if (target === 'civic' && typeof CIVIC_LOTS !== 'undefined' && state.nearCivicId) { const l = CIVIC_LOTS[state.nearCivicId]; px = l.x; pz = l.z - 3.5; }
+    else if (target === 'workplace' && typeof JOB_SITES !== 'undefined' && state.nearWorkId) { const s = JOB_SITES.find(j => j.id === state.nearWorkId); if (s) { px = s.x; pz = s.z + 0.3; } }
+    if (px !== null) {
+      const dd = Math.hypot(cp.x - px, cp.z - pz);
+      if (dd < 1.2 && state._doorArmed) { state._doorArmed = false; toggleHouse(); return; }
+    }
+  }
+  if (!target) state._doorArmed = true;                                           // re-arm once you step clear of every door
+  if (target && gatey) { btn.textContent = label; btn.classList.add('show'); }
   else btn.classList.remove('show');
 }
 
@@ -581,8 +640,8 @@ const DECOR_ANCHOR = {
 };
 // The three decorable interiors, each with its own scene group, floor bounds & save keys.
 const DECOR_CTX = {
-  home:   { target: () => groundGroup,     bx: 3.2, bz: 2.6, list: 'decor',       xf: 'decorXf',       label: 'Miller Home',  col: () => groundColliders },
-  upper:  { target: () => upstairsGroup,   bx: 3.2, bz: 2.6, list: 'decorUpper',  xf: 'decorXfUpper',  label: 'Upstairs',     col: () => upstairsColliders },
+  home:   { target: () => groundGroup,     bx: 4.2, bz: 3.4, list: 'decor',       xf: 'decorXf',       label: 'Miller Home',  col: () => groundColliders },
+  upper:  { target: () => upstairsGroup,   bx: 4.2, bz: 3.4, list: 'decorUpper',  xf: 'decorXfUpper',  label: 'Upstairs',     col: () => upstairsColliders },
   shop:   { target: () => shopScene,       bx: 6.2, bz: 4.2, list: 'decorShop',   xf: 'decorXfShop',   label: "Dad's Shop",   col: () => shopColliders },
   bought: { target: () => boughtHomeScene, bx: 5.2, bz: 3.9, list: 'decorBought', xf: 'decorXfBought', label: 'New Home',     col: () => boughtHomeColliders },
   // each business you own is decorated separately (stored per business id, see decorList/decorXfMap)
