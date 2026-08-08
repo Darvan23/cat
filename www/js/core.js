@@ -42,6 +42,7 @@ const state = {
   goldBirdsCaught: 0, // ✨🐦 the Golden Flock: 24 roost on rooftops, sneak-only
   settings: { chatter: true, hints: true },   // ⚙️ player comfort: cat subtitles & tip boxes
   guard: null,        // 🛡️ your bodyguard {kind, mode}
+  partner: null,      // 💞 your beloved {name, look, mode, homeId}
   grayHired: 0,       // analysts hired into Operations (treasury-funded)
   grayFloor: 0,       // which Gray House floor you're on     // the day your zoo ticket is valid for (a day pass)
   zooShift: false,    // working the zoo ticket booth right now

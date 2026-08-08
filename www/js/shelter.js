@@ -399,3 +399,174 @@ function spawnFreedCat(catData) {
   initCatWander(c, randomRoamHome(), 6);       // then wanders off to its own random home (some in the park)
   state.freedCats.push(c);
 }
+
+// ═══ 💞 THE LOVER — give the stray mouse to any cat and win their heart ═══
+function partnerMesh() {
+  const p = state.partner; if (!p || p.group) return;
+  const m = buildCatModel(p.look || STREET_CAT_LOOKS[0]);
+  m.group.scale.setScalar(CAT_SCALE_OUT * 0.95);
+  p.group = m.group; p.parts = m;
+  const heart = new THREE.Mesh(G.sph(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf06a9a, emissive: 0xd04878, emissiveIntensity: 0.8 }));
+  heart.scale.set(1, 1.15, 0.6); heart.position.y = 1.15; p.group.add(heart); p.heart = heart;
+  p.group.position.set(catGroup.position.x + 1.4, 0, catGroup.position.z);
+  scene.add(p.group);
+  p.floorY = 0; p.phase = Math.random() * 6;
+}
+function courtCat(c, id) {
+  if (typeof isEmployed === 'function' && isEmployed(id)) { showNotif('💼 ' + (c.name || 'That cat') + ' is at work right now — love waits for the off-shift.'); return; }
+  state.carryingMouse = false;
+  state.strayTimer = 30 + Math.random() * 40;
+  const name = (c.cat && c.cat.name) || c.name || 'Somebody';
+  const look = c.look || c.cat || (c.group ? null : null) || STREET_CAT_LOOKS[0];
+  state.partner = { name, look, id, mode: 'follow', homeId: null };
+  if (typeof hideRoamingCat === 'function') hideRoamingCat(name, true);
+  if (typeof employ === 'function') employ(id, 'your beloved 💞');
+  partnerMesh();
+  _catHappyT = 2.4; if (typeof spawnHeart === 'function') { spawnHeart(); setTimeout(spawnHeart, 250); setTimeout(spawnHeart, 500); }
+  if (typeof sfx === 'function') { sfx('purr'); setTimeout(() => sfx('coin'), 400); }
+  showNotif('💞 ' + name + ' accepts the mouse… and your heart! You have a partner now.');
+  if (typeof saveGame === 'function') saveGame();
+}
+function nearestLovableCat(cp) {
+  let best = null, bd = 2.3, bid = null;
+  (state.streetCats || []).forEach((c, i) => { if (!c.group || !c.group.visible) return; const d = Math.hypot(c.group.position.x - cp.x, c.group.position.z - cp.z); if (d < bd) { bd = d; best = c; bid = 'cat:street:' + c.name + ':' + i; } });
+  (state.freedCats || []).forEach(c => { if (!c.group || !c.group.visible) return; const d = Math.hypot(c.group.position.x - cp.x, c.group.position.z - cp.z); if (d < bd) { bd = d; best = c; bid = 'cat:' + ((c.cat && c.cat.id) || c.name); } });
+  return best ? { c: best, id: bid } : null;
+}
+
+// the activity wheel
+function openPartnerWheel() {
+  const p = state.partner; if (!p) return;
+  state.uiOpen = true;
+  let h = '<div class="zoo-want">💞</div><div class="modal-sub"><b>' + p.name + '</b> looks at you adoringly.</div><div class="co-grid" style="grid-template-columns:1fr">';
+  h += `<button onclick="partnerDo('follow')">🚶<small>Come with me${p.mode === 'follow' ? ' · already at your side' : ''}</small></button>`;
+  h += `<button onclick="partnerDo('wait')">🧍<small>Wait here for me</small></button>`;
+  h += `<button onclick="partnerDo('park')">🌳<small>Park date — hunt mice & birds TOGETHER</small></button>`;
+  h += `<button onclick="partnerDo('dream')">🎢<small>Dream City date</small></button>`;
+  h += `<button onclick="partnerDo('home')">🏠<small>${p.homeId ? 'Visit our home' : 'Move in together (needs a bought home)'}</small></button>`;
+  h += `<button onclick="partnerDo('farewell')">💔<small>Farewell…</small></button>`;
+  h += '</div><button class="modal-close" onclick="closeCheckout()">Just a nuzzle</button>';
+  document.getElementById('checkout-title').textContent = '💞 ' + p.name;
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+}
+function partnerDo(act) {
+  closeCheckout();
+  const p = state.partner; if (!p) return;
+  if (act === 'follow') { p.mode = 'follow'; showNotif('💞 ' + p.name + ' falls in beside you, tail high.'); }
+  else if (act === 'wait') { p.mode = 'wait'; showNotif('🧍 ' + p.name + ' curls up to wait. Hurry back!'); }
+  else if (act === 'park') {
+    p.mode = 'follow'; p.hunting = true;
+    showNotif('🌳 Date at the park! ' + p.name + ' will hunt WITH you — race you to the mice!');
+    if (typeof sfx === 'function') sfx('meow');
+  } else if (act === 'dream') {
+    p.mode = 'follow';
+    showNotif('🎢 A Dream City date! Head west together — the ferris wheel at sunset… 🥰');
+    if (typeof sfx === 'function') sfx('purr');
+  } else if (act === 'home') {
+    const owned = (state.owned && state.owned.homes) || [];
+    if (p.homeId) { p.mode = 'home'; showNotif('🏠 ' + p.name + ' heads home to keep the bed warm.'); }
+    else if (!owned.length) { showNotif('🏠 Buy a home first (look for FOR SALE signs) — then you two can move in together!'); }
+    else {
+      p.homeId = owned[0]; p.mode = 'home';
+      _catHappyT = 2.4; if (typeof spawnHeart === 'function') spawnHeart();
+      if (typeof sfx === 'function') sfx('upgrade');
+      showNotif('🏠💞 You and ' + p.name + ' move in together! They\'ll keep the home fires warm.');
+    }
+  } else if (act === 'farewell') {
+    showNotif('💔 ' + p.name + ' touches noses with you one last time… and pads away. Still friends.');
+    if (typeof sfx === 'function') sfx('sad');
+    if (p.group) scene.remove(p.group);
+    if (typeof unemploy === 'function') unemploy(p.id);
+    if (typeof hideRoamingCat === 'function') hideRoamingCat(p.name, false);
+    state.partner = null;
+  }
+  if (typeof saveGame === 'function') saveGame();
+}
+
+// per-frame love: follow with real trot & leaps, hunt together, keep the home
+function updatePartner(t) {
+  const p = state.partner; if (!p) return;
+  if (!p.group) { partnerMesh(); return; }
+  if (state.driving) { p.group.visible = false; return; }
+  if (typeof playerIndoors === 'function' && playerIndoors()) { p.group.visible = false; return; }
+  p.group.visible = true;
+  if (p.heart) { p.heart.position.y = 1.15 + Math.sin(t * 2.4) * 0.08; p.heart.material.emissiveIntensity = 0.6 + Math.sin(t * 3) * 0.3; }
+  const gp = p.group.position, cp = catGroup.position;
+  if (p.mode === 'home' && p.homeId && typeof PROPERTIES !== 'undefined') {
+    const hm = PROPERTIES.find(pr => pr.id === p.homeId);
+    if (hm) {
+      const dx = (hm.x + 1.4) - gp.x, dz = (hm.z + 2.8) - gp.z, d = Math.hypot(dx, dz);
+      if (d > 0.4) { gp.x += dx / d * 0.05; gp.z += dz / d * 0.05; p.group.rotation.y = Math.atan2(dx, dz); walkCatParts(p, t); }
+      else idleCatParts(p, t);
+      if (Math.hypot(cp.x - gp.x, cp.z - gp.z) < 3 && Math.random() < 0.004) { if (typeof spawnHeart === 'function') spawnHeart(); if (typeof sfx === 'function') sfx('purr'); }
+    }
+    return;
+  }
+  if (p.mode !== 'follow') { idleCatParts(p, t); return; }
+  // 🐭 hunting together: on a park date they chase critters themselves
+  if (p.hunting && typeof PARK !== 'undefined' && typeof nearestCritter === 'function') {
+    const inPark = gp.x > PARK.x0 - 4 && gp.x < PARK.x1 + 4 && gp.z > PARK.z0 - 4 && gp.z < PARK.z1 + 4;
+    p.huntCd = Math.max(0, (p.huntCd || 0) - 0.016);
+    if (inPark && p.huntCd === 0) {
+      const c = nearestCritter(gp, 7);
+      if (c) {
+        const dx = c.x - gp.x, dz = c.z - gp.z, d = Math.hypot(dx, dz);
+        if (d < 0.8) {
+          if (typeof catchCritter === 'function') catchCritter(c);
+          showNotif('💞 ' + p.name + ' pounces — caught one for the two of you!');
+          p.huntCd = 7;
+          if (typeof spawnHeart === 'function') spawnHeart();
+        } else {
+          gp.x += dx / d * 0.09; gp.z += dz / d * 0.09;
+          p.group.rotation.y = Math.atan2(dx, dz);
+          walkCatParts(p, t, 1.6);
+          return;
+        }
+      }
+    }
+  }
+  const dx = cp.x - gp.x, dz = cp.z - gp.z, d = Math.hypot(dx, dz);
+  if (d > 30) gp.set(cp.x - 1.3, 0, cp.z);
+  else if (d > 1.7) {
+    const sp = Math.min(0.12, (d - 1.5) * 0.07);
+    gp.x += dx / d * sp; gp.z += dz / d * sp;
+    p.group.rotation.y = Math.atan2(dx, dz);
+    walkCatParts(p, t);
+  } else {
+    idleCatParts(p, t);
+    p.group.rotation.y += (Math.atan2(dx, dz) - p.group.rotation.y) * 0.08;
+  }
+  // leaps between tiers, just like you
+  const targetY = state.catBaseY || 0;
+  if (p.jumpT == null && Math.abs(targetY - (p.floorY || 0)) > 0.35) { p.jumpT = 0; p.jumpFrom = p.floorY || 0; p.jumpTo = targetY; }
+  if (p.jumpT != null) {
+    p.jumpT += 0.05;
+    const pr = Math.min(1, p.jumpT), arc = Math.sin(pr * Math.PI);
+    p.floorY = p.jumpFrom + (p.jumpTo - p.jumpFrom) * pr + arc * (0.7 + Math.abs(p.jumpTo - p.jumpFrom) * 0.25);
+    (p.parts.legs || []).forEach((l, i) => { l.rotation.x = arc * (i < 2 ? -0.8 : 0.8); });
+    if (pr >= 1) { p.floorY = p.jumpTo; p.jumpT = null; }
+  }
+  gp.y = Math.max(gp.y, 0);
+}
+function walkCatParts(p, t, mult) {
+  p.walkT = (p.walkT || 0) + 0.42 * (mult || 1);
+  const sw = Math.sin(p.walkT);
+  (p.parts.legs || []).forEach((leg, i) => { leg.rotation.x = (i % 2 ? sw : -sw) * 0.85; });
+  const segs = p.parts.tail && p.parts.tail.userData && p.parts.tail.userData.segs;
+  if (segs) segs.forEach((s2, i) => { s2.rotation.x = ((s2.userData && s2.userData.rx) || 0) + Math.sin(p.walkT * 0.5 + i) * 0.12; });
+  p.group.position.y = (p.floorY || 0) + Math.abs(sw) * 0.06;
+}
+function idleCatParts(p, t) {
+  (p.parts.legs || []).forEach(l => l.rotation.x *= 0.75);
+  if (p.parts.body) p.parts.body.scale.y = 1 + Math.sin(t * 2.2 + p.phase) * 0.03;
+  const segs = p.parts.tail && p.parts.tail.userData && p.parts.tail.userData.segs;
+  if (segs) segs.forEach((s2, i) => { s2.rotation.x = ((s2.userData && s2.userData.rx) || 0) + Math.sin(t * 1.5 + i * 0.5 + p.phase) * 0.06; });
+  p.group.position.y = p.floorY || 0;
+}
+function partnerContext(cp) {
+  const p = state.partner;
+  if (!p || !p.group || !p.group.visible || state.driving) return null;
+  if (Math.hypot(cp.x - p.group.position.x, cp.z - p.group.position.z) > 1.45) return null;   // walk right up to them — a deliberate nuzzle
+  return { id: 'love:wheel', label: '💞 ' + p.name };
+}

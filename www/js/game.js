@@ -361,6 +361,7 @@ function saveGame() {
       townCode: state.townCode, neighbors: state.neighbors, countryFlag: state.countryFlag, zooPassDay: state.zooPassDay, dcPassDay: state.dcPassDay, dcTickets: state.dcTickets, dcBandDay: state.dcBandDay,
       myCars: state.myCars, activeCar: state.activeCar, carPos: state.carPos, carTrunk: state.carTrunk, goldBirdsCaught: state.goldBirdsCaught, settings: state.settings,
       guard: state.guard ? { kind: state.guard.kind, mode: state.guard.mode, name: state.guard.name, workerId: state.guard.workerId, look: state.guard.look } : null, grayHired: state.grayHired, grayStaffNames: state.grayStaffNames, jobsLedger: state.jobsLedger,
+      partner: state.partner ? { id: state.partner.id, name: state.partner.name, look: state.partner.look, mode: state.partner.mode, homeId: state.partner.homeId } : null,
     }));
   } catch (e) {}
 }
@@ -463,6 +464,7 @@ function applySave(s) {
   state.grayHired = s.grayHired || 0;
   state.grayStaffNames = s.grayStaffNames || [];
   state.jobsLedger = s.jobsLedger || {};
+  state.partner = s.partner ? { id: s.partner.id, name: s.partner.name, look: s.partner.look, mode: s.partner.mode || 'follow', homeId: s.partner.homeId || null } : null;
   if (typeof attractNewcomers === 'function') attractNewcomers(state.townGrowth.humans, state.townGrowth.cats, true);   // re-add newcomers your workplaces drew in
   if (typeof rebuildPlaced === 'function') rebuildPlaced();       // re-raise town-planner pieces
   if (typeof applyStreetNames === 'function') applyStreetNames();  // re-apply renamed streets
@@ -997,6 +999,16 @@ function updateContextButton() {
       const bt = balloonGiveTarget(cp);
       if (bt) { state.context = 'giveballoon'; state._balloonTo = bt; btn.textContent = '🎈 Give balloon to ' + bt.name; btn.classList.add('show'); return; }
     }
+    // 💝 carrying the stray mouse near ANY cat? offer it — and your heart
+    if (state.carryingMouse && !state.partner && typeof nearestLovableCat === 'function') {
+      const lv = nearestLovableCat(cp);
+      if (lv) { state.context = 'love:offer'; state._loveCtx = lv; btn.textContent = '💝 Offer the mouse to ' + (((lv.c.cat && lv.c.cat.name) || lv.c.name) || 'this cat'); btn.classList.add('show'); return; }
+    }
+    // 💞 walked right up to your beloved? the activity wheel opens
+    if (typeof partnerContext === 'function') {
+      const pw2 = partnerContext(cp);
+      if (pw2) { state.context = pw2.id; state._loveCtx = pw2; btn.textContent = pw2.label; btn.classList.add('show'); return; }
+    }
     // 🚗 Whisker Motors + your parked car + the trunk
     if (typeof carContext === 'function') {
       const cc = carContext(cp);
@@ -1070,6 +1082,8 @@ function doContextAction() {
   else if (state.context && state.context.indexOf('dc:') === 0) { if (typeof dcAction === 'function' && state._dcCtx) dcAction(state._dcCtx); }
   else if (state.context && state.context.indexOf('car:') === 0) { if (typeof carAction === 'function' && state._carCtx) carAction(state._carCtx); }
   else if (state.context && (state.context.indexOf('gray:') === 0 || state.context.indexOf('guard:') === 0)) { if (typeof grayAction === 'function' && state._grayCtx) grayAction(state._grayCtx); }
+  else if (state.context === 'love:offer') { if (typeof courtCat === 'function' && state._loveCtx) courtCat(state._loveCtx.c, state._loveCtx.id); }
+  else if (state.context === 'love:wheel') { if (typeof openPartnerWheel === 'function') openPartnerWheel(); }
   else if (state.context === 'talkdad') talkToDad();
   else if (state.context === 'collectshop') collectShopEarnings();
   else if (state.context === 'grocery') startMinigame(state.shopChen);
@@ -1721,7 +1735,7 @@ function updateParkTally() {
 // ── Playing with your rescued cats ──
 function nearestFreedCat(pos, range) {
   let best = null, bestD = range;
-  for (const c of state.freedCats.concat(state.streetCats)) { const d = Math.hypot(c.group.position.x - pos.x, c.group.position.z - pos.z); if (d < bestD) { bestD = d; best = c; } }
+  for (const c of state.freedCats.concat(state.streetCats)) { if (c.group && c.group.visible === false) continue; const d = Math.hypot(c.group.position.x - pos.x, c.group.position.z - pos.z); if (d < bestD) { bestD = d; best = c; } }   // cats away at work (or in love) can't be played with
   return best;
 }
 function playWithCat(fc) {
@@ -2777,6 +2791,7 @@ function animate(now) {
   updateGoldBird(t);                                                               // ✨🐦 the Golden Flock
   if (typeof updateGuard === 'function') updateGuard(t);                           // 🛡️ the detail keeps up
   if (typeof updateDoorArrows === 'function') updateDoorArrows(t);                 // 🟢 doors wave you in
+  if (typeof updatePartner === 'function') updatePartner(t);                       // 💞 love keeps pace
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it
