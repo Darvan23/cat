@@ -3107,8 +3107,7 @@ function animate(now) {
   }
 
   if (state.inShow) {   // 🚗 inside Whisker Motors
-    if (state._showSal) idleHuman(state._showSal, t);
-    (state._showCars || []).forEach((sc, i) => { sc.car.rotation.y = 0.5 + Math.sin(t * 0.3 + i) * 0.25; });
+    if (typeof updateShowRoom === 'function') updateShowRoom(t);
     updateEnterPrompt();
     updateContextButton();
     drawMinimap();

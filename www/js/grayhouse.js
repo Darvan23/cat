@@ -456,10 +456,7 @@ function phoneFood() {
 }
 function phoneCar() {
   closeCheckout();
-  if (!state.activeCar) { showNotif('🚗 You don\'t own a car yet — Whisker Motors is by the Gray House!'); return; }
-  if (typeof parkCarAt === 'function') parkCarAt(GRAY_SPOT.x + 16, GRAY_SPOT.z - 10, Math.PI / 2);
-  if (typeof sfx === 'function') sfx('meow');
-  showNotif('🚗 "Bringing it around now." Your ' + CAR_STYLES[state.activeCar].name + ' waits out front.');
+  if (typeof callCarTo === 'function') callCarTo(GRAY_SPOT.x + 16, GRAY_SPOT.z - 10.2, Math.PI / 2, 'the front of the Gray House');
 }
 
 // ── 🛡️ THE BODYGUARD — follows you EVERYWHERE (even into the car) ──

@@ -187,6 +187,7 @@ function enterCarShow() {
 }
 function exitCarShow() {
   state.inShow = false;
+  if (state.showShift) toggleShowShift();   // clocking out on your way through the door
   scene.add(catGroup);
   catGroup.position.set(CARSHOW.x, 0, CARSHOW.z + CARSHOW.d / 2 + 2.6); catGroup.rotation.y = 0;   // step well clear so the door doesn't grab you back
   if (typeof sfx === 'function') sfx('door');
@@ -194,6 +195,9 @@ function exitCarShow() {
 
 // showroom context: buy or choose your ride
 function carShowContext(cp) {
+  const cust = (typeof nearestShowCustomer === 'function') ? nearestShowCustomer(cp) : null;
+  if (cust) return { id: 'car:serve', label: '💬 Help this kitty find their car' };
+  if (Math.hypot(cp.x - 5.0, cp.z - 2.1) < 2.2) return { id: 'car:shift', label: state.showShift ? '🛒 End your sales shift' : '🛒 Work the sales floor' };
   for (const sc of state._showCars || []) {
     if (Math.hypot(cp.x - sc.x, cp.z - sc.z) < 2.5) {
       const st = CAR_STYLES[sc.id];
@@ -439,7 +443,7 @@ function carContext(cp) {
   }
   if (Math.hypot(cp.x - (CARSHOW.x - 5.6), cp.z - (CARSHOW.z + CARSHOW.d / 2 + 0.6)) < 2.4) return { id: 'car:mech', label: '🔧 Work a mechanic shift' };
   if (Math.hypot(cp.x - CARSHOW.x, cp.z - (CARSHOW.z + CARSHOW.d / 2 + 0.6)) < 2.6) return { id: 'car:enter', label: '🚗 Enter Whisker Motors' };
-  const gr = state.activeCar ? nearestGarage(cp, 2.8) : null;
+  const gr = (state.myCars || []).length ? nearestGarage(cp, 2.8) : null;
   if (gr && (!_carMesh || Math.hypot(_carMesh.position.x - gr.x, _carMesh.position.z - gr.z) > 7)) return { id: 'car:call', gr, label: '📞 Call your car to this garage' };
   if (_carMesh && Math.hypot(cp.x - _carMesh.position.x, cp.z - _carMesh.position.z) < 2.4) {
     if (state.carryBag) return { id: 'car:stow', label: '🧺 Put the bag in the trunk' };
@@ -455,11 +459,9 @@ function carAction(ctx) {
   else if (ctx.id === 'car:hopin') enterCar();
   else if (ctx.id === 'car:stow') trunkPut();
   else if (ctx.id === 'car:mech') startMinigame({ job: 'mech', hasJob: true, name: 'Sal', bubble: { material: { color: { setHex() {} }, emissive: { setHex() {} } } } });
-  else if (ctx.id === 'car:call') {
-    parkCarAt(ctx.gr.x, ctx.gr.z + 0.2, ctx.gr.ry);
-    if (typeof sfx === 'function') sfx('meow');
-    showNotif('📞 MEEP-MEOW! Your ' + CAR_STYLES[state.activeCar].name + ' pulls into the garage by ' + ctx.gr.label + '.');
-  }
+  else if (ctx.id === 'car:serve') openShowServe();
+  else if (ctx.id === 'car:shift') toggleShowShift();
+  else if (ctx.id === 'car:call') callCarTo(ctx.gr.x, ctx.gr.z, ctx.gr.ry, 'the garage at ' + ctx.gr.label);
   else if (ctx.id === 'car:trunk') openTrunk();
 }
 
@@ -569,3 +571,134 @@ const carJobMech = {
   },
 };
 if (typeof JOBS !== 'undefined') JOBS.mech = carJobMech;
+
+// ═══ 🛒 THE SALES FLOOR — work at Whisker Motors: cat customers, real wishes ═══
+function toggleShowShift() {
+  state.showShift = !state.showShift;
+  state.showCustomers = state.showCustomers || [];
+  if (state.showShift) {
+    state._showSpawnT = 1.2;
+    showNotif('🛒 On the sales floor! Cats are coming in — check their thought bubbles and find their dream car.');
+  } else {
+    (state.showCustomers || []).forEach(c => { c.cstate = 'off'; if (c.spr) c.spr.visible = false; });
+    showNotif('🛒 Shift over — Sal counts the takings, delighted.');
+  }
+  if (typeof sfx === 'function') sfx('ui');
+}
+function spawnShowCustomer() {
+  const looks = (typeof STREET_CAT_LOOKS !== 'undefined') ? STREET_CAT_LOOKS : [{ body: 0xc89048, accent: 0x5a3e24, eye: 0xa6c84a, markings: 'tabby' }];
+  const m = buildCatModel(looks[(Math.random() * looks.length) | 0]);
+  m.group.scale.setScalar(CAT_SCALE_OUT * 0.9);   // matches your own showroom size — fellow cats, not kittens
+  m.group.position.set(0, 0, SHOW_D - 0.4);
+  showScene.add(m.group);
+  const ids = Object.keys(CAR_STYLES).filter(id => id !== 'presidential');
+  const wantId = ids[(Math.random() * ids.length) | 0];
+  const st = CAR_STYLES[wantId];
+  const spr = (typeof makeThoughtSprite === 'function') ? makeThoughtSprite({ e: st.e, name: st.name }) : null;
+  if (spr) { spr.visible = false; spr.position.y = 3.7; m.group.add(spr); }
+  const sc = (state._showCars || []).find(s2 => s2.id === wantId);
+  state.showCustomers.push({ m, group: m.group, want: wantId, spr, cstate: 'in', tx: (sc ? sc.x : 0) + (Math.random() - 0.5) * 1.2, tz: (sc ? sc.z : -2) + 1.7 + Math.random() * 0.7, walkT: 0, patience: 34 });
+}
+function _custWalk(c, tx, tz, sp) {
+  const gp = c.group.position;
+  const dx = tx - gp.x, dz = tz - gp.z, d = Math.hypot(dx, dz);
+  if (d < 0.15) return true;
+  gp.x += dx / d * sp; gp.z += dz / d * sp;
+  c.group.rotation.y = Math.atan2(dx, dz);
+  c.walkT += 0.4;
+  const sw = Math.sin(c.walkT);
+  (c.m.legs || []).forEach((l, i) => { l.rotation.x = (i % 2 ? sw : -sw) * 0.8; });
+  gp.y = Math.abs(sw) * 0.04;
+  return false;
+}
+function updateShowRoom(t) {
+  if (state._showSal) idleHuman(state._showSal, t);
+  (state._showCars || []).forEach((sc, i) => { sc.car.rotation.y = 0.5 + Math.sin(t * 0.3 + i) * 0.25; });
+  const V = state.showCustomers || [];
+  if (state.showShift) {
+    state._showSpawnT = (state._showSpawnT || 0) - 0.016;
+    const active = V.filter(c => c.cstate === 'in' || c.cstate === 'wait').length;
+    if (state._showSpawnT <= 0 && active < 3) { spawnShowCustomer(); state._showSpawnT = 6 + Math.random() * 6; }
+  }
+  for (let i = V.length - 1; i >= 0; i--) {
+    const c = V[i];
+    if (c.cstate === 'in') {
+      if (_custWalk(c, c.tx, c.tz, 0.045)) { c.cstate = 'wait'; if (c.spr) c.spr.visible = true; }
+    } else if (c.cstate === 'wait') {
+      (c.m.legs || []).forEach(l => l.rotation.x *= 0.8);
+      c.group.position.y = 0;
+      if (c.m.body) c.m.body.scale.y = 1 + Math.sin(t * 2.2 + i) * 0.03;
+      c.group.rotation.y += (Math.atan2(c.tx - 0.01 - c.group.position.x, (c.tz - 1.7) - c.group.position.z) - c.group.rotation.y) * 0.05;
+      c.patience -= 0.016;
+      if (c.patience <= 0) { c.cstate = 'off'; if (c.spr) c.spr.visible = false; showNotif('🐾 A customer padded out — nobody helped them in time.'); }
+    } else {
+      if (c.spr) c.spr.visible = false;
+      if (_custWalk(c, 0, SHOW_D - 0.2, 0.05)) { showScene.remove(c.group); V.splice(i, 1); }
+    }
+  }
+}
+function nearestShowCustomer(cp) {
+  let best = null, bd = 2.3;
+  (state.showCustomers || []).forEach(c => {
+    if (c.cstate !== 'wait') return;
+    const d = Math.hypot(cp.x - c.group.position.x, cp.z - c.group.position.z);
+    if (d < bd) { bd = d; best = c; }
+  });
+  return best;
+}
+function openShowServe() {
+  const c = nearestShowCustomer(catGroup.position); if (!c) return;
+  state.uiOpen = true; state._showServing = c;
+  let h = '<div class="zoo-want">🐱</div><div class="modal-sub">They\'re dreaming of a car… which one is it?</div><div class="co-grid" style="grid-template-columns:repeat(2,1fr)">';
+  Object.keys(CAR_STYLES).filter(id => id !== 'presidential').forEach(id => {
+    const st = CAR_STYLES[id];
+    h += `<button onclick="sellShowCar('${id}')">${st.e}<small>${st.name}</small></button>`;
+  });
+  h += '</div><button class="modal-close" onclick="closeCheckout()">One moment</button>';
+  document.getElementById('checkout-title').textContent = '🛒 Help this kitty choose';
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+}
+function sellShowCar(id) {
+  const c = state._showServing; closeCheckout();
+  if (!c || c.cstate !== 'wait') return;
+  if (c.spr) c.spr.visible = false;
+  if (id === c.want) {
+    c.cstate = 'off';
+    state.coins += 6; state.earned = (state.earned || 0) + 6;
+    document.getElementById('coin-count').textContent = state.coins;
+    if (typeof sfx === 'function') sfx('sell');
+    _catHappyT = 1.4; if (typeof spawnHeart === 'function') spawnHeart();
+    showNotif('🛒 SOLD! The ' + CAR_STYLES[id].name + ' purrs off the lot — +6 🪙 commission!');
+    if (typeof schoolEvent === 'function') schoolEvent('minigame');
+  } else {
+    c.cstate = 'off';
+    if (typeof sfx === 'function') sfx('sad');
+    showNotif('❌ Wrong car — they wanted the ' + CAR_STYLES[c.want].name + '. Off they stalk…');
+  }
+}
+
+// ── 🚗 choose WHICH of your cars answers the call ──
+let _carCallSpot = null;
+function callCarTo(x, z, ry, label) {
+  const owned = state.myCars || [];
+  if (!owned.length) { showNotif('🚗 You don\'t own a car yet — Whisker Motors awaits!'); return; }
+  if (owned.length === 1) { state.activeCar = owned[0]; parkCarAt(x, z + 0.2, ry); if (typeof sfx === 'function') sfx('meow'); showNotif('📞 MEEP-MEOW! Your ' + CAR_STYLES[owned[0]].name + ' pulls in' + (label ? ' by ' + label : '') + '.'); return; }
+  _carCallSpot = { x, z, ry, label };
+  state.uiOpen = true;
+  let h = '<div class="zoo-want">📞</div><div class="modal-sub">"Which car shall we send?"</div><div class="co-grid" style="grid-template-columns:1fr">';
+  owned.forEach(id => { const st = CAR_STYLES[id]; h += `<button onclick="sendCalledCar('${id}')">${st.e}<small>${st.name}${state.activeCar === id ? ' · current ride' : ''}</small></button>`; });
+  h += '</div><button class="modal-close" onclick="closeCheckout()">Never mind</button>';
+  document.getElementById('checkout-title').textContent = '🚗 Your garage';
+  document.getElementById('checkout-body').innerHTML = h;
+  document.getElementById('checkout').classList.add('show');
+}
+function sendCalledCar(id) {
+  closeCheckout();
+  const s = _carCallSpot; if (!s) return;
+  state.activeCar = id;
+  parkCarAt(s.x, s.z + 0.2, s.ry);
+  if (typeof sfx === 'function') sfx('meow');
+  showNotif('📞 MEEP-MEOW! Your ' + CAR_STYLES[id].name + ' pulls in' + (s.label ? ' by ' + s.label : '') + '.');
+  if (typeof saveGame === 'function') saveGame();
+}
