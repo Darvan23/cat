@@ -188,7 +188,7 @@ function enterCarShow() {
 function exitCarShow() {
   state.inShow = false;
   scene.add(catGroup);
-  catGroup.position.set(CARSHOW.x, 0, CARSHOW.z + CARSHOW.d / 2 + 1.6); catGroup.rotation.y = 0;
+  catGroup.position.set(CARSHOW.x, 0, CARSHOW.z + CARSHOW.d / 2 + 2.6); catGroup.rotation.y = 0;   // step well clear so the door doesn't grab you back
   if (typeof sfx === 'function') sfx('door');
 }
 

@@ -419,7 +419,24 @@ function updateEnterPrompt() {
       if (dd < 1.2 && state._doorArmed) { state._doorArmed = false; toggleHouse(); return; }
     }
   }
-  if (!target) state._doorArmed = true;                                           // re-arm once you step clear of every door
+  // 🚗 context-based interiors walk in too (their arrows promised!)
+  if (!target && !state.driving && !state.uiOpen && !mg.active && !state.cinematic) {
+    const tryWalk = (x, z, fn) => {
+      const dd = Math.hypot(cp.x - x, cp.z - z);
+      if (dd < 1.25 && state._doorArmed) { state._doorArmed = false; fn(); return true; }
+      return false;
+    };
+    if (typeof CARSHOW !== 'undefined' && typeof enterCarShow === 'function' && tryWalk(CARSHOW.x, CARSHOW.z + CARSHOW.d / 2 + 0.45, enterCarShow)) return;
+    if (typeof DC_MANOR !== 'undefined' && state.dcManorDay === (state.dayCount || 0) && typeof enterManor === 'function' && tryWalk(DC_MANOR.x, DC_MANOR.z + 4.6, enterManor)) return;
+    if (typeof DC_FUN !== 'undefined' && state.dcFunDay === (state.dayCount || 0) && typeof enterFunhouse === 'function' && tryWalk(DC_FUN.x, DC_FUN.z + 3.1, enterFunhouse)) return;
+  }
+  if (!target) {                                                                  // re-arm once you step clear of every door
+    let clear = true;
+    if (typeof CARSHOW !== 'undefined' && Math.hypot(cp.x - CARSHOW.x, cp.z - (CARSHOW.z + CARSHOW.d / 2 + 0.45)) < 2.2) clear = false;
+    if (typeof DC_MANOR !== 'undefined' && Math.hypot(cp.x - DC_MANOR.x, cp.z - (DC_MANOR.z + 4.6)) < 2.2) clear = false;
+    if (typeof DC_FUN !== 'undefined' && Math.hypot(cp.x - DC_FUN.x, cp.z - (DC_FUN.z + 3.1)) < 2.2) clear = false;
+    if (clear) state._doorArmed = true;
+  }
   if (target && gatey) { btn.textContent = label; btn.classList.add('show'); }
   else btn.classList.remove('show');
 }
