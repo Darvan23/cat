@@ -466,8 +466,8 @@ const texFur = _detailTex((g, w, h) => {
 }, 128, 2, 2);
 const texGrain = _detailTex((g, w, h) => { _speckle(g, w, h, 0.97, 0.05, 420, 2); }, 64, 2, 2);
 window.texFur = texFur; window.texGrain = texGrain;
-[mat.catBody, mat.catDark, mat.catWhite, mat.catMarkA, mat.catMarkB, mat.catInner].forEach(m => { m.map = texFur; m.needsUpdate = true; });
-[mat.npcSkin, mat.npcPants, mat.npcHair].concat(mat.npcShirt).forEach(m => { m.map = texGrain; m.needsUpdate = true; });
+[mat.catBody, mat.catDark, mat.catWhite, mat.catMarkA, mat.catMarkB, mat.catInner].forEach(m => { m.map = texFur; m.bumpMap = texFur; m.bumpScale = 0.015; m.needsUpdate = true; });   // fur you can SEE catch the light
+[mat.npcSkin, mat.npcPants, mat.npcHair].concat(mat.npcShirt).forEach(m => { m.map = texGrain; m.bumpMap = texGrain; m.bumpScale = 0.006; m.needsUpdate = true; });
 mat.ground.map = texGrass;       mat.ground.needsUpdate = true;
 mat.road.map = texAsphalt;       mat.road.needsUpdate = true;
 mat.sidewalk.map = texPaving;    mat.sidewalk.needsUpdate = true;

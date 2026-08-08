@@ -37,6 +37,43 @@ function makeTailChain(material) {
   return root;
 }
 
+// ─── Fur detail pass: ruff, cheek fluff, lynx ear tufts, tail tip, toe beans ───
+// Shared by the hero cat AND every NPC cat (buildCatModel), so all cats get it.
+function addCatFurDetails(g, bodyM, darkM, tailRoot, legList, wMat) {
+  const put = (mesh, x, y, z, rx, ry, rz) => { mesh.position.set(x, y, z); mesh.rotation.set(rx || 0, ry || 0, rz || 0); mesh.castShadow = true; g.add(mesh); return mesh; };
+  // chest ruff — a collar of soft spikes where the fur is deepest
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 4 - 0.5) * 1.9;
+    put(new THREE.Mesh(G.cone(0.055, 0.17), bodyM), Math.sin(a) * 0.24, 0.33, 0.40 + Math.cos(a) * 0.10, 2.7, 0, -a * 0.5);
+  }
+  [-1, 1].forEach(s => {
+    // cheek fluff — sideways tufts framing the face
+    put(new THREE.Mesh(G.cone(0.035, 0.12), bodyM), s * 0.21, 0.61, 0.68, 0.15, s * 0.35, s * -(Math.PI / 2 + 0.25));
+    put(new THREE.Mesh(G.cone(0.03, 0.10), bodyM), s * 0.19, 0.53, 0.70, 0.3, s * 0.3, s * -(Math.PI / 2 + 0.55));
+    // lynx tufts on the ear tips
+    put(new THREE.Mesh(G.cone(0.022, 0.08), darkM), s * 0.17, 1.04, 0.50, -0.25, 0, s * -0.35);
+  });
+  // fluffy tip riding the LAST joint of the animated tail chain
+  if (tailRoot && tailRoot.userData.segs) {
+    const tip = new THREE.Mesh(G.sph(0.05, 14, 10), bodyM);
+    tip.position.y = 0.17; tip.scale.set(1, 1.35, 1); tip.castShadow = true;
+    tailRoot.userData.segs[4].add(tip);
+  }
+  // split toes on every paw (they swing with the leg)
+  (legList || []).forEach(leg => [-1, 1].forEach(s => {
+    const toe = new THREE.Mesh(G.sph(0.028, 10, 8), bodyM);
+    toe.position.set(s * 0.03, -0.455, 0.13); toe.scale.set(1, 0.75, 1.25); toe.castShadow = true; leg.add(toe);
+  }));
+  // a third pair of whiskers + brow whiskers over the eyes
+  if (wMat) {
+    const wire = pts => g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wMat));
+    [-1, 1].forEach(s => {
+      wire([new THREE.Vector3(s * 0.08, 0.66, 0.86), new THREE.Vector3(s * 0.32, 0.72, 0.70)]);
+      wire([new THREE.Vector3(s * 0.08, 0.77, 0.79), new THREE.Vector3(s * 0.17, 0.90, 0.70)]);
+    });
+  }
+}
+
 // Body — blended torso, chest, rump and neck
 const catBody = ellip(0.3, 1.08, 0.96, 1.7, mat.catBody, 0, 0.44, -0.05); // torso (breathing target)
 ellip(0.3, 1.00, 1.00, 0.95, mat.catBody, 0, 0.42, 0.34);   // chest
@@ -129,6 +166,9 @@ const legs = legHips.map(([lx, ly, lz]) => {
   catGroup.add(leg);
   return leg;
 });
+
+// The hero cat gets the full fur pass (NPC cats get theirs inside buildCatModel)
+addCatFurDetails(catGroup, mat.catBody, mat.catDark, tail, legs, whiskerMat);
 
 // ── Coat markings (one group shown depending on the chosen cat) ──
 function markMesh(group, r, sx, sy, sz, material, x, y, z) {
@@ -238,7 +278,7 @@ catGroup.scale.setScalar(CAT_SCALE_OUT);
 // Returns { group, legs, tail, body } so it can be walked/animated independently.
 function buildCatModel(cat) {
   const g = new THREE.Group();
-  const M = (c, rough = 0.85, metal = 0) => { const m = new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal }); if (rough >= 0.6 && typeof texFur !== 'undefined') { m.map = texFur; } return m; };
+  const M = (c, rough = 0.85, metal = 0) => { const m = new THREE.MeshStandardMaterial({ color: c, roughness: rough, metalness: metal }); if (rough >= 0.6 && typeof texFur !== 'undefined') { m.map = texFur; m.bumpMap = texFur; m.bumpScale = 0.015; } return m; };
   const bodyM = M(cat.body);
   const darkM = M(cat.markings === 'tuxedo' ? cat.body : cat.accent);   // ears & tail
   const innerM = M(0xe89a9a, 0.9), noseM = M(0xe0788a, 0.6), eyeM = M(cat.eye, 0.25, 0.1), pupM = M(0x101014, 0.2);
@@ -291,6 +331,7 @@ function buildCatModel(cat) {
     const wg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(side * 0.08, wy, 0.86), new THREE.Vector3(side * 0.34, wy + 0.02 * side, 0.7)]);
     g.add(new THREE.Line(wg, whiskerMat));
   });
+  addCatFurDetails(g, bodyM, darkM, tail, legs, whiskerMat);   // the same fur pass the hero wears
   // optional collar + bell (used by designed/created cats)
   if (cat.collar) {
     const cm = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.035, 8, 20), M(cat.collar, 0.5, 0.1));

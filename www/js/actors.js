@@ -38,6 +38,11 @@ function addHair(head, cfg, hairMat) {
 
 const _blushMat = new THREE.MeshStandardMaterial({ color: 0xe08a7a, roughness: 0.9, transparent: true, opacity: 0.34 });
 const _glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+// shared wardrobe details every human wears (one material each, however many people)
+const _btnMat = new THREE.MeshStandardMaterial({ color: 0x22222a, roughness: 0.45, metalness: 0.2 });
+const _beltMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.55, metalness: 0.05 });
+const _buckleMat = new THREE.MeshStandardMaterial({ color: 0xc8b048, roughness: 0.3, metalness: 0.7 });
+const _soleMat = new THREE.MeshStandardMaterial({ color: 0x1a1410, roughness: 0.7, metalness: 0 });
 function buildHuman(cfg) {
   const g = new THREE.Group();
   const parts = { arms: [], eyes: [] };
@@ -47,6 +52,7 @@ function buildHuman(cfg) {
   const shoeMat = pbr(cfg.shoe || 0x2a2018, 0.55);
   const hairMat = pbr(cfg.hair, 0.92);
   const dark = pbr(0x141414, 0.4);
+  [skin, shirt, pants, hairMat].forEach(m => { if (m.map) { m.bumpMap = m.map; m.bumpScale = 0.006; } });   // skin pores, cloth weave, hair strands
   const sph = r => G.sph(r);                             // smooth shared geometry (see core.js)
   const cyl = (rt, rb, h) => G.cyl(rt, rb, h);
   const add = m => { m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
@@ -66,6 +72,7 @@ function buildHuman(cfg) {
     const knee = new THREE.Mesh(sph(0.085), pants); knee.position.y = -0.43; knee.castShadow = true; leg.add(knee);
     const shin = new THREE.Mesh(cyl(0.085, 0.07, 0.4), pants); shin.position.y = -0.62; shin.castShadow = true; leg.add(shin);
     const shoe = new THREE.Mesh(sph(0.11), shoeMat); shoe.scale.set(1, 0.6, 1.6); shoe.position.set(0, -0.82, 0.06); shoe.castShadow = true; leg.add(shoe);
+    const sole = new THREE.Mesh(cyl(0.105, 0.115, 0.035), _soleMat); sole.scale.set(1, 1, 1.55); sole.position.set(0, -0.875, 0.08); sole.castShadow = true; leg.add(sole);
     g.add(leg); parts.legs.push(leg);
   });
   // pelvis + torso
@@ -75,12 +82,21 @@ function buildHuman(cfg) {
   if (round) S(sph(0.24), shirt, 0, 1.04, 0.13, 1.12, 0.85, 1.0);
   S(sph(0.25), shirt, 0, 1.46, 0, 1.06, 0.6, 0.85);   // shoulders
   S(cyl(0.1, 0.12, 0.08), shirt, 0, 1.52, 0.02);       // collar
+  // belt + buckle where shirt meets trousers
+  S(cyl(waistR + 0.02, waistR + 0.025, 0.055), _beltMat, 0, 0.895, bellyZ * 0.5, 1, 1, round ? 1.15 : 0.95);
+  S(new THREE.BoxGeometry(0.055, 0.04, 0.02), _buckleMat, 0, 0.895, bellyZ * 0.5 + (waistR + 0.035) * (round ? 1.15 : 0.95));
+  // a run of shirt buttons down the front (hidden under an apron, if worn)
+  if (!cfg.apron) [1.05, 1.19, 1.33].forEach(by => {
+    const br = (waistR + (by - 0.87) / 0.62 * (0.24 - waistR)) * (round ? 1.25 : 1);
+    S(sph(0.02), _btnMat, 0, by, bellyZ + br - 0.002);
+  });
 
   // arms (groups, for idle sway — shoulder & elbow balls keep them seamless mid-swing)
   [-1, 1].forEach(s => {
     const arm = new THREE.Group(); arm.position.set(s * 0.28, 1.46, 0); arm.rotation.z = s * 0.07;
     const shoulder = new THREE.Mesh(sph(0.08), shirt); shoulder.castShadow = true; arm.add(shoulder);
     const upper = new THREE.Mesh(cyl(0.075, 0.065, 0.34), shirt); upper.position.y = -0.17; upper.castShadow = true; arm.add(upper);
+    const cuff = new THREE.Mesh(cyl(0.068, 0.068, 0.055), shirt); cuff.position.y = -0.33; cuff.castShadow = true; arm.add(cuff);   // rolled sleeve edge
     const elbow = new THREE.Mesh(sph(0.062), skin); elbow.position.y = -0.34; elbow.castShadow = true; arm.add(elbow);
     const fore = new THREE.Mesh(cyl(0.06, 0.052, 0.32), skin); fore.position.y = -0.5; fore.castShadow = true; arm.add(fore);
     const hand = new THREE.Mesh(sph(0.07), skin); hand.position.set(0, -0.68, 0.02); hand.scale.set(1, 0.9, 0.72); hand.castShadow = true; arm.add(hand);
