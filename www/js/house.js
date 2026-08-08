@@ -559,12 +559,9 @@ function toggleStairs() {
   if (state.floor === 'upper') goDownstairs(); else goUpstairs();
 }
 function updateStairsPrompt() {
+  // 🪜 no button anymore — the stairs ARE the way: walk up the flight, walk into the well
   const btn = document.getElementById('stairs-btn');
-  if (!state.inHouse || state.houseLevel < 3) { btn.classList.remove('show'); return; }
-  const sp = stairsSpot();
-  const near = Math.hypot(catGroup.position.x - sp.x, catGroup.position.z - sp.z) < 1.8;
-  if (near) { btn.textContent = state.floor === 'upper' ? '⬇️ Go Downstairs' : '⬆️ Go Upstairs'; btn.classList.add('show'); }
-  else btn.classList.remove('show');
+  if (btn) btn.classList.remove('show');
 }
 
 // ─── Home Store decor (note 7): things you buy that appear in the Miller home ────

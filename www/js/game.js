@@ -3041,9 +3041,10 @@ function animate(now) {
     updateGivePrompt();
     updateContextButton();
     updateDecorEditPrompt();
-    // 🪜 walk INTO the stairwell landing upstairs → stroll back down the real steps
+    // 🪜 walk INTO the stairwell opening upstairs → stroll back down the real steps
     if (state.floor === 'upper' && typeof walkDownstairs === 'function') {
-      const inWell = Math.hypot(catGroup.position.x - (-2.4), catGroup.position.z - 1.6) < 0.8;
+      const cpU = catGroup.position;
+      const inWell = cpU.x > -4.4 && cpU.x < -2.95 && cpU.z > 1.25 && cpU.z < 3.5;   // the whole dark opening counts
       if (!inWell) state._stairArm = true;                       // must step away once before it re-triggers
       else if (state._stairArm && (state._stairCd || 0) <= 0) { state._stairArm = false; walkDownstairs(); }
     }
