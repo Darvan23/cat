@@ -328,7 +328,7 @@ function buildBench(x, z, rotY) {
 }
 // Build + register the movable/usable props so they can be rearranged in build mode
 // and NPCs can sit on / rest under them.
-function regTree(x, z)  { const g = buildTree(x, 0, z); const coll = { type: 'circle', x, z, r: 0.8 }; worldColliders.push(coll); return addProp({ kind: 'tree',  group: g, x, z, rotY: 0, coll, movable: true, use: 'tree' }); }
+function regTree(x, z)  { const g = buildTree(x, 0, z); const coll = { type: 'circle', x, z, r: 0.8 }; worldColliders.push(coll); _swayTrees.push({ g, ph: x * 0.7 + z * 0.3 }); return addProp({ kind: 'tree',  group: g, x, z, rotY: 0, coll, movable: true, use: 'tree' }); }
 function regLamp(x, z)  { const g = buildLamp(x, z);     return addProp({ kind: 'lamp',  group: g, x, z, rotY: 0, coll: null, movable: true }); }
 function regBench(x, z, rotY) { const g = buildBench(x, z, rotY); return addProp({ kind: 'bench', group: g, x, z, rotY: rotY || 0, coll: null, movable: true, use: 'bench' }); }
 // A picnic blanket with a basket + food — a spot for townsfolk to sit and eat
@@ -729,4 +729,106 @@ function buildParkBird() {
   [-1, 1].forEach(s => add(new THREE.BoxGeometry(0.04, 0.1, 0.2), body, s * 0.13, 0.16, 0)); // wings
   g.scale.setScalar(0.6);
   return g;
+}
+
+// ═══ ☁️ LIVING SKY & TOWN — clouds, birds, butterflies, smoke, bunting, swaying trees ═══
+const _clouds = [], _flocks = [], _flutters = [], _smokes = [], _bunting = [];
+const _swayTrees = [];
+function buildLivingSky() {
+  // ☁️ drifting puffy clouds
+  const cloudM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92, emissive: 0x9ab0c8, emissiveIntensity: 0.18 });
+  for (let i = 0; i < 12; i++) {
+    const g = new THREE.Group();
+    const puffs = 4 + (i % 3);
+    for (let k = 0; k < puffs; k++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(3 + Math.random() * 2.6, 10, 8), cloudM);
+      p.scale.y = 0.55;
+      p.position.set((k - puffs / 2) * 3.4 + Math.random() * 1.4, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 3);
+      g.add(p);
+    }
+    g.position.set(-300 + Math.random() * 600, 38 + Math.random() * 14, -260 + Math.random() * 480);
+    scene.add(g);
+    _clouds.push({ g, v: 0.35 + Math.random() * 0.4 });
+  }
+  // 🐦 little flocks crossing the sky
+  const birdM = new THREE.MeshStandardMaterial({ color: 0x3a3a44, roughness: 0.8 });
+  for (let f = 0; f < 3; f++) {
+    const g = new THREE.Group();
+    const wings = [];
+    for (let b = 0; b < 5; b++) {
+      const bg = new THREE.Group();
+      [-1, 1].forEach(d => { const w = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.16), birdM); w.position.x = d * 0.24; w.userData.d = d; bg.add(w); wings.push(w); });
+      bg.position.set((b - 2) * 1.4, Math.abs(b - 2) * 0.5, Math.abs(b - 2) * 1.1);   // the V
+      g.add(bg);
+    }
+    g.position.set(-200 + f * 150, 22 + f * 4, -100 + f * 90);
+    scene.add(g);
+    _flocks.push({ g, wings, v: 1.5 + f * 0.4, ph: f * 2 });
+  }
+  // 🦋 butterflies around the flower spots
+  const flowerSpots = [[-9.5, -4.8], [8, 6], [60, 24], [86, 40], [-36, 30], [22, 6.5]];
+  const bcols = [0xf0b040, 0xe06a9a, 0x7ab0e8, 0xf0f0f0];
+  flowerSpots.forEach(([bx, bz], i) => {
+    const g = new THREE.Group();
+    const wm = new THREE.MeshStandardMaterial({ color: bcols[i % 4], roughness: 0.6, side: THREE.DoubleSide });
+    const wings = [-1, 1].map(d => { const w = new THREE.Mesh(new THREE.CircleGeometry(0.12, 8), wm); w.position.x = d * 0.06; w.userData.d = d; g.add(w); return w; });
+    g.position.set(bx, 1.1, bz);
+    scene.add(g);
+    _flutters.push({ g, wings, ox: bx, oz: bz, ph: i * 1.7 });
+  });
+  // 💨 chimney smoke from the first few houses
+  const smokeM = new THREE.MeshStandardMaterial({ color: 0xd8d8dc, roughness: 1, transparent: true, opacity: 0.4 });
+  HOUSES.slice(0, 6).forEach((h, i) => {
+    if (i % 2) return;                                            // every other chimney is lit
+    const puffs = [];
+    for (let k = 0; k < 4; k++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), smokeM.clone());
+      p.position.set(h.x + 1.3, 5.3, h.z - 0.5);
+      scene.add(p);
+      puffs.push({ m: p, t: k * 0.9 });
+    }
+    _smokes.push({ x: h.x + 1.3, z: h.z - 0.5, puffs });
+  });
+  // 🎪 colourful bunting across Main Street & the town square
+  const bcols2 = [0xd0483a, 0xe8c040, 0x5a9ad0, 0x6ac06a, 0xc06ad0];
+  [[-30, 2.9, 0, 18], [8, 2.9, 0, 18], [-14, 2.9, 22, 14]].forEach(([sx, sy, sz, len]) => {
+    for (let k = 0; k < Math.floor(len / 1.4); k++) {
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.34, 4), new THREE.MeshStandardMaterial({ color: bcols2[k % 5], roughness: 0.7 }));
+      const fr = k / Math.floor(len / 1.4);
+      f.position.set(sx + fr * len, sy - Math.sin(fr * Math.PI) * 0.5, sz);
+      f.rotation.x = Math.PI;
+      scene.add(f);
+      _bunting.push({ m: f, ph: k * 0.7 });
+    }
+    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, len, 4), new THREE.MeshStandardMaterial({ color: 0x8a8a92, roughness: 0.6 }));
+    wire.rotation.z = Math.PI / 2; wire.position.set(sx + len / 2, sy + 0.14, sz);
+    scene.add(wire);
+  });
+}
+function updateLivingSky(t) {
+  _clouds.forEach(c => { c.g.position.x += c.v * 0.016; if (c.g.position.x > 320) c.g.position.x = -320; });
+  _flocks.forEach(f => {
+    f.g.position.x += f.v * 0.016 * 8;
+    f.g.position.y = 24 + Math.sin(t * 0.4 + f.ph) * 2;
+    if (f.g.position.x > 280) { f.g.position.x = -280; f.g.position.z = -120 + Math.random() * 200; }
+    f.wings.forEach(w => { w.rotation.z = w.userData.d * Math.sin(t * 10 + f.ph) * 0.5; });
+  });
+  _flutters.forEach(fl => {
+    fl.g.position.set(fl.ox + Math.sin(t * 0.7 + fl.ph) * 1.6, 0.9 + Math.sin(t * 1.3 + fl.ph * 2) * 0.45, fl.oz + Math.cos(t * 0.53 + fl.ph) * 1.6);
+    fl.g.rotation.y = t * 0.7 + fl.ph + Math.PI / 2;
+    fl.wings.forEach(w => { w.rotation.y = w.userData.d * (0.5 + Math.sin(t * 16 + fl.ph) * 0.55); });
+  });
+  _smokes.forEach(s => s.puffs.forEach(p => {
+    p.t += 0.016;
+    const c = (p.t / 3.6) % 1;
+    p.m.position.set(s.x + Math.sin(p.t * 0.8) * 0.3 * c, 5.3 + c * 3.4, s.z + c * 0.6);
+    p.m.scale.setScalar(0.6 + c * 1.7);
+    p.m.material.opacity = 0.4 * (1 - c);
+  }));
+  _bunting.forEach(b => { b.m.rotation.z = Math.sin(t * 2 + b.ph) * 0.2; });
+  for (let i = 0; i < _swayTrees.length; i++) {                     // 🌳 every tree breathes in the breeze
+    const s = _swayTrees[i];
+    s.g.rotation.z = Math.sin(t * 0.8 + s.ph) * 0.016;
+    s.g.rotation.x = Math.cos(t * 0.66 + s.ph) * 0.012;
+  }
 }

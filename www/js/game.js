@@ -710,8 +710,8 @@ function updateNeedsHUD() {
   set('energy-fill', state.needs.energy);
 }
 
-const _cDay = new THREE.Color(0x9fd0f0), _cNight = new THREE.Color(0x0a1430), _cDusk = new THREE.Color(0xf0a060);
-const _fDay = new THREE.Color(0xa9d4ee), _fNight = new THREE.Color(0x10182e);
+const _cDay = new THREE.Color(0x6fb8f2), _cNight = new THREE.Color(0x0a1430), _cDusk = new THREE.Color(0xf59a52);   // a real blue sky, a warmer sunset
+const _fDay = new THREE.Color(0x9ccdf0), _fNight = new THREE.Color(0x10182e);
 const _sunDay = new THREE.Color(0xfff4e0), _sunNight = new THREE.Color(0x6a80c0);
 let _dayPrev = 0;
 function updateDayNight(dt) {
@@ -2792,6 +2792,7 @@ function animate(now) {
   if (typeof updateGuard === 'function') updateGuard(t);                           // 🛡️ the detail keeps up
   if (typeof updateDoorArrows === 'function') updateDoorArrows(t);                 // 🟢 doors wave you in
   if (typeof updatePartner === 'function') updatePartner(t);                       // 💞 love keeps pace
+  if (typeof updateLivingSky === 'function') updateLivingSky(t);                   // ☁️ clouds, birds, smoke, breeze
   if (typeof schoolTick === 'function') schoolTick();   // 🏫 "hold N coins"-style lesson checks
   updateShopTill();   // Dad's shop keeps earning during open hours
   updateBizTill();    // a self-run (worker-less) business fills its till while you run it

@@ -45,6 +45,7 @@ function plantWildTree(kind, x, z) {
   const { group, coll } = placedVisual(kind);
   group.position.set(x, 0, z);
   scene.add(group);
+  if (typeof _swayTrees !== 'undefined' && kind !== 'flowers') _swayTrees.push({ g: group, ph: x * 0.5 + z * 0.4 });
   const collRef = (typeof worldColliderFor === 'function') ? worldColliderFor(coll, x, z, 0) : null;
   if (collRef) worldColliders.push(collRef);
   if (typeof addProp === 'function') addProp({ kind, group, x, z, rotY: 0, coll: collRef, movable: false, use: 'tree' });

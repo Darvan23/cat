@@ -343,7 +343,7 @@ scene.add(hemi);
 
 // ─── Materials ────────────────────────────────────────────────────────────────
 const mat = {
-  ground:    new THREE.MeshStandardMaterial({ color: 0x4f7a32, roughness: 1.0, metalness: 0 }),
+  ground:    new THREE.MeshStandardMaterial({ color: 0x4c8530, roughness: 1.0, metalness: 0 }),
   road:      new THREE.MeshStandardMaterial({ color: 0x4a4a52, roughness: 0.95, metalness: 0 }),
   sidewalk:  new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.9, metalness: 0 }),
   catBody:   new THREE.MeshStandardMaterial({ color: 0xe8c878, roughness: 0.85, metalness: 0 }),
@@ -373,8 +373,8 @@ const mat = {
   npcPants:  new THREE.MeshStandardMaterial({ color: 0x3a3a52, roughness: 0.85, metalness: 0 }),
   npcShoe:   new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.6, metalness: 0 }),
   coin:      new THREE.MeshStandardMaterial({ color: 0xf0c020, roughness: 0.3, metalness: 0.9, emissive: 0x4a3300, emissiveIntensity: 0.4 }),
-  tree:      new THREE.MeshStandardMaterial({ color: 0x2f7a26, roughness: 0.95, metalness: 0 }),
-  treeDark:  new THREE.MeshStandardMaterial({ color: 0x256a1e, roughness: 0.95, metalness: 0 }),
+  tree:      new THREE.MeshStandardMaterial({ color: 0x2f8c22, roughness: 0.95, metalness: 0 }),
+  treeDark:  new THREE.MeshStandardMaterial({ color: 0x257a1a, roughness: 0.95, metalness: 0 }),
   treeTrunk: new THREE.MeshStandardMaterial({ color: 0x6b4a26, roughness: 0.95, metalness: 0 }),
   poorHouse: new THREE.MeshStandardMaterial({ color: 0x8a7560, roughness: 0.95, metalness: 0 }),
   fence:     new THREE.MeshStandardMaterial({ color: 0xb89a6a, roughness: 0.9, metalness: 0 }),
