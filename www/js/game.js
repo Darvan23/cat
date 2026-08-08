@@ -1123,7 +1123,7 @@ function pauseOutdoorElena() {
 // Tell the Millers which home to live in (or send them back to the old house). Change your mind anytime.
 function millerMoveIn(id) {
   state.millerHome = id || null;
-  if (id) showDialogue('🏠 The Millers', "Our very own home — we're moving in! Bless you, little one. ❤️", 4600);
+  if (id) { state._justMovedIn = state.dayCount || 0; showDialogue('🏠 The Millers', "Our very own home — we're moving in! Bless you, little one. ❤️", 4600); }
   else showNotif('🏠 The Millers packed up and moved back to the old house.');
   if (typeof sfx === 'function') sfx('upgrade');
   saveGame();
@@ -3201,16 +3201,7 @@ function animate(now) {
       if (g && g.bubble) { g.bubble.position.y = 2.5 + Math.sin(t * 3 + 1) * 0.08; g.bubble.visible = g.hasJob; }   // the ✨ over the volunteer bobs while a game's available
       if (state.shelterToy) { state.shelterToy.position.y = 1.4 + Math.sin(t * 2.2) * 0.12; state.shelterToy.rotation.y += 0.03; }   // dangling feather toy
     }
-    else {   // bought home: the Millers only appear in the house you told them to move into
-      const hour = state.dayTime * 24;
-      const theirHome = state.millerHome && state.millerHome === state.currentBoughtHome;
-      state.boughtHomePeople.forEach(p => {
-        const home = theirHome && (!p.name || (typeof millerPlan !== 'function') || millerPlan(p.name, hour).loc !== 'out')
-          && !(typeof millerStillOutside === 'function' && millerStillOutside(p.name));
-        p.group.visible = home;
-        if (home) idleHuman(p, t);
-      });
-    }
+    else if (typeof updateBoughtHomeLife === 'function') updateBoughtHomeLife(t);   // 🏡 the Millers LIVE here — hoover, sofa, dinner, bed
     const iX = catGroup.position.x + Math.sin(state.camYaw) * state.camDist;
     const iZ = catGroup.position.z + Math.cos(state.camYaw) * state.camDist;
     camera.position.x += (iX - camera.position.x) * 0.1;

@@ -493,6 +493,7 @@ function exitHouse() {
 }
 
 function toggleHouse() {
+  state._doorArmed = false;   // any door use disarms — step clear before the next one grabs you
   if (typeof sfx === 'function' && (state.inHouse || state.inShop || state.inShelter || state.inBoughtHome || state.inBiz || state.inWork || state.nearBuilding)) sfx('door');
   if (state.inHouse) exitHouse();
   else if (state.inShop) exitShop();
@@ -1603,7 +1604,8 @@ function buildBoughtHome() {
    { name: 'Noah',   cfg: { skin: 0xe0b080, hair: 0x241712, hairStyle: 'child', shirt: 0x5a80c0, pants: 0x3a3a4a, height: 0.74, build: 'slim', eye: 0x241712 }, x: 3.0, z: 1.2, ry: Math.PI },
    { name: 'Lily',   cfg: { skin: 0xf0c49a, hair: 0x7a4a2a, hairStyle: 'long', shirt: 0xe0a0c0, pants: 0x8a6aa0, height: 0.62, build: 'slim', eye: 0x5a3a22 }, x: 2.4, z: 0.4, ry: Math.PI }].forEach(p => {
     const { group, parts } = buildHuman(p.cfg);
-    group.position.set(p.x, 0, p.z); group.rotation.y = p.ry; S.add(group);
+    group.position.set(p.x, 0, p.z); group.rotation.y = p.ry; group.visible = false;   // nobody home until they MOVE in
+    S.add(group);
     state.boughtHomePeople.push({ group, parts, name: p.name, home0: { x: p.x, z: p.z, ry: p.ry }, phase: Math.random() * 6 });
   });
 }
@@ -1649,5 +1651,70 @@ function buildShelterCats() {
     if (nightOnly) m.group.visible = false;
     shelterScene.add(m.group);
     state.shelterCats.push({ group: m.group, legs: m.legs, tail: m.tail, body: m.body, name: names[i % names.length], phase: Math.random() * 6, nightOnly, playT: 0 });
+  });
+}
+
+
+// ── 🏡 Life in the bought home: the Millers LIVE here, same as the old house ──
+function updateBoughtHomeLife(t) {
+  const people = state.boughtHomePeople || [];
+  const theirHome = !!(state.millerHome && state.millerHome === state.currentBoughtHome);
+  const hour = state.dayTime * 24;
+  const movedToday = state._justMovedIn === (state.dayCount || 0);   // moving day: everyone's home unpacking
+  const fx = id => (typeof decorReg !== 'undefined' && decorReg.bought && decorReg.bought[id]) || null;
+  const sofa = fx('bsofa'), table = fx('btable'), bed = fx('bbed');
+  people.forEach((p, i) => {
+    const plan = (typeof millerPlan === 'function') ? millerPlan(p.name, hour) : { loc: 'down' };
+    const home = theirHome && (movedToday || (plan.loc !== 'out' && !(typeof millerStillOutside === 'function' && millerStillOutside(p.name))));
+    p.group.visible = !!home;
+    if (!home) { if (p.hooverMesh) p.hooverMesh.visible = false; return; }
+    const hgt = p.group.scale.y || 1;
+    const legs = p.parts.legs, arms = p.parts.arms;
+    const seatOn = (y, x, z, ry) => { p.group.position.set(x, y - 0.82 * hgt + 0.5, z); p.group.rotation.set(0, ry, 0); if (legs) legs.forEach(l => l.rotation.x = -1.4); };
+    const night = hour >= 21.5 || hour < 6.5;
+    if (night && bed && (p.name === 'Elena' || p.name === 'Daniel')) {          // 💤 parents in the big bed
+      const side = p.name === 'Elena' ? -0.45 : 0.45;
+      p.group.position.set(bed.position.x + side, 0.62, bed.position.z + 0.2);
+      p.group.rotation.set(-Math.PI / 2, 0, 0);
+      if (legs) legs.forEach(l => l.rotation.x = 0.15);
+      if (arms) arms.forEach(a => a.rotation.x = 0.1);
+    } else if (night && sofa) {                                                 // kids curled on the sofa
+      seatOn(0.6, sofa.position.x + (p.name === 'Lily' ? -0.6 : 0.6), sofa.position.z + 0.05, 0);
+      if (p.parts.head) p.parts.head.rotation.x = 0.5;
+    } else if (hour >= 17.2 && hour < 21.5 && table) {                          // 🍽️ dinner together
+      const seats = [[-0.9, 0], [0.9, 0], [0, -0.75], [0, 0.75]];
+      const s = seats[i % 4];
+      seatOn(0.5, table.position.x + s[0], table.position.z + s[1], Math.atan2(-s[0], -s[1]));
+      if (arms && Math.sin(t * 2 + p.phase) > 0.5) arms[0].rotation.x = -1.0; else if (arms) arms[0].rotation.x = -0.5;
+    } else if (p.name === 'Elena') {                                            // 🧹 mum keeps the new place SPOTLESS
+      if (!p.hooverMesh) {
+        const hv = new THREE.Group();
+        const body2 = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), new THREE.MeshStandardMaterial({ color: 0xb0483a, roughness: 0.6 })); body2.scale.set(1, 0.7, 1.3); body2.position.y = 0.12; hv.add(body2);
+        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.95, 8), new THREE.MeshStandardMaterial({ color: 0x8a8f99, roughness: 0.4 })); stick.position.set(0, 0.55, -0.28); stick.rotation.x = 0.55; hv.add(stick);
+        boughtHomeScene.add(hv); p.hooverMesh = hv;
+      }
+      const hp2 = collide(-1 + Math.sin(t * 0.6) * 3.2, Math.sin(t * 0.21) * 2.4, boughtHomeColliders, 0.34);
+      const face = Math.atan2(Math.cos(t * 0.6) * 3.2, 0.001);
+      p.group.position.set(hp2.x, 0, hp2.z); p.group.rotation.set(0, face, 0);
+      p.hooverMesh.visible = true;
+      const hvp = collide(hp2.x + Math.sin(face) * 0.55, hp2.z + Math.cos(face) * 0.55, boughtHomeColliders, 0.2);
+      p.hooverMesh.position.set(hvp.x, 0, hvp.z); p.hooverMesh.rotation.y = face;
+      if (arms) { arms[0].rotation.x = -0.85 + Math.sin(t * 3.2) * 0.12; arms[1].rotation.x = -0.2; }
+      if (legs) { legs[0].rotation.x = Math.sin(t * 2.6) * 0.2; legs[1].rotation.x = -Math.sin(t * 2.6) * 0.2; }
+    } else if (p.name === 'Daniel' && sofa) {                                   // 📰 dad reads on the sofa
+      seatOn(0.6, sofa.position.x + 0.5, sofa.position.z + 0.05, 0);
+      if (arms) arms.forEach(a => a.rotation.x = -1.05);
+      if (p.parts.head) { p.parts.head.rotation.x = 0.32; p.parts.head.rotation.y = Math.sin(t * 0.4) * 0.1; }
+    } else {                                                                    // 🧸 the kids play on the floor
+      const kidIx = p.name === 'Lily' ? 0 : 1;
+      const kp = collide(-3.2 + kidIx * 1.2, -1.6, boughtHomeColliders, 0.34);
+      p.group.position.set(kp.x, -0.45 * hgt, kp.z);
+      p.group.rotation.set(0, kidIx === 0 ? Math.PI / 2 : -Math.PI / 2, 0);
+      if (legs) legs.forEach(l => l.rotation.x = -1.5);
+      const roll = Math.sin(t * 2.2);
+      if (arms) { arms[0].rotation.x = -0.7 + (kidIx === 0 ? Math.max(0, roll) : Math.max(0, -roll)) * -0.5; arms[1].rotation.x = -0.4; }
+      if (p.parts.head) p.parts.head.rotation.x = 0.25;
+    }
+    if (p.parts && typeof blinkHuman === 'function') blinkHuman(p, t);
   });
 }
