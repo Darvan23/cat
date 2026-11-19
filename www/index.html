@@ -15,6 +15,32 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-180.png">
   <link rel="stylesheet" href="css/style.css">
+
+    <!-- Anonymous analytics (Umami): no cookies, no personal data -->
+    <script>try{var q=new URLSearchParams(location.search).get("notrack");if(q==="1")localStorage.setItem("umami.disabled","1");if(q==="0")localStorage.removeItem("umami.disabled");}catch(e){}</script>
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="db2eae29-f59c-4067-9ddf-e38b663fb989" data-domains="darvan23.github.io"></script>
+    <script>
+    (function () {
+        var game = 'Paws & Pennies';
+        var t0 = Date.now(), sent = false;
+        function track(n, d) { try { if (window.umami) window.umami.track(n, d); } catch (e) {} }
+        window.addEventListener("load", function () { setTimeout(function () { track("Game geopend", { game: game }); }, 1200); });
+        function leave() {
+            if (sent) return; sent = true;
+            var s = Math.round((Date.now() - t0) / 1000);
+            if (s >= 3) track("Speeltijd", { game: game, seconden: s, minuten: Math.round(s / 60) });
+        }
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") leave(); });
+        window.addEventListener("pagehide", leave);
+        document.addEventListener("click", function (e) {
+            var b = e.target.closest && e.target.closest("button");
+            if (!b) return;
+            if (b.id === "adopt-btn") track("Kat geadopteerd", { game: game });
+            else if (b.id === "catmaker-confirm") track("Eigen kat gemaakt", { game: game });
+            else if (b.id === "start-btn") track("Avontuur gestart", { game: game });
+        }, true);
+    })();
+    </script>
 </head>
 <body>
 
